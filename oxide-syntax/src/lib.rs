@@ -1,14 +1,17 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
+// =======================================================================
+// lib.rs
+// =======================================================================
+// The top-level collection of AST nodes
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-}
+pub mod declarations;
+pub mod expressions;
+pub mod general;
+pub mod keywords;
+pub mod source_text;
+pub mod udp_declaration_and_instantiation;
+pub use declarations::*;
+pub use expressions::*;
+pub use general::*;
+pub use keywords::*;
+pub use source_text::*;
+pub use udp_declaration_and_instantiation::*;
