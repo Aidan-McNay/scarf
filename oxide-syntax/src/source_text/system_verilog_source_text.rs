@@ -6,7 +6,7 @@
 use crate::*;
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct SourceText(Option<TimeunitsDeclaration>, Vec<Description>);
+pub struct SourceText(pub Option<TimeunitsDeclaration>, pub Vec<Description>);
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Description {
