@@ -25,7 +25,7 @@ pub fn escaped_identifier_parser<'a>() -> impl Parser<'a, &'a str, SimpleIdentif
                 .clone()
                 .foldl(char_parser.repeated(), |a, b| a + &b),
         )
-        .then_ignore(text::whitespace().at_least(1))
+        .then_ignore(sep())
 }
 
 pub fn module_identifier_parser<'a>() -> impl Parser<'a, &'a str, ModuleIdentifier, ParserError<'a>>

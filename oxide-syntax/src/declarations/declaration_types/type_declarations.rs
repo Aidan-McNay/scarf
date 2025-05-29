@@ -8,5 +8,5 @@ pub type PackageImportDeclaration = ();
 #[derive(Clone, Debug, PartialEq)]
 pub enum Lifetime {
     Static,
-    Dynamic,
+    Automatic,
 }

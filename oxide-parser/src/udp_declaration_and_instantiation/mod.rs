@@ -1,9 +1,7 @@
 // =======================================================================
 // mod.rs
 // =======================================================================
-// Parsing for 1800-2023 A.9
+// Parsing for 1800-2023 A.5
 
-pub mod attributes;
-pub mod identifiers;
-pub use attributes::*;
-pub use identifiers::*;
+pub mod udp_declaration;
+pub use udp_declaration::*;

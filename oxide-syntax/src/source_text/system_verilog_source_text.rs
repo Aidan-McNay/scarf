@@ -21,31 +21,31 @@ pub enum Description {
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct DescriptionPackageItem(Vec<AttributeInstance>, PackageItem);
+pub struct DescriptionPackageItem(pub Vec<AttributeInstance>, pub PackageItem);
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct DescriptionBindDirective(Vec<AttributeInstance>, BindDirective);
+pub struct DescriptionBindDirective(pub Vec<AttributeInstance>, pub BindDirective);
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct ModuleNonansiHeader(
-    Vec<AttributeInstance>,
-    ModuleKeyword,
-    Option<Lifetime>,
-    ModuleIdentifier,
-    Vec<PackageImportDeclaration>,
-    Option<ParameterPortList>,
-    ListOfPorts,
+    pub Vec<AttributeInstance>,
+    pub ModuleKeyword,
+    pub Option<Lifetime>,
+    pub ModuleIdentifier,
+    pub Vec<PackageImportDeclaration>,
+    pub Option<ParameterPortList>,
+    pub ListOfPorts,
 );
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct ModuleAnsiHeader(
-    Vec<AttributeInstance>,
-    ModuleKeyword,
-    Option<Lifetime>,
-    ModuleIdentifier,
-    Vec<PackageImportDeclaration>,
-    Option<ParameterPortList>,
-    Option<ListOfPortDeclarations>,
+    pub Vec<AttributeInstance>,
+    pub ModuleKeyword,
+    pub Option<Lifetime>,
+    pub ModuleIdentifier,
+    pub Vec<PackageImportDeclaration>,
+    pub Option<ParameterPortList>,
+    pub Option<ListOfPortDeclarations>,
 );
 
 #[derive(Clone, Debug, PartialEq)]
@@ -59,36 +59,36 @@ pub enum ModuleDeclaration {
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct ModuleDeclarationNonansi(
-    ModuleNonansiHeader,
-    Option<TimeunitsDeclaration>,
-    Vec<ModuleItem>,
-    Option<ModuleIdentifier>,
+    pub ModuleNonansiHeader,
+    pub Option<TimeunitsDeclaration>,
+    pub Vec<ModuleItem>,
+    pub Option<ModuleIdentifier>,
 );
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct ModuleDeclarationAnsi(
-    ModuleAnsiHeader,
-    Option<TimeunitsDeclaration>,
-    Vec<NonPortModuleItem>,
-    Option<ModuleIdentifier>,
+    pub ModuleAnsiHeader,
+    pub Option<TimeunitsDeclaration>,
+    pub Vec<NonPortModuleItem>,
+    pub Option<ModuleIdentifier>,
 );
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct ModuleDeclarationWildcard(
-    Vec<AttributeInstance>,
-    ModuleKeyword,
-    Option<Lifetime>,
-    ModuleIdentifier,
-    Option<TimeunitsDeclaration>,
-    Vec<ModuleItem>,
-    Option<ModuleIdentifier>,
+    pub Vec<AttributeInstance>,
+    pub ModuleKeyword,
+    pub Option<Lifetime>,
+    pub ModuleIdentifier,
+    pub Option<TimeunitsDeclaration>,
+    pub Vec<ModuleItem>,
+    pub Option<ModuleIdentifier>,
 );
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct ModuleDeclarationExternNonansi(ModuleNonansiHeader);
+pub struct ModuleDeclarationExternNonansi(pub ModuleNonansiHeader);
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct ModuleDeclarationExternAnsi(ModuleAnsiHeader);
+pub struct ModuleDeclarationExternAnsi(pub ModuleAnsiHeader);
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum ModuleKeyword {
@@ -107,53 +107,53 @@ pub enum InterfaceDeclaration {
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct InterfaceDeclarationNonansi(
-    InterfaceNonansiHeader,
-    Option<TimeunitsDeclaration>,
-    Vec<InterfaceItem>,
-    Option<InterfaceIdentifier>,
+    pub InterfaceNonansiHeader,
+    pub Option<TimeunitsDeclaration>,
+    pub Vec<InterfaceItem>,
+    pub Option<InterfaceIdentifier>,
 );
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct InterfaceDeclarationAnsi(
-    InterfaceAnsiHeader,
-    Option<TimeunitsDeclaration>,
-    Vec<NonPortInterfaceItem>,
-    Option<InterfaceIdentifier>,
+    pub InterfaceAnsiHeader,
+    pub Option<TimeunitsDeclaration>,
+    pub Vec<NonPortInterfaceItem>,
+    pub Option<InterfaceIdentifier>,
 );
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct InterfaceDeclarationWildcard(
-    Vec<AttributeInstance>,
-    InterfaceIdentifier,
-    Option<TimeunitsDeclaration>,
-    Vec<InterfaceItem>,
-    Option<InterfaceIdentifier>,
+    pub Vec<AttributeInstance>,
+    pub InterfaceIdentifier,
+    pub Option<TimeunitsDeclaration>,
+    pub Vec<InterfaceItem>,
+    pub Option<InterfaceIdentifier>,
 );
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct InterfaceDeclarationExternNonansi(InterfaceNonansiHeader);
+pub struct InterfaceDeclarationExternNonansi(pub InterfaceNonansiHeader);
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct InterfaceDeclarationExternAnsi(InterfaceAnsiHeader);
+pub struct InterfaceDeclarationExternAnsi(pub InterfaceAnsiHeader);
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct InterfaceNonansiHeader(
-    Vec<AttributeInstance>,
-    Option<Lifetime>,
-    InterfaceIdentifier,
-    Vec<PackageImportDeclaration>,
-    Option<ParameterPortList>,
-    ListOfPorts,
+    pub Vec<AttributeInstance>,
+    pub Option<Lifetime>,
+    pub InterfaceIdentifier,
+    pub Vec<PackageImportDeclaration>,
+    pub Option<ParameterPortList>,
+    pub ListOfPorts,
 );
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct InterfaceAnsiHeader(
-    Vec<AttributeInstance>,
-    Option<Lifetime>,
-    InterfaceIdentifier,
-    Vec<PackageImportDeclaration>,
-    Option<ParameterPortList>,
-    Option<ListOfPortDeclarations>,
+    pub Vec<AttributeInstance>,
+    pub Option<Lifetime>,
+    pub InterfaceIdentifier,
+    pub Vec<PackageImportDeclaration>,
+    pub Option<ParameterPortList>,
+    pub Option<ListOfPortDeclarations>,
 );
 
 #[derive(Clone, Debug, PartialEq)]
@@ -167,98 +167,98 @@ pub enum ProgramDeclaration {
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct ProgramDeclarationNonansi(
-    ProgramNonansiHeader,
-    Option<TimeunitsDeclaration>,
-    Vec<ProgramItem>,
-    Option<ProgramIdentifier>,
+    pub ProgramNonansiHeader,
+    pub Option<TimeunitsDeclaration>,
+    pub Vec<ProgramItem>,
+    pub Option<ProgramIdentifier>,
 );
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct ProgramDeclarationAnsi(
-    ProgramAnsiHeader,
-    Option<TimeunitsDeclaration>,
-    Vec<NonPortProgramItem>,
-    Option<ProgramIdentifier>,
+    pub ProgramAnsiHeader,
+    pub Option<TimeunitsDeclaration>,
+    pub Vec<NonPortProgramItem>,
+    pub Option<ProgramIdentifier>,
 );
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct ProgramDeclarationWildcard(
-    Vec<AttributeInstance>,
-    ProgramIdentifier,
-    Option<TimeunitsDeclaration>,
-    Vec<ProgramItem>,
-    Option<ProgramIdentifier>,
+    pub Vec<AttributeInstance>,
+    pub ProgramIdentifier,
+    pub Option<TimeunitsDeclaration>,
+    pub Vec<ProgramItem>,
+    pub Option<ProgramIdentifier>,
 );
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct ProgramDeclarationExternNonansi(ProgramNonansiHeader);
+pub struct ProgramDeclarationExternNonansi(pub ProgramNonansiHeader);
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct ProgramDeclarationExternAnsi(ProgramAnsiHeader);
+pub struct ProgramDeclarationExternAnsi(pub ProgramAnsiHeader);
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct ProgramNonansiHeader(
-    Vec<AttributeInstance>,
-    Option<Lifetime>,
-    ProgramIdentifier,
-    Vec<PackageImportDeclaration>,
-    Option<ParameterPortList>,
-    ListOfPorts,
+    pub Vec<AttributeInstance>,
+    pub Option<Lifetime>,
+    pub ProgramIdentifier,
+    pub Vec<PackageImportDeclaration>,
+    pub Option<ParameterPortList>,
+    pub ListOfPorts,
 );
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct ProgramAnsiHeader(
-    Vec<AttributeInstance>,
-    Option<Lifetime>,
-    ProgramIdentifier,
-    Vec<PackageImportDeclaration>,
-    Option<ParameterPortList>,
-    Option<ListOfPortDeclarations>,
+    pub Vec<AttributeInstance>,
+    pub Option<Lifetime>,
+    pub ProgramIdentifier,
+    pub Vec<PackageImportDeclaration>,
+    pub Option<ParameterPortList>,
+    pub Option<ListOfPortDeclarations>,
 );
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct CheckerDeclaration(
-    CheckerIdentifier,
-    Option<CheckerPortList>,
-    Option<CheckerDeclarationCheckerOrGenerateItem>,
-    Option<CheckerIdentifier>,
+    pub CheckerIdentifier,
+    pub Option<CheckerPortList>,
+    pub Option<CheckerDeclarationCheckerOrGenerateItem>,
+    pub Option<CheckerIdentifier>,
 );
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct CheckerDeclarationCheckerOrGenerateItem(
-    Option<AttributeInstance>,
-    CheckerOrGenerateItem,
+    pub Option<AttributeInstance>,
+    pub CheckerOrGenerateItem,
 );
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct ClassDeclaration(
-    Option<Virtual>,
-    Option<FinalSpecifier>,
-    ClassIdentifier,
-    Option<ParameterPortList>,
-    Option<(ClassType, Option<ListOfArguments>)>,
-    Option<Vec<InterfaceClassType>>,
-    Vec<ClassItem>,
-    Option<ClassIdentifier>,
+    pub Option<Virtual>,
+    pub Option<FinalSpecifier>,
+    pub ClassIdentifier,
+    pub Option<ParameterPortList>,
+    pub Option<(ClassType, Option<ListOfArguments>)>,
+    pub Option<Vec<InterfaceClassType>>,
+    pub Vec<ClassItem>,
+    pub Option<ClassIdentifier>,
 );
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct InterfaceClassDeclaration(
-    ClassIdentifier,
-    Option<ParameterPortList>,
-    Option<Vec<InterfaceClassType>>,
-    Vec<InterfaceClassItem>,
-    Option<ClassIdentifier>,
+    pub ClassIdentifier,
+    pub Option<ParameterPortList>,
+    pub Option<Vec<InterfaceClassType>>,
+    pub Vec<InterfaceClassItem>,
+    pub Option<ClassIdentifier>,
 );
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct PackageDeclaration(
-    Vec<AttributeInstance>,
-    Option<Lifetime>,
-    PackageIdentifier,
-    Option<TimeunitsDeclaration>,
-    Vec<(Vec<AttributeInstance>, PackageItem)>,
-    Option<PackageIdentifier>,
+    pub Vec<AttributeInstance>,
+    pub Option<Lifetime>,
+    pub PackageIdentifier,
+    pub Option<TimeunitsDeclaration>,
+    pub Vec<(Vec<AttributeInstance>, PackageItem)>,
+    pub Option<PackageIdentifier>,
 );
 
 #[derive(Clone, Debug, PartialEq)]

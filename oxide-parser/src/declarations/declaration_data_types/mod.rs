@@ -1,9 +1,7 @@
 // =======================================================================
 // mod.rs
 // =======================================================================
-// Parsing for 1800-2023 A.9
+// Parsing for 1800-2023 A.2.2
 
-pub mod attributes;
-pub mod identifiers;
-pub use attributes::*;
-pub use identifiers::*;
+pub mod net_and_variable_types;
+pub use net_and_variable_types::*;

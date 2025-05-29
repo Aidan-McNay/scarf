@@ -3,16 +3,22 @@
 // =======================================================================
 // The top-level parser
 
+mod declarations;
 mod errors;
+mod expressions;
 mod general;
 mod source_text;
+mod utils;
 use ariadne::{Color, Label, ReportKind};
 pub use ariadne::{Report, Source};
 use chumsky::prelude::*;
-pub use errors::*;
-pub use general::*;
+use declarations::*;
+use errors::*;
+use expressions::*;
+use general::*;
 use oxide_syntax::SourceText;
-use source_text::source_text_parser;
+use source_text::*;
+use utils::*;
 
 pub fn parse<'a>(src: &'a str) -> ParseResult<SourceText, Rich<'a, char>> {
     source_text_parser().parse(src)

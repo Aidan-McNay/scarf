@@ -7,15 +7,9 @@ use crate::*;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum TimeLiteral {
-    TimeLiteralUnsigned(Box<TimeLiteralUnsigned>),
-    TimeLiteralFixedPoint(Box<TimeLiteralFixedPoint>),
+    TimeLiteralUnsigned(Box<(UnsignedNumber, TimeUnit)>),
+    TimeLiteralFixedPoint(Box<(FixedPointNumber, TimeUnit)>),
 }
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct TimeLiteralUnsigned(UnsignedNumber, TimeUnit);
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct TimeLiteralFixedPoint(FixedPointNumber, TimeUnit);
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum TimeUnit {
