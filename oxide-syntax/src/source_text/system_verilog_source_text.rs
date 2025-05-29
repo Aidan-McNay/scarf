@@ -220,14 +220,8 @@ pub struct ProgramAnsiHeader(
 pub struct CheckerDeclaration(
     pub CheckerIdentifier,
     pub Option<CheckerPortList>,
-    pub Option<CheckerDeclarationCheckerOrGenerateItem>,
+    pub Vec<(Vec<AttributeInstance>, CheckerOrGenerateItem)>,
     pub Option<CheckerIdentifier>,
-);
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct CheckerDeclarationCheckerOrGenerateItem(
-    pub Option<AttributeInstance>,
-    pub CheckerOrGenerateItem,
 );
 
 #[derive(Clone, Debug, PartialEq)]
@@ -236,11 +230,17 @@ pub struct ClassDeclaration(
     pub Option<FinalSpecifier>,
     pub ClassIdentifier,
     pub Option<ParameterPortList>,
-    pub Option<(ClassType, Option<ListOfArguments>)>,
+    pub Option<(ClassType, Option<ClassDeclarationExtensionArguments>)>,
     pub Option<Vec<InterfaceClassType>>,
     pub Vec<ClassItem>,
     pub Option<ClassIdentifier>,
 );
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum ClassDeclarationExtensionArguments {
+    ListOfArguments(Box<ListOfArguments>),
+    Default,
+}
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct InterfaceClassDeclaration(

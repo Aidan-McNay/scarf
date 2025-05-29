@@ -8,6 +8,7 @@ mod errors;
 mod expressions;
 mod general;
 mod source_text;
+mod udp_declaration_and_instantiation;
 mod utils;
 use ariadne::{Color, Label, ReportKind};
 pub use ariadne::{Report, Source};
@@ -18,6 +19,7 @@ use expressions::*;
 use general::*;
 use oxide_syntax::SourceText;
 use source_text::*;
+use udp_declaration_and_instantiation::*;
 use utils::*;
 
 pub fn parse<'a>(src: &'a str) -> ParseResult<SourceText, Rich<'a, char>> {
