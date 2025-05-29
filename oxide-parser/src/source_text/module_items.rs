@@ -8,14 +8,14 @@ use chumsky::prelude::*;
 use oxide_syntax::*;
 
 pub fn bind_directive_parser<'a>() -> impl Parser<'a, &'a str, BindDirective, ParserError<'a>> {
-    todo()
+    todo_parser()
 }
 
 pub fn module_item_parser<'a>() -> impl Parser<'a, &'a str, ModuleItem, ParserError<'a>> {
-    todo()
+    todo_parser()
 }
 
 pub fn non_port_module_item_parser<'a>()
 -> impl Parser<'a, &'a str, NonPortModuleItem, ParserError<'a>> {
-    todo()
+    todo_parser()
 }

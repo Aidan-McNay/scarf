@@ -8,10 +8,10 @@ use chumsky::prelude::*;
 use oxide_syntax::*;
 
 pub fn class_type_parser<'a>() -> impl Parser<'a, &'a str, ClassType, ParserError<'a>> {
-    todo()
+    todo_parser()
 }
 
 pub fn interface_class_type_parser<'a>()
 -> impl Parser<'a, &'a str, InterfaceClassType, ParserError<'a>> {
-    todo()
+    todo_parser()
 }

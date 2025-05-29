@@ -9,5 +9,5 @@ use oxide_syntax::*;
 
 pub fn config_declaration_parser<'a>()
 -> impl Parser<'a, &'a str, ConfigDeclaration, ParserError<'a>> {
-    todo()
+    todo_parser()
 }

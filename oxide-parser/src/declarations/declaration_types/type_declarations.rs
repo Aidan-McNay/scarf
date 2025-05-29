@@ -9,7 +9,7 @@ use oxide_syntax::*;
 
 pub fn package_import_declaration_parser<'a>()
 -> impl Parser<'a, &'a str, PackageImportDeclaration, ParserError<'a>> {
-    todo()
+    todo_parser()
 }
 
 pub fn lifetime_parser<'a>() -> impl Parser<'a, &'a str, Lifetime, ParserError<'a>> {

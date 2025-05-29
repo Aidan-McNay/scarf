@@ -8,5 +8,5 @@ use chumsky::prelude::*;
 use oxide_syntax::*;
 
 pub fn package_item_parser<'a>() -> impl Parser<'a, &'a str, PackageItem, ParserError<'a>> {
-    todo()
+    todo_parser()
 }

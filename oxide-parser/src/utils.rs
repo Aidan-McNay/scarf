@@ -16,3 +16,8 @@ pub fn foldl_vector<T>(mut a: Vec<T>, b: T) -> Vec<T> {
 pub fn sep<'a>() -> impl Parser<'a, &'a str, (), ParserError<'a>> {
     text::whitespace().at_least(1)
 }
+
+pub fn todo_parser<'a>() -> impl Parser<'a, &'a str, (), ParserError<'a>> {
+    // Match against nothing
+    one_of("").ignore_then(text::whitespace().at_least(1))
+}

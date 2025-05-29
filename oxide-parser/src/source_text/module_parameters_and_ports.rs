@@ -9,14 +9,14 @@ use oxide_syntax::*;
 
 pub fn parameter_port_list_parser<'a>()
 -> impl Parser<'a, &'a str, ParameterPortList, ParserError<'a>> {
-    todo()
+    todo_parser()
 }
 
 pub fn list_of_ports_parser<'a>() -> impl Parser<'a, &'a str, ListOfPorts, ParserError<'a>> {
-    todo()
+    todo_parser()
 }
 
 pub fn list_of_port_declarations_parser<'a>()
 -> impl Parser<'a, &'a str, ListOfPortDeclarations, ParserError<'a>> {
-    todo()
+    todo_parser()
 }

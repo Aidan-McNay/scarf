@@ -9,5 +9,5 @@ use oxide_syntax::*;
 
 pub fn list_of_arguments_parser<'a>() -> impl Parser<'a, &'a str, ListOfArguments, ParserError<'a>>
 {
-    todo()
+    todo_parser()
 }

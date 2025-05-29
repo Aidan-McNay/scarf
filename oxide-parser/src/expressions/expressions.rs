@@ -9,5 +9,5 @@ use oxide_syntax::*;
 
 pub fn constant_expression_parser<'a>()
 -> impl Parser<'a, &'a str, ConstantExpression, ParserError<'a>> {
-    todo()
+    todo_parser()
 }

@@ -8,10 +8,10 @@ use chumsky::prelude::*;
 use oxide_syntax::*;
 
 pub fn interface_item_parser<'a>() -> impl Parser<'a, &'a str, InterfaceItem, ParserError<'a>> {
-    todo()
+    todo_parser()
 }
 
 pub fn non_port_interface_item_parser<'a>()
 -> impl Parser<'a, &'a str, NonPortInterfaceItem, ParserError<'a>> {
-    todo()
+    todo_parser()
 }

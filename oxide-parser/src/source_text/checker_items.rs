@@ -9,10 +9,10 @@ use oxide_syntax::*;
 
 pub fn checker_port_list_parser<'a>() -> impl Parser<'a, &'a str, CheckerPortList, ParserError<'a>>
 {
-    todo()
+    todo_parser()
 }
 
 pub fn checker_or_generate_item_parser<'a>()
 -> impl Parser<'a, &'a str, CheckerOrGenerateItem, ParserError<'a>> {
-    todo()
+    todo_parser()
 }
