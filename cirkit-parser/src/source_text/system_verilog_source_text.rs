@@ -18,13 +18,11 @@ fn attribute_instance_vec_parser<'a>()
 
 pub fn source_text_parser<'a>() -> impl Parser<'a, &'a str, SourceText, ParserError<'a>> {
     text::whitespace()
-        .ignore_then(timeunits_declaration_parser().or_not())
-        .then(
-            sep()
-                .ignore_then(description_parser())
-                .repeated()
-                .collect::<Vec<Description>>(),
-        )
+        .ignore_then(timeunits_declaration_parser().then_ignore(sep()).or_not())
+        .then(description_parser().map(|a| iter::once(a).collect()).foldl(
+            sep().ignore_then(description_parser()).repeated(),
+            foldl_vector,
+        ))
         .then_ignore(text::whitespace())
         .map(|(a, b)| SourceText(a, b))
 }
@@ -231,8 +229,7 @@ pub fn interface_declaration_nonansi_parser<'a>()
 -> impl Parser<'a, &'a str, InterfaceDeclarationNonansi, ParserError<'a>> {
     interface_nonansi_header_parser()
         .then_ignore(sep())
-        .then(timeunits_declaration_parser().or_not())
-        .then_ignore(sep())
+        .then(timeunits_declaration_parser().then_ignore(sep()).or_not())
         .then(
             interface_item_parser()
                 .then_ignore(sep())
@@ -253,8 +250,7 @@ pub fn interface_declaration_ansi_parser<'a>()
 -> impl Parser<'a, &'a str, InterfaceDeclarationAnsi, ParserError<'a>> {
     interface_ansi_header_parser()
         .then_ignore(sep())
-        .then(timeunits_declaration_parser().or_not())
-        .then_ignore(sep())
+        .then(timeunits_declaration_parser().then_ignore(sep()).or_not())
         .then(
             non_port_interface_item_parser()
                 .then_ignore(sep())

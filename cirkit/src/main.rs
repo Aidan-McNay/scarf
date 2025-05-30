@@ -1,13 +1,55 @@
+// =======================================================================
+// main.rs
+// =======================================================================
+// The top-level code for cirkit
+
 use cirkit_parser::{Source, parse, report_errors};
+use clap::{Args, Parser, Subcommand};
+
+#[derive(Parser)]
+#[command(version, about, long_about = None)]
+#[command(propagate_version = true)]
+struct Cli {
+    #[command(subcommand)]
+    command: Commands,
+}
+
+#[derive(Subcommand)]
+enum Commands {
+    /// Format source files in-place
+    Format(FormatArgs),
+}
+
+// -----------------------------------------------------------------------
+// format
+// -----------------------------------------------------------------------
+
+#[derive(Args)]
+struct FormatArgs {
+    /// The file(s) to format
+    paths: Vec<String>,
+}
+
+fn format(args: &FormatArgs) {
+    for path in &args.paths {
+        let src = std::fs::read_to_string(&path).unwrap();
+        let result = parse(&src);
+        println!("{:?}", parse(&src));
+        for report in report_errors(result, &path) {
+            report
+                .print((path.as_str(), Source::from(src.as_str())))
+                .unwrap()
+        }
+    }
+}
+
+// -----------------------------------------------------------------------
+// main
+// -----------------------------------------------------------------------
 
 fn main() {
-    let path = std::env::args().nth(1).unwrap();
-    let src = std::fs::read_to_string(std::env::args().nth(1).unwrap()).unwrap();
-    let result = parse(&src);
-    println!("{:?}", parse(&src));
-    for report in report_errors(result, &path) {
-        report
-            .print((path.as_str(), Source::from(src.as_str())))
-            .unwrap()
+    let cli = Cli::parse();
+    match &cli.command {
+        Commands::Format(args) => format(&args),
     }
 }
