@@ -1,7 +1,13 @@
 [package]
 name = "cirkit-parser"
+description = "A helper crate of cirkit for parsing a SystemVerilog source file"
 version = "0.1.0"
 edition = "2024"
+license = "GPL-3.0-or-later"
+repository = "https://github.com/Aidan-McNay/cirkit"
+readme = "../README.md"
+keywords = ["systemverilog"]
+categories = ["development-tools", "parsing"]
 
 [dependencies]
 ariadne = "0.5.1"

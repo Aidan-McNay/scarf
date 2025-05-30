@@ -1,7 +1,13 @@
 [package]
 name = "cirkit"
+description = "A suite of tools for interacting with (System)Verilog hardware designs"
 version = "0.1.0"
 edition = "2024"
+license = "GPL-3.0-or-later"
+repository = "https://github.com/Aidan-McNay/cirkit"
+readme = "../README.md"
+keywords = ["systemverilog"]
+categories = ["command-line-utilities", "development-tools"]
 
 [dependencies]
 cirkit-parser = { path = "../cirkit-parser" }
