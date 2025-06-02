@@ -3,11 +3,13 @@
 // =======================================================================
 // The tokens that a SystemVerilog source file is parsed into
 
+use crate::*;
 use logos::Logos;
 
 #[derive(Logos, Debug, PartialEq)]
 #[logos(skip r"\s+")]
-pub enum Token {
+#[logos(error = String)]
+pub enum Token<'a> {
     // 1364-1995
     #[token("always")]
     Always,
@@ -707,9 +709,9 @@ pub enum Token {
     PoundEqPound,
     #[token("=>")]
     EqGt,
-    #[token("\"")]
+    #[token(r#"""#)]
     Quote,
-    #[token("\"\"\"")]
+    #[token(r#"""""#)]
     QuoteQuoteQuote,
     #[token("\\")]
     Bslash,
@@ -717,12 +719,6 @@ pub enum Token {
     ParenStar,
     #[token("*)")]
     StarEparen,
-    #[token("//")]
-    SlashSlash,
-    #[token("/*")]
-    SlashStar,
-    #[token("*/")]
-    StarSlash,
     // Other Language Grammar
     #[token("std")]
     Std,
@@ -763,5 +759,45 @@ pub enum Token {
     #[token("$unit")]
     DollarUnit,
     // Comments
+    #[regex(r"//[^\n]*", oneline_comment)]
+    OnelineComment(&'a str),
+    #[regex(r"/\*")]
+    BlockCommentStart,
+    #[regex(r"\*/")]
+    BlockCommentEnd,
+    BlockComment(&'a str), // Created from start and end in post-processing
+    // Numbers
+    #[regex(r"[0-9][0-9_]*", |lex| lex.slice())]
+    UnsignedNumber(&'a str),
+    #[regex(r"[0-9][0-9_]*\.[0-9][0-9_]*", |lex| lex.slice())]
+    FixedPointNumber(&'a str),
+    #[regex(r"([0-9][0-9_]*)?'[s|S]?(b|B)[0-1xXzZ\?][0-1xXzZ\?_]*", |lex| lex.slice())]
+    BinaryNumber(&'a str),
+    #[regex(r"([0-9][0-9_]*)?'[s|S]?(o|O)[0-7xXzZ\?][0-7xXzZ\?_]*", |lex| lex.slice())]
+    OctalNumber(&'a str),
+    #[regex(r"([0-9][0-9_]*)?'[s|S]?(d|D)[0-9][0-9_]*", |lex| lex.slice())]
+    #[regex(r"([0-9][0-9_]*)?'[s|S]?(d|D)(x|X|z|Z)_*", |lex| lex.slice())]
+    DecimalNumber(&'a str),
+    #[regex(r"([0-9][0-9_]*)?'[s|S]?(h|H)[0-9a-fA-FxXzZ\?][0-9a-fA-FxXzZ\?_]*", |lex| lex.slice())]
+    HexNumber(&'a str),
+    #[regex(r"[0-9][0-9_]*(\.[0-9][0-9_]*)?(e|E)(\+|-)?[0-9][0-9_]*", |lex| lex.slice())]
+    RealNumber(&'a str),
     // Literals
+    #[regex(r"\$[a-zA-Z0-9_\$]+", |lex| lex.slice())]
+    SystemIdentifier(&'a str),
+    #[regex(r"[a-zA-Z_][a-zA-Z0-9_\$]*", |lex| lex.slice())]
+    SimpleIdentifier(&'a str),
+    #[regex(r"\[!-~]*\\s", |lex| lex.slice())]
+    EscapedIdentifier(&'a str),
+    #[regex(
+        r"(([0-9][0-9_]*)|([0-9][0-9_]*\.[0-9][0-9_]*))[ \t]*(s|ms|us|ns|ps|fs)",
+        time_literal
+    )]
+    TimeLiteral((&'a str, &'a str)),
+    #[regex(
+        r#""([^"\r\n\\]|\\[\x00-\x7F]|\\[0-7]{1,3}|\\x[0-9a-fA-F]{1,2})*""#,
+        string_literal
+    )]
+    StringLiteral(&'a str),
+    TripleQuoteStringLiteral(&'a str), // Created from start and end in post-processing
 }

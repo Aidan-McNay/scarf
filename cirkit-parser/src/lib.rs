@@ -1,47 +1,12 @@
 // =======================================================================
 // lib.rs
 // =======================================================================
-// The top-level parser
+// The top-level interface for parsing a SystemVerilog source file
 
-mod declarations;
-mod errors;
-mod expressions;
-mod general;
-mod source_text;
-mod udp_declaration_and_instantiation;
-mod utils;
-use ariadne::{Color, Label, ReportKind};
+pub mod lexer;
+pub mod parser;
 pub use ariadne::{Report, Source};
-use chumsky::prelude::*;
-use declarations::*;
-use errors::*;
-use expressions::*;
-use general::*;
-use cirkit_syntax::SourceText;
-use source_text::*;
-use udp_declaration_and_instantiation::*;
-use utils::*;
-
-pub fn parse<'a>(src: &'a str) -> ParseResult<SourceText, Rich<'a, char>> {
-    source_text_parser().parse(src)
-}
-
-pub fn report_errors<'a, 'b>(
-    result: ParseResult<SourceText, Rich<'a, char>>,
-    file_path: &'b str,
-) -> Vec<Report<'a, (&'b str, std::ops::Range<usize>)>> {
-    let mut reports: Vec<Report<'a, (&'b str, std::ops::Range<usize>)>> = Vec::new();
-    result.into_errors().into_iter().for_each(|e| {
-        let report = Report::build(ReportKind::Error, (file_path, e.span().into_range()))
-            .with_config(ariadne::Config::new().with_index_type(ariadne::IndexType::Byte))
-            .with_message(e.to_string())
-            .with_label(
-                Label::new((file_path, e.span().into_range()))
-                    .with_message(e.reason().to_string())
-                    .with_color(Color::Red),
-            )
-            .finish();
-        reports.push(report);
-    });
-    reports
-}
+use lexer::*;
+pub use lexer::{lex, report_lex_errors};
+use parser::*;
+pub use parser::{parse, report_parse_errors};

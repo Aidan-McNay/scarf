@@ -10,6 +10,8 @@ keywords = ["systemverilog"]
 categories = ["development-tools", "parsing"]
 
 [dependencies]
-ariadne = "0.5.1"
+ariadne = { version = "0.5.1", features = ["auto-color"] }
 chumsky = "0.10.1"
 cirkit-syntax = { version = "0.1.0", path = "../cirkit-syntax" }
+logos = "0.15.0"
+regex = "1.11.1"
