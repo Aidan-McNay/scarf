@@ -35,7 +35,7 @@ struct FormatArgs {
 //         let src = std::fs::read_to_string(&path).unwrap();
 //         let result = parse(&src);
 //         println!("{:?}", parse(&src));
-//         for report in report_errors(result, &path) {
+//         for report in report_parse_errors(result, &path) {
 //             report
 //                 .print((path.as_str(), Source::from(src.as_str())))
 //                 .unwrap()

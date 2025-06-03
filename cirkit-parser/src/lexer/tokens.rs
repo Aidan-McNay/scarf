@@ -5,11 +5,14 @@
 
 use crate::*;
 use logos::Logos;
+use std::fmt;
 
-#[derive(Logos, Debug, PartialEq)]
-#[logos(skip r"\s+")]
+#[derive(Logos, Debug, Clone, PartialEq)]
+#[logos(skip r"[ \r\t\f]+")]
 #[logos(error = String)]
+#[logos(extras = usize)] // Used for time unit disambiguation
 pub enum Token<'a> {
+    Error,
     // 1364-1995
     #[token("always")]
     Always,
@@ -100,7 +103,7 @@ pub enum Token<'a> {
     #[token("module")]
     Module,
     #[token("nand")]
-    Nane,
+    Nand,
     #[token("negedge")]
     Negedge,
     #[token("nmos")]
@@ -713,7 +716,7 @@ pub enum Token<'a> {
     Quote,
     #[token(r#"""""#)]
     QuoteQuoteQuote,
-    #[token("\\")]
+    #[token(r"\")]
     Bslash,
     #[token("(*")]
     ParenStar,
@@ -789,15 +792,460 @@ pub enum Token<'a> {
     SimpleIdentifier(&'a str),
     #[regex(r"\[!-~]*\\s", |lex| lex.slice())]
     EscapedIdentifier(&'a str),
-    #[regex(
-        r"(([0-9][0-9_]*)|([0-9][0-9_]*\.[0-9][0-9_]*))[ \t]*(s|ms|us|ns|ps|fs)",
-        time_literal
-    )]
-    TimeLiteral((&'a str, &'a str)),
+    TimeUnit(&'a str), // Created in post-processing
     #[regex(
         r#""([^"\r\n\\]|\\[\x00-\x7F]|\\[0-7]{1,3}|\\x[0-9a-fA-F]{1,2})*""#,
         string_literal
     )]
     StringLiteral(&'a str),
     TripleQuoteStringLiteral(&'a str), // Created from start and end in post-processing
+    #[token("\n")]
+    Newline,
+}
+
+impl<'a> fmt::Display for Token<'a> {
+    // This trait requires `fmt` with this exact signature.
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        // Write strictly the first element into the supplied output
+        // stream: `f`. Returns `fmt::Result` which indicates whether the
+        // operation succeeded or failed. Note that `write!` uses syntax which
+        // is very similar to `println!`.
+        let temp_str: String;
+        let str_repr: &str = match self {
+            Token::Error => "a lexer error",
+            Token::Always => "always",
+            Token::And => "and",
+            Token::Assign => "assign",
+            Token::Begin => "begin",
+            Token::Buf => "buf",
+            Token::Bufif0 => "bufif0",
+            Token::Bufif1 => "bufif1",
+            Token::Case => "case",
+            Token::Casex => "casex",
+            Token::Casez => "casez",
+            Token::Cmos => "cmos",
+            Token::Deassign => "deassign",
+            Token::Default => "default",
+            Token::Defparam => "defparam",
+            Token::Disable => "disable",
+            Token::Edge => "edge",
+            Token::Else => "else",
+            Token::End => "end",
+            Token::Endcase => "endcase",
+            Token::Endfunction => "endfunction",
+            Token::Endmodule => "endmodule",
+            Token::Endprimitive => "endprimitive",
+            Token::Endspecify => "endspecify",
+            Token::Endtable => "endtable",
+            Token::Endtask => "endtask",
+            Token::Event => "event",
+            Token::For => "for",
+            Token::Force => "force",
+            Token::Forever => "forever",
+            Token::Fork => "fork",
+            Token::Function => "function",
+            Token::Highz0 => "highz0",
+            Token::Highz1 => "highz1",
+            Token::If => "if",
+            Token::Ifnone => "ifnone",
+            Token::Initial => "initial",
+            Token::Inout => "inout",
+            Token::Input => "input",
+            Token::Integer => "integer",
+            Token::Join => "join",
+            Token::Large => "large",
+            Token::Macromodule => "macromodule",
+            Token::Medium => "medium",
+            Token::Module => "module",
+            Token::Nand => "nand",
+            Token::Negedge => "negedge",
+            Token::Nmos => "nmos",
+            Token::Nor => "nor",
+            Token::Not => "not",
+            Token::Notif0 => "notif0",
+            Token::Notif1 => "notif1",
+            Token::Or => "or",
+            Token::Output => "output",
+            Token::Parameter => "parameter",
+            Token::Pmos => "pmos",
+            Token::Posedge => "posedge",
+            Token::Primitive => "primitive",
+            Token::Pull0 => "pull0",
+            Token::Pull1 => "pull1",
+            Token::Pulldown => "pulldown",
+            Token::Pullup => "pullup",
+            Token::Rcmos => "rcmos",
+            Token::Real => "real",
+            Token::Realtime => "realtime",
+            Token::Reg => "reg",
+            Token::Release => "release",
+            Token::Repeat => "repeat",
+            Token::Rnmos => "rnmos",
+            Token::Rpmos => "rpmos",
+            Token::Rtran => "rtran",
+            Token::Rtranif0 => "rtranif0",
+            Token::Rtranif1 => "rtranif1",
+            Token::Scalared => "scalared",
+            Token::Small => "small",
+            Token::Specify => "specify",
+            Token::Specparam => "specparam",
+            Token::Strong0 => "strong0",
+            Token::Strong1 => "strong1",
+            Token::Supply0 => "supply0",
+            Token::Supply1 => "supply1",
+            Token::Table => "table",
+            Token::Task => "task",
+            Token::Time => "time",
+            Token::Tran => "tran",
+            Token::Tranif0 => "tranif0",
+            Token::Tranif1 => "tranif1",
+            Token::Tri => "tri",
+            Token::Tri0 => "tri0",
+            Token::Tri1 => "tri1",
+            Token::Triand => "triand",
+            Token::Trior => "trior",
+            Token::Trireg => "trireg",
+            Token::Vectored => "vectored",
+            Token::Wait => "wait",
+            Token::Wand => "wand",
+            Token::Weak0 => "weak0",
+            Token::Weak1 => "weak1",
+            Token::While => "while",
+            Token::Wire => "wire",
+            Token::Wor => "wor",
+            Token::Xnor => "xnor",
+            Token::Xor => "xor",
+            Token::Automatic => "automatic",
+            Token::Cell => "cell",
+            Token::Config => "config",
+            Token::Design => "design",
+            Token::Endconfig => "endconfig",
+            Token::Endgenerate => "endgenerate",
+            Token::Generate => "generate",
+            Token::Genvar => "genvar",
+            Token::Incdir => "incdir",
+            Token::Include => "include",
+            Token::Instance => "instance",
+            Token::Liblist => "liblist",
+            Token::Library => "library",
+            Token::Localparam => "localparam",
+            Token::Noshowcancelled => "noshowcancelled",
+            Token::PulsestyleOndetect => "pulsestyle_ondetect",
+            Token::PulsestyleOnevent => "pulsestyle_onevent",
+            Token::Showcancelled => "showcancelled",
+            Token::Signed => "signed",
+            Token::Unsigned => "unsigned",
+            Token::Use => "use",
+            Token::Uwire => "uwire",
+            Token::Alias => "alias",
+            Token::AlwaysComb => "always_comb",
+            Token::AlwaysFf => "always_ff",
+            Token::AlwaysLatch => "always_latch",
+            Token::Assert => "assert",
+            Token::Assume => "assume",
+            Token::Before => "before",
+            Token::Bind => "bind",
+            Token::Bins => "bins",
+            Token::Binsof => "binsof",
+            Token::Bit => "bit",
+            Token::Break => "break",
+            Token::Byte => "byte",
+            Token::Chandle => "chandle",
+            Token::Class => "class",
+            Token::Clocking => "clocking",
+            Token::Const => "const",
+            Token::Constraint => "constraint",
+            Token::Context => "context",
+            Token::Continue => "continue",
+            Token::Cover => "cover",
+            Token::Covergroup => "covergroup",
+            Token::Coverpoint => "coverpoint",
+            Token::Cross => "cross",
+            Token::Dist => "dist",
+            Token::Do => "do",
+            Token::Endclass => "endclass",
+            Token::Endclocking => "endclocking",
+            Token::Endgroup => "endgroup",
+            Token::Endinterface => "endinterface",
+            Token::Endpackage => "endpackage",
+            Token::Endprogram => "endprogram",
+            Token::Endproperty => "endproperty",
+            Token::Endsequence => "endsequence",
+            Token::Enum => "enum",
+            Token::Expect => "expect",
+            Token::Export => "export",
+            Token::Extends => "extends",
+            Token::Extern => "extern",
+            Token::Final => "final",
+            Token::FirstMatch => "first_match",
+            Token::Foreach => "foreach",
+            Token::Forkjoin => "forkjoin",
+            Token::Iff => "iff",
+            Token::IgnoreBins => "ignore_bins",
+            Token::IllegalBins => "illegal_bins",
+            Token::Import => "import",
+            Token::Inside => "inside",
+            Token::Int => "int",
+            Token::Interface => "interface",
+            Token::Intersect => "intersect",
+            Token::JoinAny => "join_any",
+            Token::JoinNone => "join_none",
+            Token::Local => "local",
+            Token::Logic => "logic",
+            Token::Longint => "longint",
+            Token::Matches => "matches",
+            Token::Modport => "modport",
+            Token::New => "new",
+            Token::Null => "null",
+            Token::Package => "package",
+            Token::Packed => "packed",
+            Token::Priority => "priority",
+            Token::Program => "program",
+            Token::Property => "property",
+            Token::Protected => "protected",
+            Token::Pure => "pure",
+            Token::Rand => "rand",
+            Token::Randc => "randc",
+            Token::Randcase => "randcase",
+            Token::Randsequence => "randsequence",
+            Token::Ref => "ref",
+            Token::Return => "return",
+            Token::Sequence => "sequence",
+            Token::Shortint => "shortint",
+            Token::Shortreal => "shortreal",
+            Token::Solve => "solve",
+            Token::Static => "static",
+            Token::String => "string",
+            Token::Struct => "struct",
+            Token::Super => "super",
+            Token::Tagged => "tagged",
+            Token::This => "this",
+            Token::Throughout => "throughout",
+            Token::Timeprecision => "timeprecision",
+            Token::Timeunit => "timeunit",
+            Token::Type => "type",
+            Token::Typedef => "typedef",
+            Token::Union => "union",
+            Token::Unique => "unique",
+            Token::Var => "var",
+            Token::Virtual => "virtual",
+            Token::Void => "void",
+            Token::WaitOrder => "wait_order",
+            Token::Wildcard => "wildcard",
+            Token::With => "with",
+            Token::Within => "within",
+            Token::AcceptOn => "accept_on",
+            Token::Checker => "checker",
+            Token::Endchecker => "endchecker",
+            Token::Eventually => "eventually",
+            Token::Global => "global",
+            Token::Implies => "implies",
+            Token::Let => "let",
+            Token::Nexttime => "nexttime",
+            Token::RejectOn => "reject_on",
+            Token::Restrict => "restrict",
+            Token::SAlways => "s_always",
+            Token::SEventually => "s_eventually",
+            Token::SNexttime => "s_nexttime",
+            Token::SUntil => "s_until",
+            Token::SUntilWith => "s_until_with",
+            Token::Strong => "strong",
+            Token::SyncAcceptOn => "sync_accept_on",
+            Token::SyncRejectOn => "sync_reject_on",
+            Token::Unique0 => "unique0",
+            Token::Until => "until",
+            Token::UntilWith => "until_with",
+            Token::Untyped => "untyped",
+            Token::Weak => "weak",
+            Token::Implements => "implements",
+            Token::Interconnect => "interconnect",
+            Token::Nettype => "nettype",
+            Token::Soft => "soft",
+            Token::DirUnderscoreFile => "`__FILE__",
+            Token::DirUnderscoreLine => "`__LINE__",
+            Token::DirBeginKeywords => "`begin_keywords",
+            Token::DirCellDefine => "`celldefine",
+            Token::DirDefaultNettype => "`default_nettype",
+            Token::DirDefine => "`define",
+            Token::DirElse => "`else",
+            Token::DirElsif => "`elsif",
+            Token::DirEndKeywords => "`end_keywords",
+            Token::DirEndcelldefine => "`endcelldefine",
+            Token::DirEndif => "`endif",
+            Token::DirIfdef => "`ifdef",
+            Token::DirIfndef => "`ifndef",
+            Token::DirInclude => "`include",
+            Token::DirLine => "`line",
+            Token::DirNounconnectedDrive => "`nounconnected_drive",
+            Token::DirPragma => "`pragma",
+            Token::DirResetall => "`resetall",
+            Token::DirTimescale => "`timescale",
+            Token::DirUnconnectedDrive => "`unconnected_drive",
+            Token::DirUndef => "`undef",
+            Token::DirUndefineall => "`undefineall",
+            Token::Plus => "+",
+            Token::Minus => "-",
+            Token::Exclamation => "!",
+            Token::Tilde => "~",
+            Token::Amp => "&",
+            Token::TildeAmp => "~&",
+            Token::Pipe => "|",
+            Token::TildePipe => "~|",
+            Token::Caret => "^",
+            Token::TildeCaret => "~^",
+            Token::CaretTilde => "^~",
+            Token::Star => "*",
+            Token::Slash => "/",
+            Token::Percent => "%",
+            Token::EqEq => "==",
+            Token::ExclEq => "!=",
+            Token::PlusEq => "+=",
+            Token::MinusEq => "-=",
+            Token::StarEq => "*=",
+            Token::SlashEq => "/=",
+            Token::PercentEq => "%=",
+            Token::AmpEq => "&=",
+            Token::PipeEq => "|=",
+            Token::CaretEq => "^=",
+            Token::EqEqEq => "===",
+            Token::ExclEqEq => "!==",
+            Token::EqEqQuest => "==?",
+            Token::ExclEqQuest => "!=?",
+            Token::AmpAmp => "&&",
+            Token::AmpAmpAmp => "&&&",
+            Token::PipePipe => "||",
+            Token::StarStar => "**",
+            Token::Lt => "<",
+            Token::LtEq => "<=",
+            Token::Gt => ">",
+            Token::GtEq => ">=",
+            Token::GtGt => ">>",
+            Token::LtLt => "<<",
+            Token::GtGtEq => ">>=",
+            Token::LtLtEq => "<<=",
+            Token::GtGtGt => ">>>",
+            Token::LtLtLt => "<<<",
+            Token::GtGtGtEq => ">>>=",
+            Token::LtLtLtEq => "<<<=",
+            Token::MinusGt => "->",
+            Token::LtMinusGt => "<->",
+            Token::PlusPlus => "++",
+            Token::MinusMinus => "--",
+            Token::PlusColon => "+:",
+            Token::MinusColon => "-:",
+            Token::PlusSlashMinus => "+/-",
+            Token::PlusPercentMinus => "+%-",
+            Token::Paren => "(",
+            Token::EParen => ")",
+            Token::Bracket => "[",
+            Token::EBracket => "]",
+            Token::Brace => "{",
+            Token::EBrace => "}",
+            Token::Colon => ":",
+            Token::SColon => ";",
+            Token::Apost => "\"'\"",
+            Token::Comma => "\",\"",
+            Token::Period => ".",
+            Token::Pound => "#",
+            Token::Dollar => "$",
+            Token::At => "@",
+            Token::AtAt => "@@",
+            Token::Eq => "=",
+            Token::ColonColon => "::",
+            Token::ColonEq => ":=",
+            Token::ColonSlash => ":/",
+            Token::PoundPound => "##",
+            Token::PoundMinusPound => "#-#",
+            Token::PoundEqPound => "#=#",
+            Token::EqGt => "=>",
+            Token::Quote => r#"""#,
+            Token::QuoteQuoteQuote => r#"""""#,
+            Token::Bslash => r"\",
+            Token::ParenStar => "(*",
+            Token::StarEparen => "*)",
+            Token::Std => "std",
+            Token::PathpulseDollar => "PATHPULSE$",
+            Token::Option => "option",
+            Token::TypeOption => "type_option",
+            Token::Sample => "sample",
+            Token::DollarSetup => "$setup",
+            Token::DollarHold => "$hold",
+            Token::DollarSetuphold => "$setuphold",
+            Token::DollarRecovery => "$recovery",
+            Token::DollarRemoval => "$removal",
+            Token::DollarRecrem => "$recrem",
+            Token::DollarSkew => "$skew",
+            Token::DollarTimeskew => "$timeskew",
+            Token::DollarFullskew => "$fullskew",
+            Token::DollarPeriod => "$period",
+            Token::DollarWidth => "$width",
+            Token::DollarNochange => "$nochange",
+            Token::DollarRoot => "$root",
+            Token::DollarUnit => "$unit",
+            Token::OnelineComment(text) => {
+                temp_str = format!("comment '{}'", text);
+                temp_str.as_str()
+            }
+            Token::BlockCommentStart => "/*",
+            Token::BlockCommentEnd => "*/",
+            Token::BlockComment(text) => {
+                temp_str = format!("block comment '{}'", text);
+                temp_str.as_str()
+            }
+            Token::UnsignedNumber(text) => {
+                temp_str = format!("number '{}' ", text);
+                temp_str.as_str()
+            }
+            Token::FixedPointNumber(text) => {
+                temp_str = format!("number '{}' ", text);
+                temp_str.as_str()
+            }
+            Token::BinaryNumber(text) => {
+                temp_str = format!("binary number '{}' ", text);
+                temp_str.as_str()
+            }
+            Token::OctalNumber(text) => {
+                temp_str = format!("octal number '{}' ", text);
+                temp_str.as_str()
+            }
+            Token::DecimalNumber(text) => {
+                temp_str = format!("decimal number '{}' ", text);
+                temp_str.as_str()
+            }
+            Token::HexNumber(text) => {
+                temp_str = format!("hexadecimal number '{}' ", text);
+                temp_str.as_str()
+            }
+            Token::RealNumber(text) => {
+                temp_str = format!("real number '{}' ", text);
+                temp_str.as_str()
+            }
+            Token::SystemIdentifier(text) => {
+                temp_str = format!("{}", text);
+                temp_str.as_str()
+            }
+            Token::SimpleIdentifier(text) => {
+                temp_str = format!("identifier '{}'", text);
+                temp_str.as_str()
+            }
+            Token::EscapedIdentifier(text) => {
+                temp_str = format!("escaped identifier '{}'", text);
+                temp_str.as_str()
+            }
+            Token::TimeUnit(text) => {
+                temp_str = format!("time unit '{}'", text);
+                temp_str.as_str()
+            }
+            Token::StringLiteral(text) => {
+                temp_str = format!("string \"{}\"", text);
+                temp_str.as_str()
+            }
+            Token::TripleQuoteStringLiteral(text) => {
+                temp_str = format!("string \"\"\"{}\"\"\"", text);
+                temp_str.as_str()
+            }
+            Token::Newline => "newline",
+        };
+        write!(f, "{}", str_repr)
+    }
 }

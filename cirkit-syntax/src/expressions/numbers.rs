@@ -3,7 +3,9 @@
 // =======================================================================
 // AST Nodes from 1800-2023 A.8.7
 
-#[derive(Clone, Debug, PartialEq)]
-pub struct FixedPointNumber(pub UnsignedNumber, pub UnsignedNumber);
+use crate::*;
 
-pub type UnsignedNumber = String;
+#[derive(Clone, Debug, PartialEq)]
+pub struct FixedPointNumber<'a>(pub UnsignedNumber<'a>, pub UnsignedNumber<'a>);
+
+pub type UnsignedNumber<'a> = (&'a str, Metadata<'a>);

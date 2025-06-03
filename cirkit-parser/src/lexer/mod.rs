@@ -16,7 +16,8 @@ pub use postprocess::postprocess;
 pub use tokens::Token;
 
 pub fn lex<'a>(src: &'a str) -> Vec<(Result<Token<'a>, String>, Span)> {
-    postprocess(Token::lexer(src).spanned().collect(), src)
+    let stream = postprocess(Token::lexer(src).spanned().collect(), src);
+    stream
 }
 
 pub fn report_lex_errors<'a, 'b>(

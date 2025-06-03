@@ -6,9 +6,9 @@
 use crate::*;
 
 #[derive(Clone, Debug, PartialEq)]
-pub enum TimeLiteral {
-    TimeLiteralUnsigned(Box<(UnsignedNumber, TimeUnit)>),
-    TimeLiteralFixedPoint(Box<(FixedPointNumber, TimeUnit)>),
+pub enum TimeLiteral<'a> {
+    TimeLiteralUnsigned(Box<(UnsignedNumber<'a>, TimeUnit)>),
+    TimeLiteralFixedPoint(Box<(FixedPointNumber<'a>, TimeUnit)>),
 }
 
 #[derive(Clone, Debug, PartialEq)]

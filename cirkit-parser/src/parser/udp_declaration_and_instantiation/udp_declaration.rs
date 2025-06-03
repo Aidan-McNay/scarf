@@ -7,6 +7,9 @@ use crate::*;
 use chumsky::prelude::*;
 use cirkit_syntax::*;
 
-pub fn udp_declaration_parser<'a>() -> impl Parser<'a, &'a str, UdpDeclaration, ParserError<'a>> {
+pub fn udp_declaration_parser<'a, I>() -> impl Parser<'a, I, UdpDeclaration, ParserError<'a>>
+where
+    I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
+{
     todo_parser()
 }

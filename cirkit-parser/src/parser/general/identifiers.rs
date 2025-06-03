@@ -7,64 +7,58 @@ use crate::*;
 use chumsky::prelude::*;
 use cirkit_syntax::*;
 
-pub fn checker_identifier_parser<'a>()
--> impl Parser<'a, &'a str, CheckerIdentifier, ParserError<'a>> {
+pub fn checker_identifier_parser<'a, I>()
+-> impl Parser<'a, I, CheckerIdentifier<'a>, ParserError<'a>>
+where
+    I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
+{
     identifier_parser().map(|a| CheckerIdentifier(a))
 }
 
-pub fn class_identifier_parser<'a>() -> impl Parser<'a, &'a str, ClassIdentifier, ParserError<'a>> {
+pub fn class_identifier_parser<'a, I>() -> impl Parser<'a, I, ClassIdentifier<'a>, ParserError<'a>>
+where
+    I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
+{
     identifier_parser().map(|a| ClassIdentifier(a))
 }
 
-pub fn escaped_identifier_parser<'a>() -> impl Parser<'a, &'a str, SimpleIdentifier, ParserError<'a>>
-{
-    let char_parser = one_of('!'..='~').map(String::from);
-    just('\\')
-        .ignore_then(
-            char_parser
-                .clone()
-                .foldl(char_parser.repeated(), |a, b| a + &b),
-        )
-        .then_ignore(sep())
-}
-
-pub fn module_identifier_parser<'a>() -> impl Parser<'a, &'a str, ModuleIdentifier, ParserError<'a>>
+pub fn module_identifier_parser<'a, I>() -> impl Parser<'a, I, ModuleIdentifier<'a>, ParserError<'a>>
+where
+    I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
     identifier_parser().map(|a| ModuleIdentifier(a))
 }
 
-pub fn identifier_parser<'a>() -> impl Parser<'a, &'a str, Identifier, ParserError<'a>> {
-    choice((
-        simple_identifier_parser().map(|a| Identifier::SimpleIdentifier(Box::new(a))),
-        escaped_identifier_parser().map(|a| Identifier::EscapedIdentifier(Box::new(a))),
-    ))
+pub fn identifier_parser<'a, I>() -> impl Parser<'a, I, Identifier<'a>, ParserError<'a>>
+where
+    I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
+{
+    select! {
+        Token::SimpleIdentifier(text) => Identifier::SimpleIdentifier(text),
+        Token::EscapedIdentifier(text) => Identifier::EscapedIdentifier(text),
+    }
 }
 
-pub fn interface_identifier_parser<'a>()
--> impl Parser<'a, &'a str, InterfaceIdentifier, ParserError<'a>> {
+pub fn interface_identifier_parser<'a, I>()
+-> impl Parser<'a, I, InterfaceIdentifier<'a>, ParserError<'a>>
+where
+    I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
+{
     identifier_parser().map(|a| InterfaceIdentifier(a))
 }
 
-pub fn package_identifier_parser<'a>()
--> impl Parser<'a, &'a str, PackageIdentifier, ParserError<'a>> {
+pub fn package_identifier_parser<'a, I>()
+-> impl Parser<'a, I, PackageIdentifier<'a>, ParserError<'a>>
+where
+    I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
+{
     identifier_parser().map(|a| PackageIdentifier(a))
 }
 
-pub fn program_identifier_parser<'a>()
--> impl Parser<'a, &'a str, ProgramIdentifier, ParserError<'a>> {
-    identifier_parser().map(|a| ProgramIdentifier(a))
-}
-
-pub fn simple_identifier_parser<'a>() -> impl Parser<'a, &'a str, SimpleIdentifier, ParserError<'a>>
+pub fn program_identifier_parser<'a, I>()
+-> impl Parser<'a, I, ProgramIdentifier<'a>, ParserError<'a>>
+where
+    I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
-    let alpha_parser = choice((one_of('a'..='z'), one_of('A'..='Z'))).map(String::from);
-    let char_parser = choice((
-        one_of('a'..='z'),
-        one_of('A'..='Z'),
-        one_of('0'..='9'),
-        just('_'),
-        just('$'),
-    ))
-    .map(String::from);
-    alpha_parser.foldl(char_parser.repeated(), |a, b| a + &b)
+    identifier_parser().map(|a| ProgramIdentifier(a))
 }

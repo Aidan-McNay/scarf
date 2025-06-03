@@ -7,7 +7,9 @@ use crate::*;
 use chumsky::prelude::*;
 use cirkit_syntax::*;
 
-pub fn constant_expression_parser<'a>()
--> impl Parser<'a, &'a str, ConstantExpression, ParserError<'a>> {
+pub fn constant_expression_parser<'a, I>() -> impl Parser<'a, I, ConstantExpression, ParserError<'a>>
+where
+    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
+{
     todo_parser()
 }

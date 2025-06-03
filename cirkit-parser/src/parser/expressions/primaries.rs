@@ -7,28 +7,26 @@ use crate::*;
 use chumsky::prelude::*;
 use cirkit_syntax::*;
 
-pub fn time_literal_parser<'a>() -> impl Parser<'a, &'a str, TimeLiteral, ParserError<'a>> {
-    let time_literal_unsigned_parser = unsigned_number_parser()
-        .then_ignore(text::whitespace())
-        .then(time_unit_parser())
-        .map(|(a, b)| TimeLiteral::TimeLiteralUnsigned(Box::new((a, b))));
-    let time_literal_fixed_point_parser = fixed_point_number_parser()
-        .then_ignore(text::whitespace())
-        .then(time_unit_parser())
-        .map(|(a, b)| TimeLiteral::TimeLiteralFixedPoint(Box::new((a, b))));
-    choice((
-        time_literal_unsigned_parser,
-        time_literal_fixed_point_parser,
-    ))
-}
-
-pub fn time_unit_parser<'a>() -> impl Parser<'a, &'a str, TimeUnit, ParserError<'a>> {
-    choice((
-        just('s').to(TimeUnit::S),
-        just("ms").to(TimeUnit::MS),
-        just("us").to(TimeUnit::US),
-        just("ns").to(TimeUnit::NS),
-        just("ps").to(TimeUnit::PS),
-        just("fs").to(TimeUnit::FS),
-    ))
+pub fn time_literal_parser<'a, I>() -> impl Parser<'a, I, TimeLiteral<'a>, ParserError<'a>>
+where
+    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
+{
+    select! {
+        Token::TimeLiteral((val, unit)) => {let unit_enum = match unit {
+            "s" => TimeUnit::S,
+            "ms" => TimeUnit::MS,
+            "us" => TimeUnit::US,
+            "ns" => TimeUnit::NS,
+            "ps" => TimeUnit::PS,
+            "fs" => TimeUnit::FS,
+            _ => panic!("Invalid time unit from lexing")
+        };
+        if val.contains(".") {
+            let components: Vec<&'a str> = val.split(".").collect();
+            TimeLiteral::TimeLiteralFixedPoint(Box::new((FixedPointNumber(components[0], components[1]), unit_enum)))
+        } else {
+            TimeLiteral::TimeLiteralUnsigned(Box::new((val, unit_enum)))
+        }
+    }
+    }
 }

@@ -7,6 +7,11 @@ use crate::*;
 use logos::Lexer;
 use regex::Regex;
 
+pub fn potential_time_value_callback<'a>(lex: &mut Lexer<'a, Token<'a>>) -> &'a str {
+    lex.extras = lex.span().end;
+    lex.slice()
+}
+
 pub fn time_literal<'a>(lex: &mut Lexer<'a, Token<'a>>) -> Option<(&'a str, &'a str)> {
     let re = Regex::new(r"((?:[0-9][0-9_]*)|(?:[0-9][0-9_]*\.[0-9][0-9_]*))\s*(s|ms|us|ns|ps|fs)")
         .unwrap();

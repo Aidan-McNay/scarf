@@ -69,72 +69,104 @@ pub fn block_comment_merge_postprocess<'a>(
 // Turns keywords into identifiers based on which keywords are reserved
 // based on the current standard
 
-pub fn keyword_postprocess<'a>(
-    stream: Vec<(Result<Token<'a>, String>, Span)>,
-    _: &'a str,
-) -> Vec<(Result<Token<'a>, String>, Span)> {
+pub fn keyword_postprocess<'a>(stream: &mut Vec<(Result<Token<'a>, String>, Span)>, _: &'a str) {
     let mut curr_standard = vec![(StandardVersion::IEEE1800_2023, Span::default())];
     let mut begin_keywords_started = false;
-    let mut new_vec: Vec<(Result<Token<'a>, String>, Span)> = Vec::new();
-    for chunk in stream {
+    for chunk in stream.iter_mut() {
         match chunk {
-            (Ok(Token::DirBeginKeywords), span) => {
+            (Ok(Token::DirBeginKeywords), _) => {
                 begin_keywords_started = true;
-                new_vec.push((Ok(Token::DirBeginKeywords), span));
             }
             (Ok(Token::StringLiteral(specifier)), span) => {
                 if begin_keywords_started {
-                    match specifier {
-                        "1800-2023" => curr_standard.push((StandardVersion::IEEE1800_2023, span)),
-                        "1800-2017" => curr_standard.push((StandardVersion::IEEE1800_2017, span)),
-                        "1800-2012" => curr_standard.push((StandardVersion::IEEE1800_2012, span)),
-                        "1800-2009" => curr_standard.push((StandardVersion::IEEE1800_2009, span)),
-                        "1800-2005" => curr_standard.push((StandardVersion::IEEE1800_2005, span)),
-                        "1364-2005" => curr_standard.push((StandardVersion::IEEE1364_2005, span)),
-                        "1364-2001" => curr_standard.push((StandardVersion::IEEE1364_2001, span)),
-                        "1364-2001-noconfig" => {
-                            curr_standard.push((StandardVersion::IEEE1364_2001Noconfig, span))
+                    match *specifier {
+                        "1800-2023" => {
+                            curr_standard.push((StandardVersion::IEEE1800_2023, span.clone()))
                         }
-                        "1364-1995" => curr_standard.push((StandardVersion::IEEE1364_1995, span)),
-                        _ => new_vec.push((
-                            Err(format!("Invalid version specifier '{}'", specifier)),
-                            span.clone(),
-                        )),
+                        "1800-2017" => {
+                            curr_standard.push((StandardVersion::IEEE1800_2017, span.clone()))
+                        }
+                        "1800-2012" => {
+                            curr_standard.push((StandardVersion::IEEE1800_2012, span.clone()))
+                        }
+                        "1800-2009" => {
+                            curr_standard.push((StandardVersion::IEEE1800_2009, span.clone()))
+                        }
+                        "1800-2005" => {
+                            curr_standard.push((StandardVersion::IEEE1800_2005, span.clone()))
+                        }
+                        "1364-2005" => {
+                            curr_standard.push((StandardVersion::IEEE1364_2005, span.clone()))
+                        }
+                        "1364-2001" => {
+                            curr_standard.push((StandardVersion::IEEE1364_2001, span.clone()))
+                        }
+                        "1364-2001-noconfig" => curr_standard
+                            .push((StandardVersion::IEEE1364_2001Noconfig, span.clone())),
+                        "1364-1995" => {
+                            curr_standard.push((StandardVersion::IEEE1364_1995, span.clone()))
+                        }
+                        _ => {
+                            *chunk = (
+                                Err(format!("Invalid version specifier '{}'", specifier)),
+                                span.clone(),
+                            )
+                        }
                     }
                     begin_keywords_started = false;
-                } else {
-                    new_vec.push((Ok(Token::StringLiteral(specifier)), span))
                 }
             }
             (Ok(Token::DirEndKeywords), span) => {
                 if curr_standard.len() > 1 {
                     curr_standard.pop();
-                    new_vec.push((Ok(Token::DirEndKeywords), span));
                 } else {
-                    new_vec.push((
+                    *chunk = (
                         Err("end_keywords directive with no begin_keywords".to_owned()),
-                        span,
-                    ));
+                        span.clone(),
+                    );
                 }
             }
             (result, span) => {
                 if begin_keywords_started {
-                    new_vec.push((Err("Expected version specifier".to_owned()), span.clone()));
+                    *chunk = (Err("Expected version specifier".to_owned()), span.clone());
                     begin_keywords_started = false;
-                }
-                if let Ok(token) = result {
-                    if token.keyword_replace(curr_standard.last().unwrap().clone().0) {
-                        new_vec.push((Ok(Token::SimpleIdentifier("test")), span))
-                    } else {
-                        new_vec.push((Ok(token), span))
-                    }
                 } else {
-                    new_vec.push((result, span))
+                    if let Ok(token) = result {
+                        if token.keyword_replace(curr_standard.last().unwrap().clone().0) {
+                            *chunk = (Ok(Token::SimpleIdentifier("test")), span.clone());
+                        }
+                    }
                 }
             }
         }
     }
-    new_vec
+}
+
+// -----------------------------------------------------------------------
+// time_unit_postprocess
+// -----------------------------------------------------------------------
+// Convert identifiers into time units if they follow a number
+
+pub fn time_unit_postprocess<'a>(stream: &mut Vec<(Result<Token<'a>, String>, Span)>) {
+    let mut previous_number = false;
+    for chunk in stream.iter_mut() {
+        match chunk {
+            (Ok(Token::UnsignedNumber(_)), _) => previous_number = true,
+            (Ok(Token::FixedPointNumber(_)), _) => previous_number = true,
+            (Ok(Token::SimpleIdentifier(text)), span) => {
+                if previous_number {
+                    match *text {
+                        "s" | "ms" | "us" | "ns" | "ps" | "fs" => {
+                            *chunk = (Ok(Token::TimeUnit(text)), span.clone())
+                        }
+                        _ => (),
+                    }
+                    previous_number = false;
+                }
+            }
+            _ => previous_number = false,
+        }
+    }
 }
 
 // -----------------------------------------------------------------------
@@ -198,7 +230,8 @@ pub fn postprocess<'a>(
     src: &'a str,
 ) -> Vec<(Result<Token<'a>, String>, Span)> {
     let stream = block_comment_merge_postprocess(stream, src);
-    let stream = keyword_postprocess(stream, src);
-    let stream = triple_quote_string_postprocess(stream, src);
+    let mut stream = triple_quote_string_postprocess(stream, src);
+    keyword_postprocess(&mut stream, src);
+    time_unit_postprocess(&mut stream);
     stream
 }

@@ -7,7 +7,9 @@ use crate::*;
 use chumsky::prelude::*;
 use cirkit_syntax::*;
 
-pub fn list_of_arguments_parser<'a>() -> impl Parser<'a, &'a str, ListOfArguments, ParserError<'a>>
+pub fn list_of_arguments_parser<'a, I>() -> impl Parser<'a, I, ListOfArguments, ParserError<'a>>
+where
+    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
     todo_parser()
 }
