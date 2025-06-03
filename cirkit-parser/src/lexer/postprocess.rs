@@ -71,11 +71,15 @@ pub fn block_comment_merge_postprocess<'a>(
 
 pub fn keyword_postprocess<'a>(stream: &mut Vec<(Result<Token<'a>, String>, Span)>, _: &'a str) {
     let mut curr_standard = vec![(StandardVersion::IEEE1800_2023, Span::default())];
+    let mut keyword_standard_ended = true;
     let mut begin_keywords_started = false;
+    let mut begin_keywords_started_span = Span::default();
     for chunk in stream.iter_mut() {
         match chunk {
-            (Ok(Token::DirBeginKeywords), _) => {
+            (Ok(Token::DirBeginKeywords), span) => {
                 begin_keywords_started = true;
+                keyword_standard_ended = false;
+                begin_keywords_started_span = span.clone();
             }
             (Ok(Token::StringLiteral(specifier)), span) => {
                 if begin_keywords_started {
@@ -118,6 +122,7 @@ pub fn keyword_postprocess<'a>(stream: &mut Vec<(Result<Token<'a>, String>, Span
             }
             (Ok(Token::DirEndKeywords), span) => {
                 if curr_standard.len() > 1 {
+                    keyword_standard_ended = true;
                     curr_standard.pop();
                 } else {
                     *chunk = (
@@ -133,12 +138,18 @@ pub fn keyword_postprocess<'a>(stream: &mut Vec<(Result<Token<'a>, String>, Span
                 } else {
                     if let Ok(token) = result {
                         if token.keyword_replace(curr_standard.last().unwrap().clone().0) {
-                            *chunk = (Ok(Token::SimpleIdentifier("test")), span.clone());
+                            *chunk = (Ok(Token::SimpleIdentifier(token.as_str())), span.clone());
                         }
                     }
                 }
             }
         }
+    }
+    if !keyword_standard_ended {
+        stream.push((
+            Err("New keyword standard with no ending".to_owned()),
+            begin_keywords_started_span,
+        ))
     }
 }
 

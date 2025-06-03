@@ -5,7 +5,7 @@
 
 // pub mod declarations;
 pub mod errors;
-// pub mod expressions;
+pub mod expressions;
 // pub mod general;
 // pub mod source_text;
 // pub mod udp_declaration_and_instantiation;
@@ -19,7 +19,7 @@ use chumsky::prelude::*;
 pub use cirkit_syntax::SourceText;
 // pub use declarations::*;
 pub use errors::*;
-// pub use expressions::*;
+pub use expressions::*;
 // pub use general::*;
 // pub use source_text::*;
 // pub use udp_declaration_and_instantiation::*;

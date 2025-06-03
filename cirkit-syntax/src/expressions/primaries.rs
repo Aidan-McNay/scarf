@@ -7,16 +7,16 @@ use crate::*;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum TimeLiteral<'a> {
-    TimeLiteralUnsigned(Box<(UnsignedNumber<'a>, TimeUnit)>),
-    TimeLiteralFixedPoint(Box<(FixedPointNumber<'a>, TimeUnit)>),
+    TimeLiteralUnsigned(Box<(UnsignedNumber<'a>, TimeUnit<'a>)>),
+    TimeLiteralFixedPoint(Box<(FixedPointNumber<'a>, TimeUnit<'a>)>),
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub enum TimeUnit {
-    S,
-    MS,
-    US,
-    NS,
-    PS,
-    FS,
+pub enum TimeUnit<'a> {
+    S(Metadata<'a>),
+    MS(Metadata<'a>),
+    US(Metadata<'a>),
+    NS(Metadata<'a>),
+    PS(Metadata<'a>),
+    FS(Metadata<'a>),
 }

@@ -803,15 +803,9 @@ pub enum Token<'a> {
     Newline,
 }
 
-impl<'a> fmt::Display for Token<'a> {
-    // This trait requires `fmt` with this exact signature.
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        // Write strictly the first element into the supplied output
-        // stream: `f`. Returns `fmt::Result` which indicates whether the
-        // operation succeeded or failed. Note that `write!` uses syntax which
-        // is very similar to `println!`.
-        let temp_str: String;
-        let str_repr: &str = match self {
+impl<'a> Token<'a> {
+    pub fn as_str(&self) -> &'static str {
+        match self {
             Token::Error => "a lexer error",
             Token::Always => "always",
             Token::And => "and",
@@ -1182,12 +1176,41 @@ impl<'a> fmt::Display for Token<'a> {
             Token::DollarNochange => "$nochange",
             Token::DollarRoot => "$root",
             Token::DollarUnit => "$unit",
+            Token::OnelineComment(_text) => "<oneline comment>",
+            Token::BlockCommentStart => "/*",
+            Token::BlockCommentEnd => "*/",
+            Token::BlockComment(_text) => "<block comment>",
+            Token::UnsignedNumber(_text) => "<unsigned number>",
+            Token::FixedPointNumber(_text) => "<fixed point number>",
+            Token::BinaryNumber(_text) => "<binary number>",
+            Token::OctalNumber(_text) => "<octal number>",
+            Token::DecimalNumber(_text) => "<decimal number>",
+            Token::HexNumber(_text) => "<hex number>",
+            Token::RealNumber(_text) => "<real number>",
+            Token::SystemIdentifier(_text) => "<system identifier>",
+            Token::SimpleIdentifier(_text) => "<simple identifier>",
+            Token::EscapedIdentifier(_text) => "<escaped identifier>",
+            Token::TimeUnit(_text) => "<time unit>",
+            Token::StringLiteral(_text) => "<string>",
+            Token::TripleQuoteStringLiteral(_text) => "<triple-quote string>",
+            Token::Newline => "newline",
+        }
+    }
+}
+
+impl<'a> fmt::Display for Token<'a> {
+    // This trait requires `fmt` with this exact signature.
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        // Write strictly the first element into the supplied output
+        // stream: `f`. Returns `fmt::Result` which indicates whether the
+        // operation succeeded or failed. Note that `write!` uses syntax which
+        // is very similar to `println!`.
+        let temp_str: String;
+        let str_repr = match self {
             Token::OnelineComment(text) => {
                 temp_str = format!("comment '{}'", text);
                 temp_str.as_str()
             }
-            Token::BlockCommentStart => "/*",
-            Token::BlockCommentEnd => "*/",
             Token::BlockComment(text) => {
                 temp_str = format!("block comment '{}'", text);
                 temp_str.as_str()
@@ -1244,7 +1267,7 @@ impl<'a> fmt::Display for Token<'a> {
                 temp_str = format!("string \"\"\"{}\"\"\"", text);
                 temp_str.as_str()
             }
-            Token::Newline => "newline",
+            _ => self.as_str(),
         };
         write!(f, "{}", str_repr)
     }
