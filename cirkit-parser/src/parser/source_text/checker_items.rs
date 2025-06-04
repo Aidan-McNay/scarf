@@ -7,12 +7,17 @@ use crate::*;
 use chumsky::prelude::*;
 use cirkit_syntax::*;
 
-pub fn checker_port_list_parser<'a>() -> impl Parser<'a, &'a str, CheckerPortList, ParserError<'a>>
+pub fn checker_port_list_parser<'a, I>() -> impl Parser<'a, I, CheckerPortList, ParserError<'a>>
+where
+    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
     todo_parser()
 }
 
-pub fn checker_or_generate_item_parser<'a>()
--> impl Parser<'a, &'a str, CheckerOrGenerateItem, ParserError<'a>> {
+pub fn checker_or_generate_item_parser<'a, I>()
+-> impl Parser<'a, I, CheckerOrGenerateItem, ParserError<'a>>
+where
+    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
+{
     todo_parser()
 }

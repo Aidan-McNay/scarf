@@ -6,22 +6,22 @@
 use crate::*;
 use chumsky::prelude::*;
 use cirkit_syntax::*;
-use std::iter;
 
 pub fn attribute_instance_parser<'a, I>()
 -> impl Parser<'a, I, AttributeInstance<'a>, ParserError<'a>>
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
-    attr_spec_parser()
-        .map(|a| iter::once(a).collect())
-        .foldl(
-            just(Token::Comma)
-                .ignore_then(attr_spec_parser())
-                .repeated(),
-            foldl_vector,
+    token(Token::ParenStar)
+        .then(attr_spec_parser())
+        .then(
+            token(Token::Comma)
+                .then(attr_spec_parser())
+                .repeated()
+                .collect::<Vec<(Metadata<'a>, AttrSpec<'a>)>>(),
         )
-        .map(|a| AttributeInstance(a))
+        .then(token(Token::StarEparen))
+        .map(|(((a, b), c), d)| AttributeInstance(a, b, c, d))
 }
 
 pub fn attr_spec_parser<'a, I>() -> impl Parser<'a, I, AttrSpec<'a>, ParserError<'a>>
@@ -29,11 +29,7 @@ where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
     attr_name_parser()
-        .then(
-            just(Token::Eq)
-                .ignore_then(constant_expression_parser())
-                .or_not(),
-        )
+        .then(token(Token::Eq).then(constant_expression_parser()).or_not())
         .map(|(a, b)| AttrSpec(a, b))
 }
 

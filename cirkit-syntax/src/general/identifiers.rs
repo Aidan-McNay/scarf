@@ -3,13 +3,15 @@
 // =======================================================================
 // AST Nodes from 1800-2023 A.9.3
 
+use crate::*;
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct CheckerIdentifier<'a>(pub Identifier<'a>);
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct ClassIdentifier<'a>(pub Identifier<'a>);
 
-pub type EscapedIdentifier<'a> = &'a str;
+pub type EscapedIdentifier<'a> = (&'a str, Metadata<'a>);
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct ModuleIdentifier<'a>(pub Identifier<'a>);
@@ -29,4 +31,4 @@ pub struct PackageIdentifier<'a>(pub Identifier<'a>);
 #[derive(Clone, Debug, PartialEq)]
 pub struct ProgramIdentifier<'a>(pub Identifier<'a>);
 
-pub type SimpleIdentifier<'a> = &'a str;
+pub type SimpleIdentifier<'a> = (&'a str, Metadata<'a>);

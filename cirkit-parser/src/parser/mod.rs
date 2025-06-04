@@ -3,12 +3,12 @@
 // =======================================================================
 // The top-level interface for the parser
 
-// pub mod declarations;
+pub mod declarations;
 pub mod errors;
 pub mod expressions;
-// pub mod general;
-// pub mod source_text;
-// pub mod udp_declaration_and_instantiation;
+pub mod general;
+pub mod source_text;
+pub mod udp_declaration_and_instantiation;
 pub mod utils;
 use crate::*;
 use ariadne::Report;
@@ -17,30 +17,21 @@ use chumsky::error::{RichPattern, RichReason};
 use chumsky::input::ValueInput;
 use chumsky::prelude::*;
 pub use cirkit_syntax::SourceText;
-// pub use declarations::*;
+pub use declarations::*;
 pub use errors::*;
 pub use expressions::*;
-// pub use general::*;
-// pub use source_text::*;
-// pub use udp_declaration_and_instantiation::*;
+pub use general::*;
+pub use source_text::*;
+pub use udp_declaration_and_instantiation::*;
 pub use utils::*;
 
 pub type ParserSpan = SimpleSpan;
-
-pub fn trivial_parser<'a, I>() -> impl Parser<'a, I, SourceText<'a>, ParserError<'a>>
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
-    select! {
-        Token::Module => SourceText(None, Vec::new())
-    }
-}
 
 pub fn parse<'a, I>(src: I) -> ParseResult<SourceText<'a>, Rich<'a, Token<'a>>>
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
-    trivial_parser().parse(src)
+    source_text_parser().parse(src)
 }
 
 pub fn format_pattern<'a>(pattern: &RichPattern<'a, Token<'a>>) -> String {
@@ -70,7 +61,7 @@ pub fn format_reason<'a>(reason: &RichReason<'a, Token<'a>>) -> String {
                         temp_expected_str.push_str(format_pattern(expected).as_str());
                         temp_expected_str.push_str(", ");
                     }
-                    temp_expected_str.push_str(" or ");
+                    temp_expected_str.push_str("or ");
                     temp_expected_str.push_str(format_pattern(expected.last().unwrap()).as_str());
                     temp_expected_str
                 }

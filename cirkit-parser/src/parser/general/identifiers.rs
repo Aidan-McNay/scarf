@@ -34,9 +34,24 @@ where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
     select! {
-        Token::SimpleIdentifier(text) => Identifier::SimpleIdentifier(text),
-        Token::EscapedIdentifier(text) => Identifier::EscapedIdentifier(text),
+        Token::SimpleIdentifier(text) = e => Identifier::SimpleIdentifier((text, Metadata{
+            span: convert_span(e.span()),
+            extra_nodes: Vec::new()
+        })),
+        Token::EscapedIdentifier(text) = e => Identifier::EscapedIdentifier((text, Metadata{
+            span: convert_span(e.span()),
+            extra_nodes: Vec::new()
+        })),
     }
+    .then(extra_node_parser())
+    .map(|(identifier, b)| match identifier {
+        Identifier::SimpleIdentifier((text, metadata)) => {
+            Identifier::SimpleIdentifier((text, replace_nodes(metadata, b)))
+        }
+        Identifier::EscapedIdentifier((text, metadata)) => {
+            Identifier::EscapedIdentifier((text, replace_nodes(metadata, b)))
+        }
+    })
 }
 
 pub fn interface_identifier_parser<'a, I>()

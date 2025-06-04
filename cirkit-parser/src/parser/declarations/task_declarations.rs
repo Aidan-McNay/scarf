@@ -7,9 +7,16 @@ use crate::*;
 use chumsky::prelude::*;
 use cirkit_syntax::*;
 
-pub fn final_specifier_parser<'a>() -> impl Parser<'a, &'a str, FinalSpecifier, ParserError<'a>> {
-    just(':')
-        .then_ignore(sep())
-        .then_ignore(just("final"))
-        .to(())
+pub fn final_specifier_parser<'a, I>() -> impl Parser<'a, I, FinalSpecifier<'a>, ParserError<'a>>
+where
+    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
+{
+    select! {
+        Token::Final = e => Metadata{
+            span: convert_span(e.span()),
+            extra_nodes: Vec::new()
+        }
+    }
+    .then(extra_node_parser())
+    .map(|(metadata, b)| (replace_nodes(metadata, b),))
 }

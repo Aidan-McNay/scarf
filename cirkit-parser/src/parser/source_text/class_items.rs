@@ -7,11 +7,17 @@ use crate::*;
 use chumsky::prelude::*;
 use cirkit_syntax::*;
 
-pub fn class_item_parser<'a>() -> impl Parser<'a, &'a str, ClassItem, ParserError<'a>> {
+pub fn class_item_parser<'a, I>() -> impl Parser<'a, I, ClassItem, ParserError<'a>>
+where
+    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
+{
     todo_parser()
 }
 
-pub fn interface_class_item_parser<'a>()
--> impl Parser<'a, &'a str, InterfaceClassItem, ParserError<'a>> {
+pub fn interface_class_item_parser<'a, I>()
+-> impl Parser<'a, I, InterfaceClassItem, ParserError<'a>>
+where
+    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
+{
     todo_parser()
 }

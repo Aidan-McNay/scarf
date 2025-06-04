@@ -7,11 +7,17 @@ use crate::*;
 use chumsky::prelude::*;
 use cirkit_syntax::*;
 
-pub fn program_item_parser<'a>() -> impl Parser<'a, &'a str, ProgramItem, ParserError<'a>> {
+pub fn program_item_parser<'a, I>() -> impl Parser<'a, I, ProgramItem, ParserError<'a>>
+where
+    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
+{
     todo_parser()
 }
 
-pub fn non_port_program_item_parser<'a>()
--> impl Parser<'a, &'a str, NonPortProgramItem, ParserError<'a>> {
+pub fn non_port_program_item_parser<'a, I>()
+-> impl Parser<'a, I, NonPortProgramItem, ParserError<'a>>
+where
+    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
+{
     todo_parser()
 }

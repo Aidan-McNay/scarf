@@ -6,10 +6,18 @@
 use crate::*;
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct AttributeInstance<'a>(pub Vec<AttrSpec<'a>>);
+pub struct AttributeInstance<'a>(
+    pub Metadata<'a>, // (*
+    pub AttrSpec<'a>,
+    pub Vec<(Metadata<'a>, AttrSpec<'a>)>,
+    pub Metadata<'a>, // *)
+);
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct AttrSpec<'a>(pub AttrName<'a>, pub Option<ConstantExpression>);
+pub struct AttrSpec<'a>(
+    pub AttrName<'a>,
+    pub Option<(Metadata<'a>, ConstantExpression)>,
+);
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct AttrName<'a>(pub Identifier<'a>);

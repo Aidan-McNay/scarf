@@ -28,5 +28,5 @@ pub fn parse<'a>(src: &'a str) -> ParseResult<SourceText<'a>, Rich<'a, Token<'a>
         ),
     });
     let stream_lexed_src = Stream::from_iter(mapped_lexed_src).map((0..src.len()).into(), |x| x);
-    trivial_parser().parse(stream_lexed_src)
+    parse_from_lex(stream_lexed_src)
 }

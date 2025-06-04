@@ -7,6 +7,9 @@ use crate::*;
 use chumsky::prelude::*;
 use cirkit_syntax::*;
 
-pub fn package_item_parser<'a>() -> impl Parser<'a, &'a str, PackageItem, ParserError<'a>> {
+pub fn package_item_parser<'a, I>() -> impl Parser<'a, I, PackageItem, ParserError<'a>>
+where
+    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
+{
     todo_parser()
 }

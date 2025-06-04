@@ -3,4 +3,6 @@
 // =======================================================================
 // AST Nodes from 1800-2023 A.2.7
 
-pub type FinalSpecifier = ();
+use crate::*;
+
+pub type FinalSpecifier<'a> = (Metadata<'a>,);

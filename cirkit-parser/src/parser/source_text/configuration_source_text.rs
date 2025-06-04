@@ -7,7 +7,9 @@ use crate::*;
 use chumsky::prelude::*;
 use cirkit_syntax::*;
 
-pub fn config_declaration_parser<'a>()
--> impl Parser<'a, &'a str, ConfigDeclaration, ParserError<'a>> {
+pub fn config_declaration_parser<'a, I>() -> impl Parser<'a, I, ConfigDeclaration, ParserError<'a>>
+where
+    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
+{
     todo_parser()
 }

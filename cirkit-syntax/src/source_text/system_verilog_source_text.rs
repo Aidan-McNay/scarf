@@ -7,6 +7,7 @@ use crate::*;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct SourceText<'a>(
+    pub Vec<(ExtraNode<'a>, Span)>, // Leading whitespace/comments/directives
     pub Option<TimeunitsDeclaration<'a>>,
     pub Vec<Description<'a>>,
 );
@@ -32,23 +33,25 @@ pub struct DescriptionBindDirective<'a>(pub Vec<AttributeInstance<'a>>, pub Bind
 #[derive(Clone, Debug, PartialEq)]
 pub struct ModuleNonansiHeader<'a>(
     pub Vec<AttributeInstance<'a>>,
-    pub ModuleKeyword,
-    pub Option<Lifetime>,
+    pub ModuleKeyword<'a>,
+    pub Option<Lifetime<'a>>,
     pub ModuleIdentifier<'a>,
     pub Vec<PackageImportDeclaration>,
     pub Option<ParameterPortList>,
     pub ListOfPorts,
+    pub Metadata<'a>, // ;
 );
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct ModuleAnsiHeader<'a>(
     pub Vec<AttributeInstance<'a>>,
-    pub ModuleKeyword,
-    pub Option<Lifetime>,
+    pub ModuleKeyword<'a>,
+    pub Option<Lifetime<'a>>,
     pub ModuleIdentifier<'a>,
     pub Vec<PackageImportDeclaration>,
     pub Option<ParameterPortList>,
     pub Option<ListOfPortDeclarations>,
+    pub Metadata<'a>, // ;
 );
 
 #[derive(Clone, Debug, PartialEq)]
@@ -65,7 +68,8 @@ pub struct ModuleDeclarationNonansi<'a>(
     pub ModuleNonansiHeader<'a>,
     pub Option<TimeunitsDeclaration<'a>>,
     pub Vec<ModuleItem>,
-    pub Option<ModuleIdentifier<'a>>,
+    pub Metadata<'a>,
+    pub Option<(Metadata<'a>, ModuleIdentifier<'a>)>,
 );
 
 #[derive(Clone, Debug, PartialEq)]
@@ -73,30 +77,36 @@ pub struct ModuleDeclarationAnsi<'a>(
     pub ModuleAnsiHeader<'a>,
     pub Option<TimeunitsDeclaration<'a>>,
     pub Vec<NonPortModuleItem>,
-    pub Option<ModuleIdentifier<'a>>,
+    pub Metadata<'a>,
+    pub Option<(Metadata<'a>, ModuleIdentifier<'a>)>,
 );
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct ModuleDeclarationWildcard<'a>(
     pub Vec<AttributeInstance<'a>>,
-    pub ModuleKeyword,
-    pub Option<Lifetime>,
+    pub ModuleKeyword<'a>,
+    pub Option<Lifetime<'a>>,
     pub ModuleIdentifier<'a>,
+    pub Metadata<'a>, // (
+    pub Metadata<'a>, // .
+    pub Metadata<'a>, // *)
+    pub Metadata<'a>, // ;
     pub Option<TimeunitsDeclaration<'a>>,
     pub Vec<ModuleItem>,
-    pub Option<ModuleIdentifier<'a>>,
+    pub Metadata<'a>, // endmodule
+    pub Option<(Metadata<'a>, ModuleIdentifier<'a>)>,
 );
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct ModuleDeclarationExternNonansi<'a>(pub ModuleNonansiHeader<'a>);
+pub struct ModuleDeclarationExternNonansi<'a>(pub Metadata<'a>, pub ModuleNonansiHeader<'a>);
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct ModuleDeclarationExternAnsi<'a>(pub ModuleAnsiHeader<'a>);
+pub struct ModuleDeclarationExternAnsi<'a>(pub Metadata<'a>, pub ModuleAnsiHeader<'a>);
 
 #[derive(Clone, Debug, PartialEq)]
-pub enum ModuleKeyword {
-    Module,
-    Macromodule,
+pub enum ModuleKeyword<'a> {
+    Module(Metadata<'a>),
+    Macromodule(Metadata<'a>),
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -113,7 +123,8 @@ pub struct InterfaceDeclarationNonansi<'a>(
     pub InterfaceNonansiHeader<'a>,
     pub Option<TimeunitsDeclaration<'a>>,
     pub Vec<InterfaceItem>,
-    pub Option<InterfaceIdentifier<'a>>,
+    pub Metadata<'a>, // endinterface
+    pub Option<(Metadata<'a>, InterfaceIdentifier<'a>)>,
 );
 
 #[derive(Clone, Debug, PartialEq)]
@@ -121,42 +132,53 @@ pub struct InterfaceDeclarationAnsi<'a>(
     pub InterfaceAnsiHeader<'a>,
     pub Option<TimeunitsDeclaration<'a>>,
     pub Vec<NonPortInterfaceItem>,
-    pub Option<InterfaceIdentifier<'a>>,
+    pub Metadata<'a>, // endinterface
+    pub Option<(Metadata<'a>, InterfaceIdentifier<'a>)>,
 );
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct InterfaceDeclarationWildcard<'a>(
     pub Vec<AttributeInstance<'a>>,
+    pub Metadata<'a>, // interface
     pub InterfaceIdentifier<'a>,
+    pub Metadata<'a>, // (
+    pub Metadata<'a>, // .
+    pub Metadata<'a>, // *)
+    pub Metadata<'a>, // ;
     pub Option<TimeunitsDeclaration<'a>>,
     pub Vec<InterfaceItem>,
-    pub Option<InterfaceIdentifier<'a>>,
+    pub Metadata<'a>, // endinterface
+    pub Option<(Metadata<'a>, InterfaceIdentifier<'a>)>,
 );
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct InterfaceDeclarationExternNonansi<'a>(pub InterfaceNonansiHeader<'a>);
+pub struct InterfaceDeclarationExternNonansi<'a>(pub Metadata<'a>, pub InterfaceNonansiHeader<'a>);
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct InterfaceDeclarationExternAnsi<'a>(pub InterfaceAnsiHeader<'a>);
+pub struct InterfaceDeclarationExternAnsi<'a>(pub Metadata<'a>, pub InterfaceAnsiHeader<'a>);
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct InterfaceNonansiHeader<'a>(
     pub Vec<AttributeInstance<'a>>,
-    pub Option<Lifetime>,
+    pub Metadata<'a>, // interface
+    pub Option<Lifetime<'a>>,
     pub InterfaceIdentifier<'a>,
     pub Vec<PackageImportDeclaration>,
     pub Option<ParameterPortList>,
     pub ListOfPorts,
+    pub Metadata<'a>, // ;
 );
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct InterfaceAnsiHeader<'a>(
     pub Vec<AttributeInstance<'a>>,
-    pub Option<Lifetime>,
+    pub Metadata<'a>, // interface
+    pub Option<Lifetime<'a>>,
     pub InterfaceIdentifier<'a>,
     pub Vec<PackageImportDeclaration>,
     pub Option<ParameterPortList>,
     pub Option<ListOfPortDeclarations>,
+    pub Metadata<'a>, // ;
 );
 
 #[derive(Clone, Debug, PartialEq)]
@@ -173,7 +195,8 @@ pub struct ProgramDeclarationNonansi<'a>(
     pub ProgramNonansiHeader<'a>,
     pub Option<TimeunitsDeclaration<'a>>,
     pub Vec<ProgramItem>,
-    pub Option<ProgramIdentifier<'a>>,
+    pub Metadata<'a>, // endprogram
+    pub Option<(Metadata<'a>, ProgramIdentifier<'a>)>,
 );
 
 #[derive(Clone, Debug, PartialEq)]
@@ -181,93 +204,156 @@ pub struct ProgramDeclarationAnsi<'a>(
     pub ProgramAnsiHeader<'a>,
     pub Option<TimeunitsDeclaration<'a>>,
     pub Vec<NonPortProgramItem>,
-    pub Option<ProgramIdentifier<'a>>,
+    pub Metadata<'a>, // endprogram
+    pub Option<(Metadata<'a>, ProgramIdentifier<'a>)>,
 );
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct ProgramDeclarationWildcard<'a>(
     pub Vec<AttributeInstance<'a>>,
+    pub Metadata<'a>, // program
     pub ProgramIdentifier<'a>,
+    pub Metadata<'a>, // (
+    pub Metadata<'a>, // .
+    pub Metadata<'a>, // *)
+    pub Metadata<'a>, // ;
     pub Option<TimeunitsDeclaration<'a>>,
     pub Vec<ProgramItem>,
-    pub Option<ProgramIdentifier<'a>>,
+    pub Metadata<'a>, // endprogram
+    pub Option<(Metadata<'a>, ProgramIdentifier<'a>)>,
 );
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct ProgramDeclarationExternNonansi<'a>(pub ProgramNonansiHeader<'a>);
+pub struct ProgramDeclarationExternNonansi<'a>(pub Metadata<'a>, pub ProgramNonansiHeader<'a>);
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct ProgramDeclarationExternAnsi<'a>(pub ProgramAnsiHeader<'a>);
+pub struct ProgramDeclarationExternAnsi<'a>(pub Metadata<'a>, pub ProgramAnsiHeader<'a>);
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct ProgramNonansiHeader<'a>(
     pub Vec<AttributeInstance<'a>>,
-    pub Option<Lifetime>,
+    pub Metadata<'a>, // program
+    pub Option<Lifetime<'a>>,
     pub ProgramIdentifier<'a>,
     pub Vec<PackageImportDeclaration>,
     pub Option<ParameterPortList>,
     pub ListOfPorts,
+    pub Metadata<'a>, // ;
 );
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct ProgramAnsiHeader<'a>(
     pub Vec<AttributeInstance<'a>>,
-    pub Option<Lifetime>,
+    pub Metadata<'a>, // program
+    pub Option<Lifetime<'a>>,
     pub ProgramIdentifier<'a>,
     pub Vec<PackageImportDeclaration>,
     pub Option<ParameterPortList>,
     pub Option<ListOfPortDeclarations>,
+    pub Metadata<'a>, // ;
 );
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct CheckerDeclaration<'a>(
+    pub Metadata<'a>, // checker
     pub CheckerIdentifier<'a>,
-    pub Option<CheckerPortList>,
+    pub Option<(Metadata<'a>, CheckerPortList, Metadata<'a>)>,
+    pub Metadata<'a>,
     pub Vec<(Vec<AttributeInstance<'a>>, CheckerOrGenerateItem)>,
-    pub Option<CheckerIdentifier<'a>>,
+    pub Metadata<'a>, // endchecker
+    pub Option<(Metadata<'a>, CheckerIdentifier<'a>)>,
 );
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct ClassDeclaration<'a>(
-    pub Option<Virtual>,
-    pub Option<FinalSpecifier>,
+    pub Option<Metadata<'a>>, // virtual
+    pub Metadata<'a>,         // class
+    pub Option<FinalSpecifier<'a>>,
     pub ClassIdentifier<'a>,
     pub Option<ParameterPortList>,
-    pub Option<(ClassType, Option<ClassDeclarationExtensionArguments>)>,
-    pub Option<Vec<InterfaceClassType>>,
+    pub  Option<(
+        Metadata<'a>, // extends
+        ClassType,
+        Option<(
+            Metadata<'a>, // (
+            ClassDeclarationExtensionArguments<'a>,
+            Metadata<'a>, // )
+        )>,
+    )>,
+    pub  Option<(
+        Metadata<'a>, // implements
+        InterfaceClassType,
+        Vec<(Metadata<'a>, InterfaceClassType)>,
+    )>,
+    pub Metadata<'a>, // ;
     pub Vec<ClassItem>,
-    pub Option<ClassIdentifier<'a>>,
+    pub Metadata<'a>, // endclass
+    pub Option<(Metadata<'a>, ClassIdentifier<'a>)>,
 );
 
 #[derive(Clone, Debug, PartialEq)]
-pub enum ClassDeclarationExtensionArguments {
+pub enum ClassDeclarationExtensionArguments<'a> {
     ListOfArguments(Box<ListOfArguments>),
-    Default,
+    Default(Metadata<'a>),
 }
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct InterfaceClassDeclaration<'a>(
+    pub Metadata<'a>, // interface
+    pub Metadata<'a>, // class
     pub ClassIdentifier<'a>,
     pub Option<ParameterPortList>,
-    pub Option<Vec<InterfaceClassType>>,
+    pub  Option<(
+        Metadata<'a>, // extends
+        InterfaceClassType,
+        Vec<(Metadata<'a>, InterfaceClassType)>,
+    )>,
+    pub Metadata<'a>, // ;
     pub Vec<InterfaceClassItem>,
-    pub Option<ClassIdentifier<'a>>,
+    pub Metadata<'a>, // endclass
+    pub Option<(Metadata<'a>, ClassIdentifier<'a>)>,
 );
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct PackageDeclaration<'a>(
     pub Vec<AttributeInstance<'a>>,
-    pub Option<Lifetime>,
+    pub Metadata<'a>, // package
+    pub Option<Lifetime<'a>>,
     pub PackageIdentifier<'a>,
+    pub Metadata<'a>, // ;
     pub Option<TimeunitsDeclaration<'a>>,
     pub Vec<(Vec<AttributeInstance<'a>>, PackageItem)>,
-    pub Option<PackageIdentifier<'a>>,
+    pub Metadata<'a>, // endpackage
+    pub Option<(Metadata<'a>, PackageIdentifier<'a>)>,
 );
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum TimeunitsDeclaration<'a> {
-    Timeunit(TimeLiteral<'a>, Option<TimeLiteral<'a>>),
-    Timeprecision(TimeLiteral<'a>),
-    Timeunitprecision(TimeLiteral<'a>, TimeLiteral<'a>),
-    Timeprecisionunit(TimeLiteral<'a>, TimeLiteral<'a>),
+    Timeunit(
+        Metadata<'a>, // timeunit
+        TimeLiteral<'a>,
+        Option<(Metadata<'a>, TimeLiteral<'a>)>,
+        Metadata<'a>, // ;
+    ),
+    Timeprecision(
+        Metadata<'a>, // timeprecision
+        TimeLiteral<'a>,
+        Metadata<'a>, // ;
+    ),
+    Timeunitprecision(
+        Metadata<'a>, // timeunit
+        TimeLiteral<'a>,
+        Metadata<'a>, // ;
+        Metadata<'a>, // timeprecision
+        TimeLiteral<'a>,
+        Metadata<'a>, // ;
+    ),
+    Timeprecisionunit(
+        Metadata<'a>, // timeprecision
+        TimeLiteral<'a>,
+        Metadata<'a>, // ;
+        Metadata<'a>, // timeunit
+        TimeLiteral<'a>,
+        Metadata<'a>, // ;
+    ),
 }

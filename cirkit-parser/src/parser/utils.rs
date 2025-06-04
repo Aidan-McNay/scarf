@@ -15,17 +15,6 @@ pub fn foldl_vector<T>(mut a: Vec<T>, b: T) -> Vec<T> {
     a
 }
 
-// A parser for matching a token with metadata
-pub fn token<'a, I, R>(
-    tok: Token<'a>,
-    mapping: impl Fn(SimpleSpan) -> R + 'a,
-) -> impl Parser<'a, I, R, ParserError<'a>>
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
-    just(tok).map_with(move |_, e| mapping(e.span()))
-}
-
 // Span conversion
 pub fn convert_span(simple_span: ParserSpan) -> Span {
     simple_span.into()
@@ -37,7 +26,9 @@ where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
     select! {
-        Token::OnelineComment(text) = e => (ExtraNode::OnelineComment(text), convert_span(e.span()))
+        Token::OnelineComment(text) = e => (ExtraNode::OnelineComment(text), convert_span(e.span())),
+        Token::BlockComment(text) = e => (ExtraNode::BlockComment(text), convert_span(e.span())),
+        Token::Newline = e => (ExtraNode::Newline, convert_span(e.span()))
     }
     .repeated()
     .collect::<Vec<(ExtraNode<'a>, Span)>>()
@@ -52,6 +43,20 @@ pub fn replace_nodes<'a>(
         span: old_metadata.span,
         extra_nodes: new_nodes,
     }
+}
+
+// A parser for matching a token and extra nodes, producing metadata
+pub fn token<'a, I>(token_to_match: Token<'a>) -> impl Parser<'a, I, Metadata<'a>, ParserError<'a>>
+where
+    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
+{
+    just(token_to_match)
+        .map_with(|_, e| Metadata {
+            span: convert_span(e.span()),
+            extra_nodes: Vec::default(),
+        })
+        .then(extra_node_parser())
+        .map(|(a, b)| replace_nodes(a, b))
 }
 
 pub fn todo_parser<'a, I>() -> impl Parser<'a, I, (), ParserError<'a>>
