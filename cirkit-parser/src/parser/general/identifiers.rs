@@ -22,6 +22,14 @@ where
     identifier_parser().map(|a| ClassIdentifier(a))
 }
 
+pub fn modport_identifier_parser<'a, I>()
+-> impl Parser<'a, I, ModportIdentifier<'a>, ParserError<'a>>
+where
+    I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
+{
+    identifier_parser().map(|a| ModportIdentifier(a))
+}
+
 pub fn module_identifier_parser<'a, I>() -> impl Parser<'a, I, ModuleIdentifier<'a>, ParserError<'a>>
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
@@ -43,6 +51,7 @@ where
             extra_nodes: Vec::new()
         })),
     }
+    .labelled("an identifier")
     .then(extra_node_parser())
     .map(|(identifier, b)| match identifier {
         Identifier::SimpleIdentifier((text, metadata)) => {
@@ -70,10 +79,40 @@ where
     identifier_parser().map(|a| PackageIdentifier(a))
 }
 
+pub fn parameter_identifier_parser<'a, I>()
+-> impl Parser<'a, I, ParameterIdentifier<'a>, ParserError<'a>>
+where
+    I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
+{
+    identifier_parser().map(|a| ParameterIdentifier(a))
+}
+
+pub fn port_identifier_parser<'a, I>() -> impl Parser<'a, I, PortIdentifier<'a>, ParserError<'a>>
+where
+    I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
+{
+    identifier_parser().map(|a| PortIdentifier(a))
+}
+
 pub fn program_identifier_parser<'a, I>()
 -> impl Parser<'a, I, ProgramIdentifier<'a>, ParserError<'a>>
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
     identifier_parser().map(|a| ProgramIdentifier(a))
+}
+
+pub fn type_identifier_parser<'a, I>() -> impl Parser<'a, I, TypeIdentifier<'a>, ParserError<'a>>
+where
+    I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
+{
+    identifier_parser().map(|a| TypeIdentifier(a))
+}
+
+pub fn variable_identifier_parser<'a, I>()
+-> impl Parser<'a, I, VariableIdentifier<'a>, ParserError<'a>>
+where
+    I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
+{
+    identifier_parser().map(|a| VariableIdentifier(a))
 }

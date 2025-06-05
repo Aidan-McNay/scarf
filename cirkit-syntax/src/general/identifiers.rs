@@ -14,6 +14,9 @@ pub struct ClassIdentifier<'a>(pub Identifier<'a>);
 pub type EscapedIdentifier<'a> = (&'a str, Metadata<'a>);
 
 #[derive(Clone, Debug, PartialEq)]
+pub struct ModportIdentifier<'a>(pub Identifier<'a>);
+
+#[derive(Clone, Debug, PartialEq)]
 pub struct ModuleIdentifier<'a>(pub Identifier<'a>);
 
 #[derive(Clone, Debug, PartialEq)]
@@ -29,6 +32,18 @@ pub struct InterfaceIdentifier<'a>(pub Identifier<'a>);
 pub struct PackageIdentifier<'a>(pub Identifier<'a>);
 
 #[derive(Clone, Debug, PartialEq)]
+pub struct ParameterIdentifier<'a>(pub Identifier<'a>);
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct PortIdentifier<'a>(pub Identifier<'a>);
+
+#[derive(Clone, Debug, PartialEq)]
 pub struct ProgramIdentifier<'a>(pub Identifier<'a>);
 
 pub type SimpleIdentifier<'a> = (&'a str, Metadata<'a>);
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct TypeIdentifier<'a>(pub Identifier<'a>);
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct VariableIdentifier<'a>(pub Identifier<'a>);

@@ -37,8 +37,8 @@ pub struct ModuleNonansiHeader<'a>(
     pub Option<Lifetime<'a>>,
     pub ModuleIdentifier<'a>,
     pub Vec<PackageImportDeclaration>,
-    pub Option<ParameterPortList>,
-    pub ListOfPorts,
+    pub Option<ParameterPortList<'a>>,
+    pub ListOfPorts<'a>,
     pub Metadata<'a>, // ;
 );
 
@@ -49,8 +49,8 @@ pub struct ModuleAnsiHeader<'a>(
     pub Option<Lifetime<'a>>,
     pub ModuleIdentifier<'a>,
     pub Vec<PackageImportDeclaration>,
-    pub Option<ParameterPortList>,
-    pub Option<ListOfPortDeclarations>,
+    pub Option<ParameterPortList<'a>>,
+    pub Option<ListOfPortDeclarations<'a>>,
     pub Metadata<'a>, // ;
 );
 
@@ -164,8 +164,8 @@ pub struct InterfaceNonansiHeader<'a>(
     pub Option<Lifetime<'a>>,
     pub InterfaceIdentifier<'a>,
     pub Vec<PackageImportDeclaration>,
-    pub Option<ParameterPortList>,
-    pub ListOfPorts,
+    pub Option<ParameterPortList<'a>>,
+    pub ListOfPorts<'a>,
     pub Metadata<'a>, // ;
 );
 
@@ -176,8 +176,8 @@ pub struct InterfaceAnsiHeader<'a>(
     pub Option<Lifetime<'a>>,
     pub InterfaceIdentifier<'a>,
     pub Vec<PackageImportDeclaration>,
-    pub Option<ParameterPortList>,
-    pub Option<ListOfPortDeclarations>,
+    pub Option<ParameterPortList<'a>>,
+    pub Option<ListOfPortDeclarations<'a>>,
     pub Metadata<'a>, // ;
 );
 
@@ -236,8 +236,8 @@ pub struct ProgramNonansiHeader<'a>(
     pub Option<Lifetime<'a>>,
     pub ProgramIdentifier<'a>,
     pub Vec<PackageImportDeclaration>,
-    pub Option<ParameterPortList>,
-    pub ListOfPorts,
+    pub Option<ParameterPortList<'a>>,
+    pub ListOfPorts<'a>,
     pub Metadata<'a>, // ;
 );
 
@@ -248,8 +248,8 @@ pub struct ProgramAnsiHeader<'a>(
     pub Option<Lifetime<'a>>,
     pub ProgramIdentifier<'a>,
     pub Vec<PackageImportDeclaration>,
-    pub Option<ParameterPortList>,
-    pub Option<ListOfPortDeclarations>,
+    pub Option<ParameterPortList<'a>>,
+    pub Option<ListOfPortDeclarations<'a>>,
     pub Metadata<'a>, // ;
 );
 
@@ -270,7 +270,7 @@ pub struct ClassDeclaration<'a>(
     pub Metadata<'a>,         // class
     pub Option<FinalSpecifier<'a>>,
     pub ClassIdentifier<'a>,
-    pub Option<ParameterPortList>,
+    pub Option<ParameterPortList<'a>>,
     pub  Option<(
         Metadata<'a>, // extends
         ClassType,
@@ -302,7 +302,7 @@ pub struct InterfaceClassDeclaration<'a>(
     pub Metadata<'a>, // interface
     pub Metadata<'a>, // class
     pub ClassIdentifier<'a>,
-    pub Option<ParameterPortList>,
+    pub Option<ParameterPortList<'a>>,
     pub  Option<(
         Metadata<'a>, // extends
         InterfaceClassType,

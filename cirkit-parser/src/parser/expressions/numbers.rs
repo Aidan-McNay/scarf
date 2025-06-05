@@ -28,6 +28,7 @@ where
             extra_nodes: Vec::new()
         })
     }
+    .labelled("an unsigned number")
     .then(extra_node_parser())
     .map(|((text, metadata), b)| (text, replace_nodes(metadata, b)))
 }

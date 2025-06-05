@@ -7,7 +7,7 @@ use crate::*;
 use chumsky::prelude::*;
 use cirkit_syntax::*;
 
-fn attribute_instance_vec_parser<'a, I>()
+pub(crate) fn attribute_instance_vec_parser<'a, I>()
 -> impl Parser<'a, I, Vec<AttributeInstance<'a>>, ParserError<'a>>
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
@@ -52,6 +52,7 @@ where
             .map(|a| Description::DescriptionBindDirective(Box::new(a))),
         config_declaration_parser().map(|a| Description::ConfigDeclaration(Box::new(a))),
     ))
+    .boxed()
 }
 
 pub fn module_declaration_parser<'a, I>()
@@ -113,6 +114,7 @@ where
                 .or_not(),
         )
         .map(|((((a, b), c), d), e)| ModuleDeclarationAnsi(a, b, c, d, e))
+        .boxed()
 }
 
 pub fn module_nonansi_header_parser<'a, I>()
@@ -133,6 +135,7 @@ where
         .then(list_of_ports_parser())
         .then(token(Token::SColon))
         .map(|(((((((a, b), c), d), e), f), g), h)| ModuleNonansiHeader(a, b, c, d, e, f, g, h))
+        .boxed()
 }
 
 pub fn module_ansi_header_parser<'a, I>()
@@ -153,6 +156,7 @@ where
         .then(list_of_port_declarations_parser().or_not())
         .then(token(Token::SColon))
         .map(|(((((((a, b), c), d), e), f), g), h)| ModuleAnsiHeader(a, b, c, d, e, f, g, h))
+        .boxed()
 }
 
 pub fn module_declaration_wildcard_parser<'a, I>()
@@ -183,6 +187,7 @@ where
         .map(|(((((((((((a, b), c), d), e), f), g), h), i), j), k), l)| {
             ModuleDeclarationWildcard(a, b, c, d, e, f, g, h, i, j, k, l)
         })
+        .boxed()
 }
 
 pub fn module_declaration_extern_nonansi_parser<'a, I>()
@@ -253,6 +258,7 @@ where
                 .or_not(),
         )
         .map(|((((a, b), c), d), e)| InterfaceDeclarationNonansi(a, b, c, d, e))
+        .boxed()
 }
 
 pub fn interface_declaration_ansi_parser<'a, I>()
@@ -274,6 +280,7 @@ where
                 .or_not(),
         )
         .map(|((((a, b), c), d), e)| InterfaceDeclarationAnsi(a, b, c, d, e))
+        .boxed()
 }
 
 pub fn interface_declaration_wildcard_parser<'a, I>()
@@ -303,6 +310,7 @@ where
         .map(|((((((((((a, b), c), d), e), f), g), h), i), j), k)| {
             InterfaceDeclarationWildcard(a, b, c, d, e, f, g, h, i, j, k)
         })
+        .boxed()
 }
 
 pub fn interface_declaration_extern_nonansi_parser<'a, I>()
@@ -343,6 +351,7 @@ where
         .then(list_of_ports_parser())
         .then(token(Token::SColon))
         .map(|(((((((a, b), c), d), e), f), g), h)| InterfaceNonansiHeader(a, b, c, d, e, f, g, h))
+        .boxed()
 }
 
 pub fn interface_ansi_header_parser<'a, I>()
@@ -363,6 +372,7 @@ where
         .then(list_of_port_declarations_parser().or_not())
         .then(token(Token::SColon))
         .map(|(((((((a, b), c), d), e), f), g), h)| InterfaceAnsiHeader(a, b, c, d, e, f, g, h))
+        .boxed()
 }
 
 pub fn program_declaration_parser<'a, I>()
@@ -403,6 +413,7 @@ where
                 .or_not(),
         )
         .map(|((((a, b), c), d), e)| ProgramDeclarationNonansi(a, b, c, d, e))
+        .boxed()
 }
 
 pub fn program_declaration_ansi_parser<'a, I>()
@@ -424,6 +435,7 @@ where
                 .or_not(),
         )
         .map(|((((a, b), c), d), e)| ProgramDeclarationAnsi(a, b, c, d, e))
+        .boxed()
 }
 
 pub fn program_declaration_wildcard_parser<'a, I>()
@@ -453,6 +465,7 @@ where
         .map(|((((((((((a, b), c), d), e), f), g), h), i), j), k)| {
             ProgramDeclarationWildcard(a, b, c, d, e, f, g, h, i, j, k)
         })
+        .boxed()
 }
 
 pub fn program_declaration_extern_nonansi_parser<'a, I>()
@@ -493,6 +506,7 @@ where
         .then(list_of_ports_parser())
         .then(token(Token::SColon))
         .map(|(((((((a, b), c), d), e), f), g), h)| ProgramNonansiHeader(a, b, c, d, e, f, g, h))
+        .boxed()
 }
 
 pub fn program_ansi_header_parser<'a, I>()
@@ -513,6 +527,7 @@ where
         .then(list_of_port_declarations_parser().or_not())
         .then(token(Token::SColon))
         .map(|(((((((a, b), c), d), e), f), g), h)| ProgramAnsiHeader(a, b, c, d, e, f, g, h))
+        .boxed()
 }
 
 pub fn checker_declaration_parser<'a, I>()
@@ -540,6 +555,7 @@ where
                 .or_not(),
         )
         .map(|((((((a, b), c), d), e), f), g)| CheckerDeclaration(a, b, c, d, e, f, g))
+        .boxed()
 }
 
 pub fn class_declaration_parser<'a, I>() -> impl Parser<'a, I, ClassDeclaration<'a>, ParserError<'a>>
@@ -585,6 +601,7 @@ where
         .map(|((((((((((a, b), c), d), e), f), g), h), i), j), k)| {
             ClassDeclaration(a, b, c, d, e, f, g, h, i, j, k)
         })
+        .boxed()
 }
 
 pub fn interface_class_declaration_parser<'a, I>()
@@ -617,6 +634,7 @@ where
         .map(|((((((((a, b), c), d), e), f), g), h), i)| {
             InterfaceClassDeclaration(a, b, c, d, e, f, g, h, i)
         })
+        .boxed()
 }
 
 pub fn package_declaration_parser<'a, I>()
@@ -644,6 +662,7 @@ where
         .map(|((((((((a, b), c), d), e), f), g), h), i)| {
             PackageDeclaration(a, b, c, d, e, f, g, h, i)
         })
+        .boxed()
 }
 
 pub fn timeunits_declaration_parser<'a, I>()
@@ -684,4 +703,5 @@ where
         timeunitprecision_parser,
         timeprecisionunit_parser,
     ))
+    .boxed()
 }

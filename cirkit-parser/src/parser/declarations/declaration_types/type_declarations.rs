@@ -15,23 +15,27 @@ where
     todo_parser()
 }
 
+pub fn forward_type_parser<'a, I>() -> impl Parser<'a, I, ForwardType<'a>, ParserError<'a>>
+where
+    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
+{
+    choice((
+        token(Token::Enum).map(|a| ForwardType::Enum(a)),
+        token(Token::Struct).map(|a| ForwardType::Struct(a)),
+        token(Token::Union).map(|a| ForwardType::Union(a)),
+        token(Token::Class).map(|a| ForwardType::Class(a)),
+        token(Token::Interface)
+            .then(token(Token::Class))
+            .map(|(a, b)| ForwardType::InterfaceClass(a, b)),
+    ))
+}
+
 pub fn lifetime_parser<'a, I>() -> impl Parser<'a, I, Lifetime<'a>, ParserError<'a>>
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
-    select! {
-        Token::Static = e => Lifetime::Static(Metadata{
-            span: convert_span(e.span()),
-            extra_nodes: Vec::new()
-        }),
-        Token::Automatic = e => Lifetime::Automatic(Metadata{
-            span: convert_span(e.span()),
-            extra_nodes: Vec::new()
-        }),
-    }
-    .then(extra_node_parser())
-    .map(|(lifetime, b)| match lifetime {
-        Lifetime::Static(metadata) => Lifetime::Static(replace_nodes(metadata, b)),
-        Lifetime::Automatic(metadata) => Lifetime::Automatic(replace_nodes(metadata, b)),
-    })
+    choice((
+        token(Token::Static).map(|a| Lifetime::Static(a)),
+        token(Token::Automatic).map(|a| Lifetime::Automatic(a)),
+    ))
 }

@@ -20,3 +20,5 @@ pub enum TimeUnit<'a> {
     PS(Metadata<'a>),
     FS(Metadata<'a>),
 }
+
+pub type ConstantSelect<'a> = ();

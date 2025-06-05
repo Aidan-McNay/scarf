@@ -16,7 +16,7 @@ pub struct AttributeInstance<'a>(
 #[derive(Clone, Debug, PartialEq)]
 pub struct AttrSpec<'a>(
     pub AttrName<'a>,
-    pub Option<(Metadata<'a>, ConstantExpression)>,
+    pub Option<(Metadata<'a>, ConstantExpression<'a>)>,
 );
 
 #[derive(Clone, Debug, PartialEq)]

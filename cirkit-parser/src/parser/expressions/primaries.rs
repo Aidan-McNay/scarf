@@ -35,34 +35,32 @@ where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
     select! {
-        Token::TimeUnit(unit) = e => match unit {
-            "s" => TimeUnit::S(Metadata{
-                span: convert_span(e.span()),
-                extra_nodes: Vec::new()
-            }),
-            "ms" => TimeUnit::MS(Metadata{
-                span: convert_span(e.span()),
-                extra_nodes: Vec::new()
-            }),
-            "us" => TimeUnit::US(Metadata{
-                span: convert_span(e.span()),
-                extra_nodes: Vec::new()
-            }),
-            "ns" => TimeUnit::NS(Metadata{
-                span: convert_span(e.span()),
-                extra_nodes: Vec::new()
-            }),
-            "ps" => TimeUnit::PS(Metadata{
-                span: convert_span(e.span()),
-                extra_nodes: Vec::new()
-            }),
-            "fs" => TimeUnit::FS(Metadata{
-                span: convert_span(e.span()),
-                extra_nodes: Vec::new()
-            }),
-            _ => panic!("Internal issue identifying time units")
-        }
+        Token::TimeUnit(unit) = e if unit == "s" => TimeUnit::S(Metadata{
+            span: convert_span(e.span()),
+            extra_nodes: Vec::new()
+        }),
+        Token::TimeUnit(unit) = e if unit == "ms" => TimeUnit::MS(Metadata{
+            span: convert_span(e.span()),
+            extra_nodes: Vec::new()
+        }),
+        Token::TimeUnit(unit) = e if unit == "us" => TimeUnit::US(Metadata{
+            span: convert_span(e.span()),
+            extra_nodes: Vec::new()
+        }),
+        Token::TimeUnit(unit) = e if unit == "ns" => TimeUnit::NS(Metadata{
+            span: convert_span(e.span()),
+            extra_nodes: Vec::new()
+        }),
+        Token::TimeUnit(unit) = e if unit == "ps" => TimeUnit::PS(Metadata{
+            span: convert_span(e.span()),
+            extra_nodes: Vec::new()
+        }),
+        Token::TimeUnit(unit) = e if unit == "fs" => TimeUnit::FS(Metadata{
+            span: convert_span(e.span()),
+            extra_nodes: Vec::new()
+        }),
     }
+    .labelled("a time unit")
     .then(extra_node_parser())
     .map(|(timeunit, b)| match timeunit {
         TimeUnit::S(metadata) => TimeUnit::S(replace_nodes(metadata, b)),
@@ -72,4 +70,11 @@ where
         TimeUnit::PS(metadata) => TimeUnit::S(replace_nodes(metadata, b)),
         TimeUnit::FS(metadata) => TimeUnit::S(replace_nodes(metadata, b)),
     })
+}
+
+pub fn constant_select_parser<'a, I>() -> impl Parser<'a, I, ConstantSelect<'a>, ParserError<'a>>
+where
+    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
+{
+    todo_parser()
 }

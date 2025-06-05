@@ -5,4 +5,8 @@
 
 use crate::*;
 
-pub type FinalSpecifier<'a> = (Metadata<'a>,);
+#[derive(Clone, Debug, PartialEq)]
+pub struct FinalSpecifier<'a>(
+    pub Metadata<'a>, // :
+    pub Metadata<'a>, // final
+);

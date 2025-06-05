@@ -11,12 +11,7 @@ pub fn final_specifier_parser<'a, I>() -> impl Parser<'a, I, FinalSpecifier<'a>,
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
-    select! {
-        Token::Final = e => Metadata{
-            span: convert_span(e.span()),
-            extra_nodes: Vec::new()
-        }
-    }
-    .then(extra_node_parser())
-    .map(|(metadata, b)| (replace_nodes(metadata, b),))
+    token(Token::Colon)
+        .then(token(Token::Final))
+        .map(|(a, b)| FinalSpecifier(a, b))
 }
