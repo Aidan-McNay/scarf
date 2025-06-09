@@ -120,29 +120,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cirkit"
-version = "0.1.0"
-dependencies = [
- "cirkit-parser",
- "clap",
-]
-
-[[package]]
-name = "cirkit-parser"
-version = "0.1.0"
-dependencies = [
- "ariadne",
- "chumsky",
- "cirkit-syntax",
- "logos",
- "regex",
-]
-
-[[package]]
-name = "cirkit-syntax"
-version = "0.1.0"
-
-[[package]]
 name = "clap"
 version = "4.5.39"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -405,6 +382,29 @@ checksum = "cfcb3a22ef46e85b45de6ee7e79d063319ebb6594faafcf1c225ea92ab6e9b92"
 dependencies = [
  "semver",
 ]
+
+[[package]]
+name = "scarf"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "scarf-parser",
+]
+
+[[package]]
+name = "scarf-parser"
+version = "0.1.0"
+dependencies = [
+ "ariadne",
+ "chumsky",
+ "logos",
+ "regex",
+ "scarf-syntax",
+]
+
+[[package]]
+name = "scarf-syntax"
+version = "0.1.0"
 
 [[package]]
 name = "semver"
