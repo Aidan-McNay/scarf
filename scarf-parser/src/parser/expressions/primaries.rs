@@ -72,6 +72,34 @@ where
     })
 }
 
+pub fn implicit_class_handle_parser<'a, I>()
+-> impl Parser<'a, I, ImplicitClassHandle<'a>, ParserError<'a>>
+where
+    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
+{
+    let _this_parser = token(Token::This).map(|a| ImplicitClassHandle::This(a));
+    let _super_parser = token(Token::Super).map(|a| ImplicitClassHandle::Super(a));
+    let _this_super_parser = token(Token::This)
+        .then(token(Token::Period))
+        .then(token(Token::Super))
+        .map(|((a, b), c)| ImplicitClassHandle::ThisSuper(a, b, c));
+    choice((_this_parser, _super_parser, _this_super_parser))
+}
+
+pub fn constant_bit_select_parser<'a, I>()
+-> impl Parser<'a, I, ConstantBitSelect<'a>, ParserError<'a>>
+where
+    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
+{
+    token(Token::Bracket)
+        .then(constant_expression_parser())
+        .then(token(Token::EBracket))
+        .map(|((a, b), c)| (a, b, c))
+        .repeated()
+        .collect::<Vec<(Metadata<'a>, ConstantExpression<'a>, Metadata<'a>)>>()
+        .map(|a| ConstantBitSelect(a))
+}
+
 pub fn constant_select_parser<'a, I>() -> impl Parser<'a, I, ConstantSelect<'a>, ParserError<'a>>
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,

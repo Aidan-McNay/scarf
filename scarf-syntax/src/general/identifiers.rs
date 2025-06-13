@@ -86,8 +86,7 @@ pub struct HierarchicalEventIdentifier<'a>(pub HierarchicalIdentifier<'a>);
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct HierarchicalIdentifier<'a>(
-    pub Metadata<'a>, // $root
-    pub Metadata<'a>, // .
+    pub Option<(Metadata<'a>, Metadata<'a>)>, // $root .
     pub  Vec<(
         Identifier<'a>,
         ConstantBitSelect<'a>,
@@ -197,6 +196,78 @@ pub struct PsCheckerIdentifier<'a>(pub Option<PackageScope<'a>>, pub CheckerIden
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct PsIdentifier<'a>(pub Option<PackageScope<'a>>, pub Identifier<'a>);
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum PsOrHierarchicalArrayIdentifierScope<'a> {
+    ImplicitClassHandle(ImplicitClassHandle<'a>, Metadata<'a>),
+    ClassScope(ClassScope<'a>),
+    PackageScope(PackageScope<'a>),
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct PsOrHierarchicalArrayIdentifier<'a>(
+    pub Option<PsOrHierarchicalArrayIdentifierScope<'a>>,
+    pub HierarchicalArrayIdentifier<'a>,
+);
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum PsOrHierarchicalNetIdentifier<'a> {
+    PackageScope(Option<PackageScope<'a>>, NetIdentifier<'a>),
+    Hierarchical(HierarchicalNetIdentifier<'a>),
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum PsOrHierarchicalPropertyIdentifier<'a> {
+    PackageScope(Option<PackageScope<'a>>, PropertyIdentifier<'a>),
+    Hierarchical(HierarchicalPropertyIdentifier<'a>),
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum PsOrHierarchicalSequenceIdentifier<'a> {
+    PackageScope(Option<PackageScope<'a>>, SequenceIdentifier<'a>),
+    Hierarchical(HierarchicalSequenceIdentifier<'a>),
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum PsOrHierarchicalTfIdentifier<'a> {
+    PackageScope(Option<PackageScope<'a>>, TfIdentifier<'a>),
+    Hierarchical(HierarchicalTfIdentifier<'a>),
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum PsParameterIdentifierScope<'a> {
+    ClassScope(ClassScope<'a>),
+    PackageScope(PackageScope<'a>),
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum PsParameterIdentifier<'a> {
+    Scoped(
+        Option<PsParameterIdentifierScope<'a>>,
+        ParameterIdentifier<'a>,
+    ),
+    Generated(
+        Vec<(
+            GenerateBlockIdentifier<'a>,
+            Option<(Metadata<'a>, ConstantExpression<'a>, Metadata<'a>)>,
+            Metadata<'a>, // .
+        )>,
+        ParameterIdentifier<'a>,
+    ),
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum PsTypeIdentifierScope<'a> {
+    LocalScope(Metadata<'a>, Metadata<'a>),
+    ClassScope(ClassScope<'a>),
+    PackageScope(PackageScope<'a>),
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct PsTypeIdentifier<'a>(
+    pub Option<PsTypeIdentifierScope<'a>>,
+    pub TypeIdentifier<'a>,
+);
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct RsProductionIdentifier<'a>(pub Identifier<'a>);

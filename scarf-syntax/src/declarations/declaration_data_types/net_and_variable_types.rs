@@ -7,7 +7,14 @@ use crate::*;
 
 pub type DataType<'a> = ();
 pub type DataTypeOrImplicit<'a> = ();
-pub type ClassType = ();
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct ClassScope<'a>(
+    pub ClassType<'a>,
+    pub Metadata<'a>, // ::
+);
+
+pub type ClassType<'a> = ();
 pub type InterfaceClassType = ();
 
 #[derive(Clone, Debug, PartialEq)]

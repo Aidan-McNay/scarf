@@ -22,7 +22,16 @@ where
     todo_parser()
 }
 
-pub fn class_type_parser<'a, I>() -> impl Parser<'a, I, ClassType, ParserError<'a>>
+pub fn class_scope_parser<'a, I>() -> impl Parser<'a, I, ClassScope<'a>, ParserError<'a>>
+where
+    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
+{
+    class_type_parser()
+        .then(token(Token::ColonColon))
+        .map(|(a, b)| ClassScope(a, b))
+}
+
+pub fn class_type_parser<'a, I>() -> impl Parser<'a, I, ClassType<'a>, ParserError<'a>>
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {

@@ -273,7 +273,7 @@ pub struct ClassDeclaration<'a>(
     pub Option<ParameterPortList<'a>>,
     pub  Option<(
         Metadata<'a>, // extends
-        ClassType,
+        ClassType<'a>,
         Option<(
             Metadata<'a>, // (
             ClassDeclarationExtensionArguments<'a>,

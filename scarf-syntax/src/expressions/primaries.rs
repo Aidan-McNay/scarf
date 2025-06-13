@@ -22,6 +22,13 @@ pub enum TimeUnit<'a> {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+pub enum ImplicitClassHandle<'a> {
+    This(Metadata<'a>),
+    Super(Metadata<'a>),
+    ThisSuper(Metadata<'a>, Metadata<'a>, Metadata<'a>),
+}
+
+#[derive(Clone, Debug, PartialEq)]
 pub struct ConstantBitSelect<'a>(
     pub  Vec<(
         Metadata<'a>, // [
