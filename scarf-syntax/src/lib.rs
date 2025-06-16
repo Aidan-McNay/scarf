@@ -3,6 +3,7 @@
 // =======================================================================
 // The top-level collection of AST nodes
 
+pub mod behavioral_statements;
 pub mod compiler_directives;
 pub mod declarations;
 pub mod expressions;
@@ -10,6 +11,7 @@ pub mod general;
 pub mod metadata;
 pub mod source_text;
 pub mod udp_declaration_and_instantiation;
+pub use behavioral_statements::*;
 pub use compiler_directives::*;
 pub use declarations::*;
 pub use expressions::*;

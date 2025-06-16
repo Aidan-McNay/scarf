@@ -19,7 +19,7 @@ where
                 .collect::<Vec<UnpackedDimension<'a>>>(),
         )
         .then(
-            token(Token::Colon)
+            token(Token::Comma)
                 .then(interface_identifier_parser())
                 .then(
                     unpacked_dimension_parser()
@@ -44,7 +44,7 @@ where
 {
     param_assignment_parser()
         .then(
-            token(Token::Colon)
+            token(Token::Comma)
                 .then(param_assignment_parser())
                 .repeated()
                 .collect::<Vec<(Metadata<'a>, ParamAssignment<'a>)>>(),
@@ -64,7 +64,7 @@ where
                 .collect::<Vec<UnpackedDimension<'a>>>(),
         )
         .then(
-            token(Token::Colon)
+            token(Token::Comma)
                 .then(port_identifier_parser())
                 .then(
                     unpacked_dimension_parser()
@@ -82,6 +82,21 @@ where
         .map(|((a, b), c)| ListOfPortIdentifiers(a, b, c))
 }
 
+pub fn list_of_specparam_assignments_parser<'a, I>()
+-> impl Parser<'a, I, ListOfSpecparamAssignments<'a>, ParserError<'a>>
+where
+    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
+{
+    specparam_assignment_parser()
+        .then(
+            token(Token::Comma)
+                .then(specparam_assignment_parser())
+                .repeated()
+                .collect::<Vec<(Metadata<'a>, SpecparamAssignment<'a>)>>(),
+        )
+        .map(|(a, b)| ListOfSpecparamAssignments(a, b))
+}
+
 pub fn list_of_type_assignments_parser<'a, I>()
 -> impl Parser<'a, I, ListOfTypeAssignments<'a>, ParserError<'a>>
 where
@@ -89,7 +104,7 @@ where
 {
     type_assignment_parser()
         .then(
-            token(Token::Colon)
+            token(Token::Comma)
                 .then(type_assignment_parser())
                 .repeated()
                 .collect::<Vec<(Metadata<'a>, TypeAssignment<'a>)>>(),
@@ -109,7 +124,7 @@ where
                 .collect::<Vec<VariableDimension<'a>>>(),
         )
         .then(
-            token(Token::Colon)
+            token(Token::Comma)
                 .then(variable_identifier_parser())
                 .then(
                     variable_dimension_parser()

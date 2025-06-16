@@ -293,7 +293,7 @@ pub struct ClassDeclaration<'a>(
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum ClassDeclarationExtensionArguments<'a> {
-    ListOfArguments(Box<ListOfArguments>),
+    ListOfArguments(Box<ListOfArguments<'a>>),
     Default(Metadata<'a>),
 }
 

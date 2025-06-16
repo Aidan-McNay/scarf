@@ -12,6 +12,8 @@ pub struct ParamAssignment<'a>(
     pub Option<(Metadata<'a>, ConstantParamExpression<'a>)>,
 );
 
+pub type SpecparamAssignment<'a> = ();
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct TypeAssignment<'a>(
     pub TypeIdentifier<'a>,

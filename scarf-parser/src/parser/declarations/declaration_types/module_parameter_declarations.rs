@@ -47,3 +47,15 @@ where
         .then(list_of_type_assignments_parser())
         .map(|((a, b), c)| TypeParameterDeclaration(a, b, c))
 }
+
+pub fn specparam_declaration_parser<'a, I>()
+-> impl Parser<'a, I, SpecparamDeclaration<'a>, ParserError<'a>>
+where
+    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
+{
+    token(Token::Specparam)
+        .then(packed_dimension_parser().or_not())
+        .then(list_of_specparam_assignments_parser())
+        .then(token(Token::SColon))
+        .map(|(((a, b), c), d)| SpecparamDeclaration(a, b, c, d))
+}

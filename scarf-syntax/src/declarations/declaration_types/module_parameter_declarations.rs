@@ -37,3 +37,11 @@ pub struct TypeParameterDeclaration<'a>(
     pub Option<ForwardType<'a>>,
     pub ListOfTypeAssignments<'a>,
 );
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct SpecparamDeclaration<'a>(
+    pub Metadata<'a>, // specparam
+    pub Option<PackedDimension<'a>>,
+    pub ListOfSpecparamAssignments<'a>,
+    pub Metadata<'a>, // ;
+);

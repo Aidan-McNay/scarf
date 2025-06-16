@@ -761,6 +761,14 @@ pub enum Token<'a> {
     DollarRoot,
     #[token("$unit")]
     DollarUnit,
+    #[token("$fatal")]
+    DollarFatal,
+    #[token("$error")]
+    DollarError,
+    #[token("$warning")]
+    DollarWarning,
+    #[token("$info")]
+    DollarInfo,
     // Comments
     #[regex(r"//[^\n]*", oneline_comment)]
     OnelineComment(&'a str),
@@ -790,7 +798,7 @@ pub enum Token<'a> {
     SystemIdentifier(&'a str),
     #[regex(r"[a-zA-Z_][a-zA-Z0-9_\$]*", |lex| lex.slice())]
     SimpleIdentifier(&'a str),
-    #[regex(r"\[!-~]*\\s", |lex| lex.slice())]
+    #[regex(r"\\[!-~]+", |lex| lex.slice())]
     EscapedIdentifier(&'a str),
     TimeUnit(&'a str), // Created in post-processing
     #[regex(
@@ -1176,6 +1184,10 @@ impl<'a> Token<'a> {
             Token::DollarNochange => "$nochange",
             Token::DollarRoot => "$root",
             Token::DollarUnit => "$unit",
+            Token::DollarFatal => "$fatal",
+            Token::DollarError => "$error",
+            Token::DollarWarning => "$warning",
+            Token::DollarInfo => "$info",
             Token::OnelineComment(_text) => "<oneline comment>",
             Token::BlockCommentStart => "/*",
             Token::BlockCommentEnd => "*/",

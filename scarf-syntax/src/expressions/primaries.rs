@@ -28,6 +28,8 @@ pub enum ImplicitClassHandle<'a> {
     ThisSuper(Metadata<'a>, Metadata<'a>, Metadata<'a>),
 }
 
+pub type Select<'a> = ();
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct ConstantBitSelect<'a>(
     pub  Vec<(

@@ -25,6 +25,14 @@ where
         .map(|((a, b), c)| ParamAssignment(a, b, c))
 }
 
+pub fn specparam_assignment_parser<'a, I>()
+-> impl Parser<'a, I, SpecparamAssignment<'a>, ParserError<'a>>
+where
+    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
+{
+    todo_parser()
+}
+
 pub fn type_assignment_parser<'a, I>() -> impl Parser<'a, I, TypeAssignment<'a>, ParserError<'a>>
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
