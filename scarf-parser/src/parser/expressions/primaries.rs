@@ -7,7 +7,7 @@ use crate::*;
 use chumsky::prelude::*;
 use scarf_syntax::*;
 
-pub fn time_literal_parser<'a, I>() -> impl Parser<'a, I, TimeLiteral<'a>, ParserError<'a>>
+pub fn time_literal_parser<'a, I>() -> impl Parser<'a, I, TimeLiteral<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
@@ -30,7 +30,7 @@ where
     })
 }
 
-fn time_unit_parser<'a, I>() -> impl Parser<'a, I, TimeUnit<'a>, ParserError<'a>>
+fn time_unit_parser<'a, I>() -> impl Parser<'a, I, TimeUnit<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
@@ -72,8 +72,23 @@ where
     })
 }
 
+pub fn select_parser<'a, I>() -> impl Parser<'a, I, Select<'a>, ParserError<'a>> + Clone
+where
+    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
+{
+    todo_parser()
+}
+
+pub fn nonrange_select_parser<'a, I>()
+-> impl Parser<'a, I, NonrangeSelect<'a>, ParserError<'a>> + Clone
+where
+    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
+{
+    todo_parser()
+}
+
 pub fn implicit_class_handle_parser<'a, I>()
--> impl Parser<'a, I, ImplicitClassHandle<'a>, ParserError<'a>>
+-> impl Parser<'a, I, ImplicitClassHandle<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
@@ -87,7 +102,7 @@ where
 }
 
 pub fn constant_bit_select_parser<'a, I>()
--> impl Parser<'a, I, ConstantBitSelect<'a>, ParserError<'a>>
+-> impl Parser<'a, I, ConstantBitSelect<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
@@ -100,7 +115,8 @@ where
         .map(|a| ConstantBitSelect(a))
 }
 
-pub fn constant_select_parser<'a, I>() -> impl Parser<'a, I, ConstantSelect<'a>, ParserError<'a>>
+pub fn constant_select_parser<'a, I>()
+-> impl Parser<'a, I, ConstantSelect<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {

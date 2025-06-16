@@ -8,7 +8,7 @@ use chumsky::prelude::*;
 use scarf_syntax::*;
 
 pub fn unpacked_dimension_parser<'a, I>()
--> impl Parser<'a, I, UnpackedDimension<'a>, ParserError<'a>>
+-> impl Parser<'a, I, UnpackedDimension<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
@@ -23,7 +23,8 @@ where
     choice((unpacked_range_parser, unpacked_expression_parser))
 }
 
-pub fn packed_dimension_parser<'a, I>() -> impl Parser<'a, I, PackedDimension<'a>, ParserError<'a>>
+pub fn packed_dimension_parser<'a, I>()
+-> impl Parser<'a, I, PackedDimension<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
@@ -38,7 +39,7 @@ where
 }
 
 pub fn associative_dimension_parser<'a, I>()
--> impl Parser<'a, I, AssociativeDimension<'a>, ParserError<'a>>
+-> impl Parser<'a, I, AssociativeDimension<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
@@ -54,7 +55,7 @@ where
 }
 
 pub fn variable_dimension_parser<'a, I>()
--> impl Parser<'a, I, VariableDimension<'a>, ParserError<'a>>
+-> impl Parser<'a, I, VariableDimension<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
@@ -67,7 +68,8 @@ where
     ))
 }
 
-pub fn queue_dimension_parser<'a, I>() -> impl Parser<'a, I, QueueDimension<'a>, ParserError<'a>>
+pub fn queue_dimension_parser<'a, I>()
+-> impl Parser<'a, I, QueueDimension<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
@@ -82,7 +84,8 @@ where
         .map(|(((a, b), c), d)| QueueDimension(a, b, c, d))
 }
 
-pub fn unsized_dimension_parser<'a, I>() -> impl Parser<'a, I, UnsizedDimension<'a>, ParserError<'a>>
+pub fn unsized_dimension_parser<'a, I>()
+-> impl Parser<'a, I, UnsizedDimension<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {

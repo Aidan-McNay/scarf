@@ -8,7 +8,7 @@ use chumsky::prelude::*;
 use scarf_syntax::*;
 
 pub fn fixed_point_number_parser<'a, I>()
--> impl Parser<'a, I, FixedPointNumber<'a>, ParserError<'a>>
+-> impl Parser<'a, I, FixedPointNumber<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
@@ -18,7 +18,8 @@ where
         .map(|(a, b)| FixedPointNumber(a, b))
 }
 
-pub fn unsigned_number_parser<'a, I>() -> impl Parser<'a, I, UnsignedNumber<'a>, ParserError<'a>>
+pub fn unsigned_number_parser<'a, I>()
+-> impl Parser<'a, I, UnsignedNumber<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {

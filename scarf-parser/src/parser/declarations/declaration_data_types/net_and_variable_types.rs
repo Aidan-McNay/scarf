@@ -7,7 +7,7 @@ use crate::*;
 use chumsky::prelude::*;
 use scarf_syntax::*;
 
-pub fn data_type_parser<'a, I>() -> impl Parser<'a, I, DataType<'a>, ParserError<'a>>
+pub fn data_type_parser<'a, I>() -> impl Parser<'a, I, DataType<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
@@ -15,14 +15,14 @@ where
 }
 
 pub fn data_type_or_implicit_parser<'a, I>()
--> impl Parser<'a, I, DataTypeOrImplicit<'a>, ParserError<'a>>
+-> impl Parser<'a, I, DataTypeOrImplicit<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
     todo_parser()
 }
 
-pub fn class_scope_parser<'a, I>() -> impl Parser<'a, I, ClassScope<'a>, ParserError<'a>>
+pub fn class_scope_parser<'a, I>() -> impl Parser<'a, I, ClassScope<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
@@ -31,7 +31,7 @@ where
         .map(|(a, b)| ClassScope(a, b))
 }
 
-pub fn class_type_parser<'a, I>() -> impl Parser<'a, I, ClassType<'a>, ParserError<'a>>
+pub fn class_type_parser<'a, I>() -> impl Parser<'a, I, ClassType<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
@@ -39,14 +39,15 @@ where
 }
 
 pub fn interface_class_type_parser<'a, I>()
--> impl Parser<'a, I, InterfaceClassType, ParserError<'a>>
+-> impl Parser<'a, I, InterfaceClassType, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
     todo_parser()
 }
 
-pub fn integer_atom_type_parser<'a, I>() -> impl Parser<'a, I, IntegerAtomType<'a>, ParserError<'a>>
+pub fn integer_atom_type_parser<'a, I>()
+-> impl Parser<'a, I, IntegerAtomType<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
@@ -61,7 +62,7 @@ where
 }
 
 pub fn integer_vector_type_parser<'a, I>()
--> impl Parser<'a, I, IntegerVectorType<'a>, ParserError<'a>>
+-> impl Parser<'a, I, IntegerVectorType<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
@@ -72,7 +73,8 @@ where
     ))
 }
 
-pub fn non_integer_type_parser<'a, I>() -> impl Parser<'a, I, NonIntegerType<'a>, ParserError<'a>>
+pub fn non_integer_type_parser<'a, I>()
+-> impl Parser<'a, I, NonIntegerType<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
@@ -83,7 +85,7 @@ where
     ))
 }
 
-pub fn net_type_parser<'a, I>() -> impl Parser<'a, I, NetType<'a>, ParserError<'a>>
+pub fn net_type_parser<'a, I>() -> impl Parser<'a, I, NetType<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
@@ -103,7 +105,7 @@ where
     ))
 }
 
-pub fn net_port_type_parser<'a, I>() -> impl Parser<'a, I, NetPortType<'a>, ParserError<'a>>
+pub fn net_port_type_parser<'a, I>() -> impl Parser<'a, I, NetPortType<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
@@ -111,14 +113,14 @@ where
 }
 
 pub fn variable_port_type_parser<'a, I>()
--> impl Parser<'a, I, VariablePortType<'a>, ParserError<'a>>
+-> impl Parser<'a, I, VariablePortType<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
     todo_parser()
 }
 
-pub fn signing_parser<'a, I>() -> impl Parser<'a, I, Signing<'a>, ParserError<'a>>
+pub fn signing_parser<'a, I>() -> impl Parser<'a, I, Signing<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
@@ -128,7 +130,7 @@ where
     ))
 }
 
-pub fn struct_union_parser<'a, I>() -> impl Parser<'a, I, StructUnion<'a>, ParserError<'a>>
+pub fn struct_union_parser<'a, I>() -> impl Parser<'a, I, StructUnion<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
@@ -145,7 +147,7 @@ where
 }
 
 pub fn data_type_or_incomplete_class_scoped_type_parser<'a, I>()
--> impl Parser<'a, I, DataTypeOrIncompleteClassScopedType<'a>, ParserError<'a>>
+-> impl Parser<'a, I, DataTypeOrIncompleteClassScopedType<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {

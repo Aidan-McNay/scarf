@@ -8,7 +8,7 @@ use chumsky::prelude::*;
 use scarf_syntax::*;
 
 pub fn local_parameter_declaration_parser<'a, I>()
--> impl Parser<'a, I, LocalParameterDeclaration<'a>, ParserError<'a>>
+-> impl Parser<'a, I, LocalParameterDeclaration<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
@@ -23,7 +23,7 @@ where
 }
 
 pub fn parameter_declaration_parser<'a, I>()
--> impl Parser<'a, I, ParameterDeclaration<'a>, ParserError<'a>>
+-> impl Parser<'a, I, ParameterDeclaration<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
@@ -38,7 +38,7 @@ where
 }
 
 pub fn type_parameter_declaration_parser<'a, I>()
--> impl Parser<'a, I, TypeParameterDeclaration<'a>, ParserError<'a>>
+-> impl Parser<'a, I, TypeParameterDeclaration<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
@@ -49,7 +49,7 @@ where
 }
 
 pub fn specparam_declaration_parser<'a, I>()
--> impl Parser<'a, I, SpecparamDeclaration<'a>, ParserError<'a>>
+-> impl Parser<'a, I, SpecparamDeclaration<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {

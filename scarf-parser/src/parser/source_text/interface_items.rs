@@ -7,7 +7,7 @@ use crate::*;
 use chumsky::prelude::*;
 use scarf_syntax::*;
 
-pub fn interface_item_parser<'a, I>() -> impl Parser<'a, I, InterfaceItem, ParserError<'a>>
+pub fn interface_item_parser<'a, I>() -> impl Parser<'a, I, InterfaceItem, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
@@ -15,7 +15,7 @@ where
 }
 
 pub fn non_port_interface_item_parser<'a, I>()
--> impl Parser<'a, I, NonPortInterfaceItem, ParserError<'a>>
+-> impl Parser<'a, I, NonPortInterfaceItem, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {

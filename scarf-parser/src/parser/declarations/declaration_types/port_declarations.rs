@@ -7,7 +7,8 @@ use crate::*;
 use chumsky::prelude::*;
 use scarf_syntax::*;
 
-pub fn inout_declaration_parser<'a, I>() -> impl Parser<'a, I, InoutDeclaration<'a>, ParserError<'a>>
+pub fn inout_declaration_parser<'a, I>()
+-> impl Parser<'a, I, InoutDeclaration<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
@@ -17,7 +18,8 @@ where
         .map(|((a, b), c)| InoutDeclaration(a, b, c))
 }
 
-pub fn input_declaration_parser<'a, I>() -> impl Parser<'a, I, InputDeclaration<'a>, ParserError<'a>>
+pub fn input_declaration_parser<'a, I>()
+-> impl Parser<'a, I, InputDeclaration<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
@@ -36,7 +38,7 @@ where
 }
 
 pub fn output_declaration_parser<'a, I>()
--> impl Parser<'a, I, OutputDeclaration<'a>, ParserError<'a>>
+-> impl Parser<'a, I, OutputDeclaration<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
@@ -55,7 +57,7 @@ where
 }
 
 pub fn interface_port_declaration_parser<'a, I>()
--> impl Parser<'a, I, InterfacePortDeclaration<'a>, ParserError<'a>>
+-> impl Parser<'a, I, InterfacePortDeclaration<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
@@ -70,7 +72,8 @@ where
     choice((interface_parser, modport_parser))
 }
 
-pub fn ref_declaration_parser<'a, I>() -> impl Parser<'a, I, RefDeclaration<'a>, ParserError<'a>>
+pub fn ref_declaration_parser<'a, I>()
+-> impl Parser<'a, I, RefDeclaration<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {

@@ -7,7 +7,8 @@ use crate::*;
 use chumsky::prelude::*;
 use scarf_syntax::*;
 
-pub fn unary_operator_parser<'a, I>() -> impl Parser<'a, I, UnaryOperator<'a>, ParserError<'a>>
+pub fn unary_operator_parser<'a, I>()
+-> impl Parser<'a, I, UnaryOperator<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
@@ -26,7 +27,8 @@ where
     ))
 }
 
-pub fn binary_operator_parser<'a, I>() -> impl Parser<'a, I, BinaryOperator<'a>, ParserError<'a>>
+pub fn binary_operator_parser<'a, I>()
+-> impl Parser<'a, I, BinaryOperator<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
@@ -69,7 +71,7 @@ where
 }
 
 pub fn inc_or_dec_operator_parser<'a, I>()
--> impl Parser<'a, I, IncOrDecOperator<'a>, ParserError<'a>>
+-> impl Parser<'a, I, IncOrDecOperator<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
@@ -80,7 +82,7 @@ where
 }
 
 pub fn unary_module_path_operator_parser<'a, I>()
--> impl Parser<'a, I, UnaryModulePathOperator<'a>, ParserError<'a>>
+-> impl Parser<'a, I, UnaryModulePathOperator<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
@@ -98,7 +100,7 @@ where
 }
 
 pub fn binary_module_path_operator_parser<'a, I>()
--> impl Parser<'a, I, BinaryModulePathOperator<'a>, ParserError<'a>>
+-> impl Parser<'a, I, BinaryModulePathOperator<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {

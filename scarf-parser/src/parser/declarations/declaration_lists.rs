@@ -8,7 +8,7 @@ use chumsky::prelude::*;
 use scarf_syntax::*;
 
 pub fn list_of_interface_identifiers_parser<'a, I>()
--> impl Parser<'a, I, ListOfInterfaceIdentifiers<'a>, ParserError<'a>>
+-> impl Parser<'a, I, ListOfInterfaceIdentifiers<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
@@ -38,7 +38,7 @@ where
 }
 
 pub fn list_of_param_assignments_parser<'a, I>()
--> impl Parser<'a, I, ListOfParamAssignments<'a>, ParserError<'a>>
+-> impl Parser<'a, I, ListOfParamAssignments<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
@@ -53,7 +53,7 @@ where
 }
 
 pub fn list_of_port_identifiers_parser<'a, I>()
--> impl Parser<'a, I, ListOfPortIdentifiers<'a>, ParserError<'a>>
+-> impl Parser<'a, I, ListOfPortIdentifiers<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
@@ -83,7 +83,7 @@ where
 }
 
 pub fn list_of_specparam_assignments_parser<'a, I>()
--> impl Parser<'a, I, ListOfSpecparamAssignments<'a>, ParserError<'a>>
+-> impl Parser<'a, I, ListOfSpecparamAssignments<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
@@ -98,7 +98,7 @@ where
 }
 
 pub fn list_of_type_assignments_parser<'a, I>()
--> impl Parser<'a, I, ListOfTypeAssignments<'a>, ParserError<'a>>
+-> impl Parser<'a, I, ListOfTypeAssignments<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
@@ -113,7 +113,7 @@ where
 }
 
 pub fn list_of_variable_identifiers_parser<'a, I>()
--> impl Parser<'a, I, ListOfVariableIdentifiers<'a>, ParserError<'a>>
+-> impl Parser<'a, I, ListOfVariableIdentifiers<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {

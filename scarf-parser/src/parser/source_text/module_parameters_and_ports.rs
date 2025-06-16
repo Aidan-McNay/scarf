@@ -8,7 +8,7 @@ use chumsky::prelude::*;
 use scarf_syntax::*;
 
 pub fn parameter_port_list_parser<'a, I>()
--> impl Parser<'a, I, ParameterPortList<'a>, ParserError<'a>>
+-> impl Parser<'a, I, ParameterPortList<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
@@ -42,7 +42,7 @@ where
 }
 
 pub fn parameter_port_declaration_parser<'a, I>()
--> impl Parser<'a, I, ParameterPortDeclaration<'a>, ParserError<'a>>
+-> impl Parser<'a, I, ParameterPortDeclaration<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
@@ -59,7 +59,7 @@ where
     ))
 }
 
-pub fn list_of_ports_parser<'a, I>() -> impl Parser<'a, I, ListOfPorts<'a>, ParserError<'a>>
+pub fn list_of_ports_parser<'a, I>() -> impl Parser<'a, I, ListOfPorts<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
@@ -76,7 +76,7 @@ where
 }
 
 pub fn list_of_port_declarations_parser<'a, I>()
--> impl Parser<'a, I, ListOfPortDeclarations<'a>, ParserError<'a>>
+-> impl Parser<'a, I, ListOfPortDeclarations<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
@@ -103,7 +103,8 @@ where
         .map(|((a, b), c)| ListOfPortDeclarations(a, b, c))
 }
 
-pub fn port_declaration_parser<'a, I>() -> impl Parser<'a, I, PortDeclaration<'a>, ParserError<'a>>
+pub fn port_declaration_parser<'a, I>()
+-> impl Parser<'a, I, PortDeclaration<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
@@ -131,7 +132,7 @@ where
     ))
 }
 
-pub fn port_parser<'a, I>() -> impl Parser<'a, I, Port<'a>, ParserError<'a>>
+pub fn port_parser<'a, I>() -> impl Parser<'a, I, Port<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
@@ -147,7 +148,8 @@ where
     choice((_port_expression_parser, _port_identifier_parser))
 }
 
-pub fn port_expression_parser<'a, I>() -> impl Parser<'a, I, PortExpression<'a>, ParserError<'a>>
+pub fn port_expression_parser<'a, I>()
+-> impl Parser<'a, I, PortExpression<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
@@ -166,7 +168,8 @@ where
     choice((single_port_reference_parser, multi_port_reference_parser))
 }
 
-pub fn port_reference_parser<'a, I>() -> impl Parser<'a, I, PortReference<'a>, ParserError<'a>>
+pub fn port_reference_parser<'a, I>()
+-> impl Parser<'a, I, PortReference<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
@@ -175,7 +178,8 @@ where
         .map(|(a, b)| PortReference(a, b))
 }
 
-pub fn port_direction_parser<'a, I>() -> impl Parser<'a, I, PortDirection<'a>, ParserError<'a>>
+pub fn port_direction_parser<'a, I>()
+-> impl Parser<'a, I, PortDirection<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
@@ -187,7 +191,8 @@ where
     ))
 }
 
-pub fn net_port_header_parser<'a, I>() -> impl Parser<'a, I, NetPortHeader<'a>, ParserError<'a>>
+pub fn net_port_header_parser<'a, I>()
+-> impl Parser<'a, I, NetPortHeader<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
@@ -198,7 +203,7 @@ where
 }
 
 pub fn variable_port_header_parser<'a, I>()
--> impl Parser<'a, I, VariablePortHeader<'a>, ParserError<'a>>
+-> impl Parser<'a, I, VariablePortHeader<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
@@ -209,7 +214,7 @@ where
 }
 
 pub fn interface_port_header_parser<'a, I>()
--> impl Parser<'a, I, InterfacePortHeader<'a>, ParserError<'a>>
+-> impl Parser<'a, I, InterfacePortHeader<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
@@ -231,7 +236,7 @@ where
 }
 
 pub fn ansi_port_declaration_parser<'a, I>()
--> impl Parser<'a, I, AnsiPortDeclaration<'a>, ParserError<'a>>
+-> impl Parser<'a, I, AnsiPortDeclaration<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
@@ -245,7 +250,7 @@ where
 }
 
 pub fn ansi_net_port_declaration_parser<'a, I>()
--> impl Parser<'a, I, AnsiNetPortDeclaration<'a>, ParserError<'a>>
+-> impl Parser<'a, I, AnsiNetPortDeclaration<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
@@ -267,7 +272,7 @@ where
 }
 
 pub fn ansi_variable_port_declaration_parser<'a, I>()
--> impl Parser<'a, I, AnsiVariablePortDeclaration<'a>, ParserError<'a>>
+-> impl Parser<'a, I, AnsiVariablePortDeclaration<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
@@ -284,7 +289,7 @@ where
 }
 
 pub fn ansi_constant_port_declaration_parser<'a, I>()
--> impl Parser<'a, I, AnsiConstantPortDeclaration<'a>, ParserError<'a>>
+-> impl Parser<'a, I, AnsiConstantPortDeclaration<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {

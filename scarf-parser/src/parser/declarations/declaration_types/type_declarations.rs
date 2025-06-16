@@ -8,14 +8,14 @@ use chumsky::prelude::*;
 use scarf_syntax::*;
 
 pub fn package_import_declaration_parser<'a, I>()
--> impl Parser<'a, I, PackageImportDeclaration, ParserError<'a>>
+-> impl Parser<'a, I, PackageImportDeclaration, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
     todo_parser()
 }
 
-pub fn forward_type_parser<'a, I>() -> impl Parser<'a, I, ForwardType<'a>, ParserError<'a>>
+pub fn forward_type_parser<'a, I>() -> impl Parser<'a, I, ForwardType<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
@@ -30,7 +30,7 @@ where
     ))
 }
 
-pub fn lifetime_parser<'a, I>() -> impl Parser<'a, I, Lifetime<'a>, ParserError<'a>>
+pub fn lifetime_parser<'a, I>() -> impl Parser<'a, I, Lifetime<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {

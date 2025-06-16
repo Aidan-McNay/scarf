@@ -3,6 +3,7 @@
 // =======================================================================
 // The top-level interface for the parser
 
+pub mod behavioral_statements;
 pub mod declarations;
 pub mod errors;
 pub mod expressions;
@@ -13,14 +14,15 @@ pub mod utils;
 use crate::*;
 use ariadne::Report;
 use ariadne::{Color, Label, ReportKind};
+pub use behavioral_statements::*;
 use chumsky::error::{RichPattern, RichReason};
 use chumsky::input::ValueInput;
 use chumsky::prelude::*;
-pub use scarf_syntax::SourceText;
 pub use declarations::*;
 pub use errors::*;
 pub use expressions::*;
 pub use general::*;
+pub use scarf_syntax::SourceText;
 pub use source_text::*;
 pub use udp_declaration_and_instantiation::*;
 pub use utils::*;

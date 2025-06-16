@@ -7,7 +7,8 @@ use crate::*;
 use chumsky::prelude::*;
 use scarf_syntax::*;
 
-pub fn string_literal_parser<'a, I>() -> impl Parser<'a, I, StringLiteral<'a>, ParserError<'a>>
+pub fn string_literal_parser<'a, I>()
+-> impl Parser<'a, I, StringLiteral<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {

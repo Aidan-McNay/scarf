@@ -8,7 +8,7 @@ use chumsky::prelude::*;
 use scarf_syntax::*;
 
 pub fn attribute_instance_parser<'a, I>()
--> impl Parser<'a, I, AttributeInstance<'a>, ParserError<'a>>
+-> impl Parser<'a, I, AttributeInstance<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
@@ -24,7 +24,7 @@ where
         .map(|(((a, b), c), d)| AttributeInstance(a, b, c, d))
 }
 
-pub fn attr_spec_parser<'a, I>() -> impl Parser<'a, I, AttrSpec<'a>, ParserError<'a>>
+pub fn attr_spec_parser<'a, I>() -> impl Parser<'a, I, AttrSpec<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
@@ -33,7 +33,7 @@ where
         .map(|(a, b)| AttrSpec(a, b))
 }
 
-pub fn attr_name_parser<'a, I>() -> impl Parser<'a, I, AttrName<'a>, ParserError<'a>>
+pub fn attr_name_parser<'a, I>() -> impl Parser<'a, I, AttrName<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {

@@ -41,14 +41,14 @@ pub enum VariableLvalue<'a> {
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub enum SelectionVariableLvalueScope<'a> {
+pub enum ImplicitClassHandleOrPackageScope<'a> {
     ImplicitClassHandle(Box<(ImplicitClassHandle<'a>, Metadata<'a>)>),
     PackageScope(Box<PackageScope<'a>>),
 }
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct SelectionVariableLvalue<'a>(
-    pub SelectionVariableLvalueScope<'a>,
+    pub ImplicitClassHandleOrPackageScope<'a>,
     pub HierarchicalVariableIdentifier<'a>,
     pub Select<'a>,
 );
@@ -65,4 +65,11 @@ pub struct NestedVariableLvalue<'a>(
 pub struct AssignmentVariableLvalue<'a>(
     pub Option<AssignmentPatternExpressionType<'a>>,
     pub AssignmentPatternVariableLvalue<'a>,
+);
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct NonrangeVariableLvalue<'a>(
+    pub ImplicitClassHandleOrPackageScope<'a>,
+    pub HierarchicalVariableIdentifier<'a>,
+    pub NonrangeSelect<'a>,
 );

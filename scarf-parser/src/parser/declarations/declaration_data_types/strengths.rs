@@ -7,7 +7,8 @@ use crate::*;
 use chumsky::prelude::*;
 use scarf_syntax::*;
 
-pub fn drive_strength_parser<'a, I>() -> impl Parser<'a, I, DriveStrength<'a>, ParserError<'a>>
+pub fn drive_strength_parser<'a, I>()
+-> impl Parser<'a, I, DriveStrength<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
@@ -57,7 +58,7 @@ where
     ))
 }
 
-pub fn strength0_parser<'a, I>() -> impl Parser<'a, I, Strength0<'a>, ParserError<'a>>
+pub fn strength0_parser<'a, I>() -> impl Parser<'a, I, Strength0<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
@@ -69,7 +70,7 @@ where
     ))
 }
 
-pub fn strength1_parser<'a, I>() -> impl Parser<'a, I, Strength1<'a>, ParserError<'a>>
+pub fn strength1_parser<'a, I>() -> impl Parser<'a, I, Strength1<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
@@ -81,7 +82,8 @@ where
     ))
 }
 
-pub fn charge_strength_parser<'a, I>() -> impl Parser<'a, I, ChargeStrength<'a>, ParserError<'a>>
+pub fn charge_strength_parser<'a, I>()
+-> impl Parser<'a, I, ChargeStrength<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {

@@ -7,28 +7,31 @@ use crate::*;
 use chumsky::prelude::*;
 use scarf_syntax::*;
 
-pub fn array_identifier_parser<'a, I>() -> impl Parser<'a, I, ArrayIdentifier<'a>, ParserError<'a>>
+pub fn array_identifier_parser<'a, I>()
+-> impl Parser<'a, I, ArrayIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
     identifier_parser().map(|a| ArrayIdentifier(a))
 }
 
-pub fn block_identifier_parser<'a, I>() -> impl Parser<'a, I, BlockIdentifier<'a>, ParserError<'a>>
+pub fn block_identifier_parser<'a, I>()
+-> impl Parser<'a, I, BlockIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
     identifier_parser().map(|a| BlockIdentifier(a))
 }
 
-pub fn bin_identifier_parser<'a, I>() -> impl Parser<'a, I, BinIdentifier<'a>, ParserError<'a>>
+pub fn bin_identifier_parser<'a, I>()
+-> impl Parser<'a, I, BinIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
     identifier_parser().map(|a| BinIdentifier(a))
 }
 
-pub fn c_identifier_parser<'a, I>() -> impl Parser<'a, I, CIdentifier<'a>, ParserError<'a>>
+pub fn c_identifier_parser<'a, I>() -> impl Parser<'a, I, CIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
@@ -45,7 +48,8 @@ where
     })
 }
 
-pub fn cell_identifier_parser<'a, I>() -> impl Parser<'a, I, CellIdentifier<'a>, ParserError<'a>>
+pub fn cell_identifier_parser<'a, I>()
+-> impl Parser<'a, I, CellIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
@@ -53,14 +57,15 @@ where
 }
 
 pub fn checker_identifier_parser<'a, I>()
--> impl Parser<'a, I, CheckerIdentifier<'a>, ParserError<'a>>
+-> impl Parser<'a, I, CheckerIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
     identifier_parser().map(|a| CheckerIdentifier(a))
 }
 
-pub fn class_identifier_parser<'a, I>() -> impl Parser<'a, I, ClassIdentifier<'a>, ParserError<'a>>
+pub fn class_identifier_parser<'a, I>()
+-> impl Parser<'a, I, ClassIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
@@ -68,7 +73,7 @@ where
 }
 
 pub fn class_variable_identifier_parser<'a, I>()
--> impl Parser<'a, I, ClassVariableIdentifier<'a>, ParserError<'a>>
+-> impl Parser<'a, I, ClassVariableIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
@@ -76,21 +81,23 @@ where
 }
 
 pub fn clocking_identifier_parser<'a, I>()
--> impl Parser<'a, I, ClockingIdentifier<'a>, ParserError<'a>>
+-> impl Parser<'a, I, ClockingIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
     identifier_parser().map(|a| ClockingIdentifier(a))
 }
 
-pub fn config_identifier_parser<'a, I>() -> impl Parser<'a, I, ConfigIdentifier<'a>, ParserError<'a>>
+pub fn config_identifier_parser<'a, I>()
+-> impl Parser<'a, I, ConfigIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
     identifier_parser().map(|a| ConfigIdentifier(a))
 }
 
-pub fn const_identifier_parser<'a, I>() -> impl Parser<'a, I, ConstIdentifier<'a>, ParserError<'a>>
+pub fn const_identifier_parser<'a, I>()
+-> impl Parser<'a, I, ConstIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
@@ -98,7 +105,7 @@ where
 }
 
 pub fn constraint_identifier_parser<'a, I>()
--> impl Parser<'a, I, ConstraintIdentifier<'a>, ParserError<'a>>
+-> impl Parser<'a, I, ConstraintIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
@@ -106,7 +113,7 @@ where
 }
 
 pub fn covergroup_identifier_parser<'a, I>()
--> impl Parser<'a, I, CovergroupIdentifier<'a>, ParserError<'a>>
+-> impl Parser<'a, I, CovergroupIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
@@ -114,7 +121,7 @@ where
 }
 
 pub fn covergroup_variable_identifier_parser<'a, I>()
--> impl Parser<'a, I, CovergroupVariableIdentifier<'a>, ParserError<'a>>
+-> impl Parser<'a, I, CovergroupVariableIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
@@ -122,14 +129,15 @@ where
 }
 
 pub fn cover_point_identifier_parser<'a, I>()
--> impl Parser<'a, I, CoverPointIdentifier<'a>, ParserError<'a>>
+-> impl Parser<'a, I, CoverPointIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
     identifier_parser().map(|a| CoverPointIdentifier(a))
 }
 
-pub fn cross_identifier_parser<'a, I>() -> impl Parser<'a, I, CrossIdentifier<'a>, ParserError<'a>>
+pub fn cross_identifier_parser<'a, I>()
+-> impl Parser<'a, I, CrossIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
@@ -137,21 +145,23 @@ where
 }
 
 pub fn dynamic_array_variable_identifier_parser<'a, I>()
--> impl Parser<'a, I, DynamicArrayVariableIdentifier<'a>, ParserError<'a>>
+-> impl Parser<'a, I, DynamicArrayVariableIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
     variable_identifier_parser().map(|a| DynamicArrayVariableIdentifier(a))
 }
 
-pub fn enum_identifier_parser<'a, I>() -> impl Parser<'a, I, EnumIdentifier<'a>, ParserError<'a>>
+pub fn enum_identifier_parser<'a, I>()
+-> impl Parser<'a, I, EnumIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
     identifier_parser().map(|a| EnumIdentifier(a))
 }
 
-pub fn formal_identifier_parser<'a, I>() -> impl Parser<'a, I, FormalIdentifier<'a>, ParserError<'a>>
+pub fn formal_identifier_parser<'a, I>()
+-> impl Parser<'a, I, FormalIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
@@ -159,7 +169,7 @@ where
 }
 
 pub fn formal_port_identifier_parser<'a, I>()
--> impl Parser<'a, I, FormalPortIdentifier<'a>, ParserError<'a>>
+-> impl Parser<'a, I, FormalPortIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
@@ -167,7 +177,7 @@ where
 }
 
 pub fn function_identifier_parser<'a, I>()
--> impl Parser<'a, I, FunctionIdentifier<'a>, ParserError<'a>>
+-> impl Parser<'a, I, FunctionIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
@@ -175,14 +185,15 @@ where
 }
 
 pub fn generate_block_identifier_parser<'a, I>()
--> impl Parser<'a, I, GenerateBlockIdentifier<'a>, ParserError<'a>>
+-> impl Parser<'a, I, GenerateBlockIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
     identifier_parser().map(|a| GenerateBlockIdentifier(a))
 }
 
-pub fn genvar_identifier_parser<'a, I>() -> impl Parser<'a, I, GenvarIdentifier<'a>, ParserError<'a>>
+pub fn genvar_identifier_parser<'a, I>()
+-> impl Parser<'a, I, GenvarIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
@@ -190,7 +201,7 @@ where
 }
 
 pub fn hierarchical_array_identifier_parser<'a, I>()
--> impl Parser<'a, I, HierarchicalArrayIdentifier<'a>, ParserError<'a>>
+-> impl Parser<'a, I, HierarchicalArrayIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
@@ -198,7 +209,7 @@ where
 }
 
 pub fn hierarchical_block_identifier_parser<'a, I>()
--> impl Parser<'a, I, HierarchicalBlockIdentifier<'a>, ParserError<'a>>
+-> impl Parser<'a, I, HierarchicalBlockIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
@@ -206,7 +217,7 @@ where
 }
 
 pub fn hierarchical_event_identifier_parser<'a, I>()
--> impl Parser<'a, I, HierarchicalEventIdentifier<'a>, ParserError<'a>>
+-> impl Parser<'a, I, HierarchicalEventIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
@@ -214,7 +225,7 @@ where
 }
 
 pub fn hierarchical_identifier_parser<'a, I>()
--> impl Parser<'a, I, HierarchicalIdentifier<'a>, ParserError<'a>>
+-> impl Parser<'a, I, HierarchicalIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
@@ -233,7 +244,7 @@ where
 }
 
 pub fn hierarchical_net_identifier_parser<'a, I>()
--> impl Parser<'a, I, HierarchicalNetIdentifier<'a>, ParserError<'a>>
+-> impl Parser<'a, I, HierarchicalNetIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
@@ -241,7 +252,7 @@ where
 }
 
 pub fn hierarchical_parameter_identifier_parser<'a, I>()
--> impl Parser<'a, I, HierarchicalParameterIdentifier<'a>, ParserError<'a>>
+-> impl Parser<'a, I, HierarchicalParameterIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
@@ -249,7 +260,7 @@ where
 }
 
 pub fn hierarchical_property_identifier_parser<'a, I>()
--> impl Parser<'a, I, HierarchicalPropertyIdentifier<'a>, ParserError<'a>>
+-> impl Parser<'a, I, HierarchicalPropertyIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
@@ -257,7 +268,7 @@ where
 }
 
 pub fn hierarchical_sequence_identifier_parser<'a, I>()
--> impl Parser<'a, I, HierarchicalSequenceIdentifier<'a>, ParserError<'a>>
+-> impl Parser<'a, I, HierarchicalSequenceIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
@@ -265,7 +276,7 @@ where
 }
 
 pub fn hierarchical_task_identifier_parser<'a, I>()
--> impl Parser<'a, I, HierarchicalTaskIdentifier<'a>, ParserError<'a>>
+-> impl Parser<'a, I, HierarchicalTaskIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
@@ -273,7 +284,7 @@ where
 }
 
 pub fn hierarchical_tf_identifier_parser<'a, I>()
--> impl Parser<'a, I, HierarchicalTfIdentifier<'a>, ParserError<'a>>
+-> impl Parser<'a, I, HierarchicalTfIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
@@ -281,14 +292,14 @@ where
 }
 
 pub fn hierarchical_variable_identifier_parser<'a, I>()
--> impl Parser<'a, I, HierarchicalVariableIdentifier<'a>, ParserError<'a>>
+-> impl Parser<'a, I, HierarchicalVariableIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
     hierarchical_identifier_parser().map(|a| HierarchicalVariableIdentifier(a))
 }
 
-pub fn identifier_parser<'a, I>() -> impl Parser<'a, I, Identifier<'a>, ParserError<'a>>
+pub fn identifier_parser<'a, I>() -> impl Parser<'a, I, Identifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
@@ -315,7 +326,7 @@ where
 }
 
 pub fn index_identifier_parser<'a, I>()
--> impl Parser<'a, I, IndexVariableIdentifier<'a>, ParserError<'a>>
+-> impl Parser<'a, I, IndexVariableIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
@@ -323,7 +334,7 @@ where
 }
 
 pub fn interface_identifier_parser<'a, I>()
--> impl Parser<'a, I, InterfaceIdentifier<'a>, ParserError<'a>>
+-> impl Parser<'a, I, InterfaceIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
@@ -331,7 +342,7 @@ where
 }
 
 pub fn interface_port_identifier_parser<'a, I>()
--> impl Parser<'a, I, InterfacePortIdentifier<'a>, ParserError<'a>>
+-> impl Parser<'a, I, InterfacePortIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
@@ -339,7 +350,7 @@ where
 }
 
 pub fn inout_port_identifier_parser<'a, I>()
--> impl Parser<'a, I, InoutPortIdentifier<'a>, ParserError<'a>>
+-> impl Parser<'a, I, InoutPortIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
@@ -347,7 +358,7 @@ where
 }
 
 pub fn input_port_identifier_parser<'a, I>()
--> impl Parser<'a, I, InputPortIdentifier<'a>, ParserError<'a>>
+-> impl Parser<'a, I, InputPortIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
@@ -355,7 +366,7 @@ where
 }
 
 pub fn instance_identifier_parser<'a, I>()
--> impl Parser<'a, I, InstanceIdentifier<'a>, ParserError<'a>>
+-> impl Parser<'a, I, InstanceIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
@@ -363,21 +374,23 @@ where
 }
 
 pub fn library_identifier_parser<'a, I>()
--> impl Parser<'a, I, LibraryIdentifier<'a>, ParserError<'a>>
+-> impl Parser<'a, I, LibraryIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
     identifier_parser().map(|a| LibraryIdentifier(a))
 }
 
-pub fn member_identifier_parser<'a, I>() -> impl Parser<'a, I, MemberIdentifier<'a>, ParserError<'a>>
+pub fn member_identifier_parser<'a, I>()
+-> impl Parser<'a, I, MemberIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
     identifier_parser().map(|a| MemberIdentifier(a))
 }
 
-pub fn method_identifier_parser<'a, I>() -> impl Parser<'a, I, MethodIdentifier<'a>, ParserError<'a>>
+pub fn method_identifier_parser<'a, I>()
+-> impl Parser<'a, I, MethodIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
@@ -385,21 +398,23 @@ where
 }
 
 pub fn modport_identifier_parser<'a, I>()
--> impl Parser<'a, I, ModportIdentifier<'a>, ParserError<'a>>
+-> impl Parser<'a, I, ModportIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
     identifier_parser().map(|a| ModportIdentifier(a))
 }
 
-pub fn module_identifier_parser<'a, I>() -> impl Parser<'a, I, ModuleIdentifier<'a>, ParserError<'a>>
+pub fn module_identifier_parser<'a, I>()
+-> impl Parser<'a, I, ModuleIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
     identifier_parser().map(|a| ModuleIdentifier(a))
 }
 
-pub fn net_identifier_parser<'a, I>() -> impl Parser<'a, I, NetIdentifier<'a>, ParserError<'a>>
+pub fn net_identifier_parser<'a, I>()
+-> impl Parser<'a, I, NetIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
@@ -407,7 +422,7 @@ where
 }
 
 pub fn nettype_identifier_parser<'a, I>()
--> impl Parser<'a, I, NettypeIdentifier<'a>, ParserError<'a>>
+-> impl Parser<'a, I, NettypeIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
@@ -415,7 +430,7 @@ where
 }
 
 pub fn output_port_identifier_parser<'a, I>()
--> impl Parser<'a, I, OutputPortIdentifier<'a>, ParserError<'a>>
+-> impl Parser<'a, I, OutputPortIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
@@ -423,14 +438,14 @@ where
 }
 
 pub fn package_identifier_parser<'a, I>()
--> impl Parser<'a, I, PackageIdentifier<'a>, ParserError<'a>>
+-> impl Parser<'a, I, PackageIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
     identifier_parser().map(|a| PackageIdentifier(a))
 }
 
-pub fn package_scope_parser<'a, I>() -> impl Parser<'a, I, PackageScope<'a>, ParserError<'a>>
+pub fn package_scope_parser<'a, I>() -> impl Parser<'a, I, PackageScope<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
@@ -444,14 +459,15 @@ where
 }
 
 pub fn parameter_identifier_parser<'a, I>()
--> impl Parser<'a, I, ParameterIdentifier<'a>, ParserError<'a>>
+-> impl Parser<'a, I, ParameterIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
     identifier_parser().map(|a| ParameterIdentifier(a))
 }
 
-pub fn port_identifier_parser<'a, I>() -> impl Parser<'a, I, PortIdentifier<'a>, ParserError<'a>>
+pub fn port_identifier_parser<'a, I>()
+-> impl Parser<'a, I, PortIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
@@ -459,7 +475,7 @@ where
 }
 
 pub fn program_identifier_parser<'a, I>()
--> impl Parser<'a, I, ProgramIdentifier<'a>, ParserError<'a>>
+-> impl Parser<'a, I, ProgramIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
@@ -467,7 +483,7 @@ where
 }
 
 pub fn property_identifier_parser<'a, I>()
--> impl Parser<'a, I, PropertyIdentifier<'a>, ParserError<'a>>
+-> impl Parser<'a, I, PropertyIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
@@ -475,7 +491,7 @@ where
 }
 
 pub fn ps_class_identifier_parser<'a, I>()
--> impl Parser<'a, I, PsClassIdentifier<'a>, ParserError<'a>>
+-> impl Parser<'a, I, PsClassIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
@@ -486,7 +502,7 @@ where
 }
 
 pub fn ps_covergroup_identifier_parser<'a, I>()
--> impl Parser<'a, I, PsCovergroupIdentifier<'a>, ParserError<'a>>
+-> impl Parser<'a, I, PsCovergroupIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
@@ -497,7 +513,7 @@ where
 }
 
 pub fn ps_checker_identifier_parser<'a, I>()
--> impl Parser<'a, I, PsCheckerIdentifier<'a>, ParserError<'a>>
+-> impl Parser<'a, I, PsCheckerIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
@@ -507,7 +523,7 @@ where
         .map(|(a, b)| PsCheckerIdentifier(a, b))
 }
 
-pub fn ps_identifier_parser<'a, I>() -> impl Parser<'a, I, PsIdentifier<'a>, ParserError<'a>>
+pub fn ps_identifier_parser<'a, I>() -> impl Parser<'a, I, PsIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
@@ -518,7 +534,7 @@ where
 }
 
 pub fn ps_or_hierarchical_array_identifier_parser<'a, I>()
--> impl Parser<'a, I, PsOrHierarchicalArrayIdentifier<'a>, ParserError<'a>>
+-> impl Parser<'a, I, PsOrHierarchicalArrayIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
@@ -536,7 +552,7 @@ where
 }
 
 pub fn ps_or_hierarchical_net_identifier_parser<'a, I>()
--> impl Parser<'a, I, PsOrHierarchicalNetIdentifier<'a>, ParserError<'a>>
+-> impl Parser<'a, I, PsOrHierarchicalNetIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
@@ -551,7 +567,7 @@ where
 }
 
 pub fn ps_or_hierarchical_property_identifier_parser<'a, I>()
--> impl Parser<'a, I, PsOrHierarchicalPropertyIdentifier<'a>, ParserError<'a>>
+-> impl Parser<'a, I, PsOrHierarchicalPropertyIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
@@ -566,7 +582,7 @@ where
 }
 
 pub fn ps_or_hierarchical_sequence_identifier_parser<'a, I>()
--> impl Parser<'a, I, PsOrHierarchicalSequenceIdentifier<'a>, ParserError<'a>>
+-> impl Parser<'a, I, PsOrHierarchicalSequenceIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
@@ -581,7 +597,7 @@ where
 }
 
 pub fn ps_or_hierarchical_tf_identifier_parser<'a, I>()
--> impl Parser<'a, I, PsOrHierarchicalTfIdentifier<'a>, ParserError<'a>>
+-> impl Parser<'a, I, PsOrHierarchicalTfIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
@@ -595,7 +611,7 @@ where
 }
 
 pub fn ps_parameter_identifier_parser<'a, I>()
--> impl Parser<'a, I, PsParameterIdentifier<'a>, ParserError<'a>>
+-> impl Parser<'a, I, PsParameterIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
@@ -629,7 +645,7 @@ where
 }
 
 pub fn ps_type_identifier_parser<'a, I>()
--> impl Parser<'a, I, PsTypeIdentifier<'a>, ParserError<'a>>
+-> impl Parser<'a, I, PsTypeIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
@@ -647,7 +663,7 @@ where
 }
 
 pub fn rs_production_identifier_parser<'a, I>()
--> impl Parser<'a, I, RsProductionIdentifier<'a>, ParserError<'a>>
+-> impl Parser<'a, I, RsProductionIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
@@ -655,14 +671,15 @@ where
 }
 
 pub fn sequence_identifier_parser<'a, I>()
--> impl Parser<'a, I, SequenceIdentifier<'a>, ParserError<'a>>
+-> impl Parser<'a, I, SequenceIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
     identifier_parser().map(|a| SequenceIdentifier(a))
 }
 
-pub fn signal_identifier_parser<'a, I>() -> impl Parser<'a, I, SignalIdentifier<'a>, ParserError<'a>>
+pub fn signal_identifier_parser<'a, I>()
+-> impl Parser<'a, I, SignalIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
@@ -670,21 +687,22 @@ where
 }
 
 pub fn specparam_identifier_parser<'a, I>()
--> impl Parser<'a, I, SpecparamIdentifier<'a>, ParserError<'a>>
+-> impl Parser<'a, I, SpecparamIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
     identifier_parser().map(|a| SpecparamIdentifier(a))
 }
 
-pub fn task_identifier_parser<'a, I>() -> impl Parser<'a, I, TaskIdentifier<'a>, ParserError<'a>>
+pub fn task_identifier_parser<'a, I>()
+-> impl Parser<'a, I, TaskIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
     identifier_parser().map(|a| TaskIdentifier(a))
 }
 
-pub fn tf_identifier_parser<'a, I>() -> impl Parser<'a, I, TfIdentifier<'a>, ParserError<'a>>
+pub fn tf_identifier_parser<'a, I>() -> impl Parser<'a, I, TfIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
@@ -692,7 +710,7 @@ where
 }
 
 pub fn terminal_identifier_parser<'a, I>()
--> impl Parser<'a, I, TerminalIdentifier<'a>, ParserError<'a>>
+-> impl Parser<'a, I, TerminalIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
@@ -700,21 +718,23 @@ where
 }
 
 pub fn topmodule_identifier_parser<'a, I>()
--> impl Parser<'a, I, TopmoduleIdentifier<'a>, ParserError<'a>>
+-> impl Parser<'a, I, TopmoduleIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
     identifier_parser().map(|a| TopmoduleIdentifier(a))
 }
 
-pub fn type_identifier_parser<'a, I>() -> impl Parser<'a, I, TypeIdentifier<'a>, ParserError<'a>>
+pub fn type_identifier_parser<'a, I>()
+-> impl Parser<'a, I, TypeIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
     identifier_parser().map(|a| TypeIdentifier(a))
 }
 
-pub fn udp_identifier_parser<'a, I>() -> impl Parser<'a, I, UdpIdentifier<'a>, ParserError<'a>>
+pub fn udp_identifier_parser<'a, I>()
+-> impl Parser<'a, I, UdpIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
@@ -722,7 +742,7 @@ where
 }
 
 pub fn variable_identifier_parser<'a, I>()
--> impl Parser<'a, I, VariableIdentifier<'a>, ParserError<'a>>
+-> impl Parser<'a, I, VariableIdentifier<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {

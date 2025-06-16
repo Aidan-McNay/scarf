@@ -7,7 +7,8 @@ use crate::*;
 use chumsky::prelude::*;
 use scarf_syntax::*;
 
-pub fn param_assignment_parser<'a, I>() -> impl Parser<'a, I, ParamAssignment<'a>, ParserError<'a>>
+pub fn param_assignment_parser<'a, I>()
+-> impl Parser<'a, I, ParamAssignment<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
@@ -26,14 +27,15 @@ where
 }
 
 pub fn specparam_assignment_parser<'a, I>()
--> impl Parser<'a, I, SpecparamAssignment<'a>, ParserError<'a>>
+-> impl Parser<'a, I, SpecparamAssignment<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
     todo_parser()
 }
 
-pub fn type_assignment_parser<'a, I>() -> impl Parser<'a, I, TypeAssignment<'a>, ParserError<'a>>
+pub fn type_assignment_parser<'a, I>()
+-> impl Parser<'a, I, TypeAssignment<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {

@@ -7,7 +7,8 @@ use crate::*;
 use chumsky::prelude::*;
 use scarf_syntax::*;
 
-pub fn checker_port_list_parser<'a, I>() -> impl Parser<'a, I, CheckerPortList, ParserError<'a>>
+pub fn checker_port_list_parser<'a, I>()
+-> impl Parser<'a, I, CheckerPortList, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
@@ -15,7 +16,7 @@ where
 }
 
 pub fn checker_or_generate_item_parser<'a, I>()
--> impl Parser<'a, I, CheckerOrGenerateItem, ParserError<'a>>
+-> impl Parser<'a, I, CheckerOrGenerateItem, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {

@@ -29,6 +29,7 @@ pub enum ImplicitClassHandle<'a> {
 }
 
 pub type Select<'a> = ();
+pub type NonrangeSelect<'a> = ();
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct ConstantBitSelect<'a>(

@@ -3,8 +3,8 @@
 // =======================================================================
 // The top-level code for scarf
 
-use scarf_parser::*;
 use clap::{Args, Parser, Subcommand};
+use scarf_parser::*;
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
