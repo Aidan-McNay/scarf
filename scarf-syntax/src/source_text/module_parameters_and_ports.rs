@@ -154,6 +154,6 @@ pub struct AnsiConstantPortDeclaration<'a>(
     pub Metadata<'a>, // .
     pub PortIdentifier<'a>,
     pub Metadata<'a>, // (
-    pub Option<Expression<'a>>,
+    pub Option<Expression>,
     pub Metadata<'a>, // )
 );

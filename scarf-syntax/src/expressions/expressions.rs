@@ -15,4 +15,4 @@ pub struct ConstantRange<'a>(
     pub ConstantExpression<'a>,
 );
 
-pub type Expression<'a> = ();
+pub type Expression = ();

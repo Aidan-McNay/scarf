@@ -34,7 +34,7 @@ where
         .map(|((a, b), c)| ConstantRange(a, b, c))
 }
 
-pub fn expression_parser<'a, I>() -> impl Parser<'a, I, Expression<'a>, ParserError<'a>> + Clone
+pub fn expression_parser<'a, I>() -> impl Parser<'a, I, Expression, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
