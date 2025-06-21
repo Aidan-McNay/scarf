@@ -41,6 +41,7 @@ where
         )
         .then(token(Token::SColon))
         .map(|((a, b), c)| FatalSystemSeverityTask(a, b, c))
+        .boxed()
 }
 
 pub fn error_system_severity_task_parser<'a, I>()
@@ -58,6 +59,7 @@ where
         )
         .then(token(Token::SColon))
         .map(|((a, b), c)| ErrorSystemSeverityTask(a, b, c))
+        .boxed()
 }
 
 pub fn warning_system_severity_task_parser<'a, I>()
@@ -75,6 +77,7 @@ where
         )
         .then(token(Token::SColon))
         .map(|((a, b), c)| WarningSystemSeverityTask(a, b, c))
+        .boxed()
 }
 
 pub fn info_system_severity_task_parser<'a, I>()
@@ -92,6 +95,7 @@ where
         )
         .then(token(Token::SColon))
         .map(|((a, b), c)| InfoSystemSeverityTask(a, b, c))
+        .boxed()
 }
 
 pub fn finish_number_parser<'a, I>() -> impl Parser<'a, I, FinishNumber<'a>, ParserError<'a>> + Clone

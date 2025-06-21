@@ -16,6 +16,7 @@ where
         .then(net_port_type_parser())
         .then(list_of_port_identifiers_parser())
         .map(|((a, b), c)| InoutDeclaration(a, b, c))
+        .boxed()
 }
 
 pub fn input_declaration_parser<'a, I>()
@@ -35,6 +36,7 @@ where
         net_input_declaration_parser,
         variable_input_declaration_parser,
     ))
+    .boxed()
 }
 
 pub fn output_declaration_parser<'a, I>()
@@ -54,6 +56,7 @@ where
         net_output_declaration_parser,
         variable_output_declaration_parser,
     ))
+    .boxed()
 }
 
 pub fn interface_port_declaration_parser<'a, I>()
@@ -69,7 +72,7 @@ where
         .then(modport_identifier_parser())
         .then(list_of_interface_identifiers_parser())
         .map(|(((a, b), c), d)| InterfacePortDeclaration::Modport(Box::new((a, b, c, d))));
-    choice((interface_parser, modport_parser))
+    choice((interface_parser, modport_parser)).boxed()
 }
 
 pub fn ref_declaration_parser<'a, I>()
@@ -81,4 +84,5 @@ where
         .then(variable_port_type_parser())
         .then(list_of_variable_identifiers_parser())
         .map(|((a, b), c)| RefDeclaration(a, b, c))
+        .boxed()
 }

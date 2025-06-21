@@ -57,6 +57,7 @@ where
         type_parameter_declaration_parser()
             .map(|a| ParameterPortDeclaration::TypeParameterDeclaration(Box::new(a))),
     ))
+    .boxed()
 }
 
 pub fn list_of_ports_parser<'a, I>() -> impl Parser<'a, I, ListOfPorts<'a>, ParserError<'a>> + Clone
@@ -73,6 +74,7 @@ where
         )
         .then(token(Token::EParen))
         .map(|(((a, b), c), d)| ListOfPorts(a, b, c, d))
+        .boxed()
 }
 
 pub fn list_of_port_declarations_parser<'a, I>()
@@ -101,6 +103,7 @@ where
         )
         .then(token(Token::EParen))
         .map(|((a, b), c)| ListOfPortDeclarations(a, b, c))
+        .boxed()
 }
 
 pub fn port_declaration_parser<'a, I>()
@@ -130,6 +133,7 @@ where
         _ref_declaration_parser,
         _interface_port_declaration_parser,
     ))
+    .boxed()
 }
 
 pub fn port_parser<'a, I>() -> impl Parser<'a, I, Port<'a>, ParserError<'a>> + Clone
@@ -145,7 +149,7 @@ where
         .then(port_expression_parser().or_not())
         .then(token(Token::EParen))
         .map(|((((a, b), c), d), e)| Port::PortIdentifier(Box::new((a, b, c, d, e))));
-    choice((_port_expression_parser, _port_identifier_parser))
+    choice((_port_expression_parser, _port_identifier_parser)).boxed()
 }
 
 pub fn port_expression_parser<'a, I>()
@@ -165,7 +169,7 @@ where
         )
         .then(token(Token::EBrace))
         .map(|(((a, b), c), d)| PortExpression::MultiPortReference(Box::new((a, b, c, d))));
-    choice((single_port_reference_parser, multi_port_reference_parser))
+    choice((single_port_reference_parser, multi_port_reference_parser)).boxed()
 }
 
 pub fn port_reference_parser<'a, I>()
@@ -176,6 +180,7 @@ where
     port_identifier_parser()
         .then(constant_select_parser())
         .map(|(a, b)| PortReference(a, b))
+        .boxed()
 }
 
 pub fn port_direction_parser<'a, I>()
@@ -189,6 +194,7 @@ where
         token(Token::Inout).map(|a| PortDirection::Inout(a)),
         token(Token::Ref).map(|a| PortDirection::Ref(a)),
     ))
+    .boxed()
 }
 
 pub fn net_port_header_parser<'a, I>()
@@ -200,6 +206,7 @@ where
         .or_not()
         .then(net_port_type_parser())
         .map(|(a, b)| NetPortHeader(a, b))
+        .boxed()
 }
 
 pub fn variable_port_header_parser<'a, I>()
@@ -211,6 +218,7 @@ where
         .or_not()
         .then(variable_port_type_parser())
         .map(|(a, b)| VariablePortHeader(a, b))
+        .boxed()
 }
 
 pub fn interface_port_header_parser<'a, I>()
@@ -247,6 +255,7 @@ where
         ansi_constant_port_declaration_parser()
             .map(|a| AnsiPortDeclaration::ConstantPort(Box::new(a))),
     ))
+    .boxed()
 }
 
 pub fn ansi_net_port_declaration_parser<'a, I>()
@@ -269,6 +278,7 @@ where
         )
         .then(token(Token::Eq).then(constant_expression_parser()).or_not())
         .map(|(((a, b), c), d)| AnsiNetPortDeclaration(a, b, c, d))
+        .boxed()
 }
 
 pub fn ansi_variable_port_declaration_parser<'a, I>()
@@ -286,6 +296,7 @@ where
         )
         .then(token(Token::Eq).then(constant_expression_parser()).or_not())
         .map(|(((a, b), c), d)| AnsiVariablePortDeclaration(a, b, c, d))
+        .boxed()
 }
 
 pub fn ansi_constant_port_declaration_parser<'a, I>()
@@ -301,4 +312,5 @@ where
         .then(expression_parser().or_not())
         .then(token(Token::EParen))
         .map(|(((((a, b), c), d), e), f)| AnsiConstantPortDeclaration(a, b, c, d, e, f))
+        .boxed()
 }

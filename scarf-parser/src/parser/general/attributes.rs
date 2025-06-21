@@ -22,6 +22,7 @@ where
         )
         .then(token(Token::StarEparen))
         .map(|(((a, b), c), d)| AttributeInstance(a, b, c, d))
+        .boxed()
 }
 
 pub fn attr_spec_parser<'a, I>() -> impl Parser<'a, I, AttrSpec<'a>, ParserError<'a>> + Clone
@@ -31,11 +32,12 @@ where
     attr_name_parser()
         .then(token(Token::Eq).then(constant_expression_parser()).or_not())
         .map(|(a, b)| AttrSpec(a, b))
+        .boxed()
 }
 
 pub fn attr_name_parser<'a, I>() -> impl Parser<'a, I, AttrName<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
-    identifier_parser().map(|a| AttrName(a))
+    identifier_parser().map(|a| AttrName(a)).boxed()
 }

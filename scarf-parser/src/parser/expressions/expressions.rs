@@ -32,6 +32,7 @@ where
         .then(token(Token::Colon))
         .then(constant_expression_parser())
         .map(|((a, b), c)| ConstantRange(a, b, c))
+        .boxed()
 }
 
 pub fn expression_parser<'a, I>() -> impl Parser<'a, I, Expression, ParserError<'a>> + Clone

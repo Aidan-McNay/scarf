@@ -35,6 +35,7 @@ where
                 )>>(),
         )
         .map(|((a, b), c)| ListOfInterfaceIdentifiers(a, b, c))
+        .boxed()
 }
 
 pub fn list_of_param_assignments_parser<'a, I>()
@@ -50,6 +51,7 @@ where
                 .collect::<Vec<(Metadata<'a>, ParamAssignment<'a>)>>(),
         )
         .map(|(a, b)| ListOfParamAssignments(a, b))
+        .boxed()
 }
 
 pub fn list_of_port_identifiers_parser<'a, I>()
@@ -80,6 +82,7 @@ where
                 )>>(),
         )
         .map(|((a, b), c)| ListOfPortIdentifiers(a, b, c))
+        .boxed()
 }
 
 pub fn list_of_specparam_assignments_parser<'a, I>()
@@ -95,6 +98,7 @@ where
                 .collect::<Vec<(Metadata<'a>, SpecparamAssignment<'a>)>>(),
         )
         .map(|(a, b)| ListOfSpecparamAssignments(a, b))
+        .boxed()
 }
 
 pub fn list_of_type_assignments_parser<'a, I>()
@@ -110,6 +114,7 @@ where
                 .collect::<Vec<(Metadata<'a>, TypeAssignment<'a>)>>(),
         )
         .map(|(a, b)| ListOfTypeAssignments(a, b))
+        .boxed()
 }
 
 pub fn list_of_variable_identifiers_parser<'a, I>()
@@ -140,4 +145,5 @@ where
                 )>>(),
         )
         .map(|((a, b), c)| ListOfVariableIdentifiers(a, b, c))
+        .boxed()
 }

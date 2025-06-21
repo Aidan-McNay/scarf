@@ -29,6 +29,7 @@ where
                 .collect::<Vec<Description<'a>>>(),
         )
         .map(|((a, b), c)| SourceText(a, b, c))
+        .boxed()
 }
 
 pub fn description_parser<'a, I>() -> impl Parser<'a, I, Description<'a>, ParserError<'a>> + Clone
@@ -72,6 +73,7 @@ where
         module_declaration_extern_ansi_parser()
             .map(|a| ModuleDeclaration::ModuleDeclarationExternAnsi(Box::new(a))),
     ))
+    .boxed()
 }
 
 pub fn module_declaration_nonansi_parser<'a, I>()
@@ -93,6 +95,7 @@ where
                 .or_not(),
         )
         .map(|((((a, b), c), d), e)| ModuleDeclarationNonansi(a, b, c, d, e))
+        .boxed()
 }
 
 pub fn module_declaration_ansi_parser<'a, I>()
@@ -198,6 +201,7 @@ where
     token(Token::Extern)
         .then(module_nonansi_header_parser())
         .map(|(a, b)| ModuleDeclarationExternNonansi(a, b))
+        .boxed()
 }
 
 pub fn module_declaration_extern_ansi_parser<'a, I>()
@@ -208,6 +212,7 @@ where
     token(Token::Extern)
         .then(module_ansi_header_parser())
         .map(|(a, b)| ModuleDeclarationExternAnsi(a, b))
+        .boxed()
 }
 
 pub fn module_keyword_parser<'a, I>()
@@ -219,6 +224,7 @@ where
         token(Token::Module).map(|a| ModuleKeyword::Module(a)),
         token(Token::Macromodule).map(|a| ModuleKeyword::Macromodule(a)),
     ))
+    .boxed()
 }
 
 pub fn interface_declaration_parser<'a, I>()
@@ -238,6 +244,7 @@ where
         interface_declaration_extern_ansi_parser()
             .map(|a| InterfaceDeclaration::InterfaceDeclarationExternAnsi(Box::new(a))),
     ))
+    .boxed()
 }
 
 pub fn interface_declaration_nonansi_parser<'a, I>()
@@ -322,6 +329,7 @@ where
     token(Token::Extern)
         .then(interface_nonansi_header_parser())
         .map(|(a, b)| InterfaceDeclarationExternNonansi(a, b))
+        .boxed()
 }
 
 pub fn interface_declaration_extern_ansi_parser<'a, I>()
@@ -332,6 +340,7 @@ where
     token(Token::Extern)
         .then(interface_ansi_header_parser())
         .map(|(a, b)| InterfaceDeclarationExternAnsi(a, b))
+        .boxed()
 }
 
 pub fn interface_nonansi_header_parser<'a, I>()
@@ -393,6 +402,7 @@ where
         program_declaration_extern_ansi_parser()
             .map(|a| ProgramDeclaration::ProgramDeclarationExternAnsi(Box::new(a))),
     ))
+    .boxed()
 }
 
 pub fn program_declaration_nonansi_parser<'a, I>()
@@ -477,6 +487,7 @@ where
     token(Token::Extern)
         .then(program_nonansi_header_parser())
         .map(|(a, b)| ProgramDeclarationExternNonansi(a, b))
+        .boxed()
 }
 
 pub fn program_declaration_extern_ansi_parser<'a, I>()
@@ -487,6 +498,7 @@ where
     token(Token::Extern)
         .then(program_ansi_header_parser())
         .map(|(a, b)| ProgramDeclarationExternAnsi(a, b))
+        .boxed()
 }
 
 pub fn program_nonansi_header_parser<'a, I>()

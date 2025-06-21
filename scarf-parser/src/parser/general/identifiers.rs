@@ -241,6 +241,7 @@ where
         .then(identifiers_parser)
         .then(identifier_parser())
         .map(|((a, b), c)| HierarchicalIdentifier(a, b, c))
+        .boxed()
 }
 
 pub fn hierarchical_net_identifier_parser<'a, I>()
@@ -323,6 +324,7 @@ where
             Identifier::EscapedIdentifier((text, replace_nodes(metadata, b)))
         }
     })
+    .boxed()
 }
 
 pub fn index_identifier_parser<'a, I>()
@@ -499,6 +501,7 @@ where
         .or_not()
         .then(class_identifier_parser())
         .map(|(a, b)| PsClassIdentifier(a, b))
+        .boxed()
 }
 
 pub fn ps_covergroup_identifier_parser<'a, I>()
@@ -510,6 +513,7 @@ where
         .or_not()
         .then(covergroup_identifier_parser())
         .map(|(a, b)| PsCovergroupIdentifier(a, b))
+        .boxed()
 }
 
 pub fn ps_checker_identifier_parser<'a, I>()
@@ -521,6 +525,7 @@ where
         .or_not()
         .then(checker_identifier_parser())
         .map(|(a, b)| PsCheckerIdentifier(a, b))
+        .boxed()
 }
 
 pub fn ps_identifier_parser<'a, I>() -> impl Parser<'a, I, PsIdentifier<'a>, ParserError<'a>> + Clone
@@ -531,6 +536,7 @@ where
         .or_not()
         .then(identifier_parser())
         .map(|(a, b)| PsIdentifier(a, b))
+        .boxed()
 }
 
 pub fn ps_or_hierarchical_array_identifier_parser<'a, I>()
@@ -549,6 +555,7 @@ where
         .or_not()
         .then(hierarchical_array_identifier_parser())
         .map(|(a, b)| PsOrHierarchicalArrayIdentifier(a, b))
+        .boxed()
 }
 
 pub fn ps_or_hierarchical_net_identifier_parser<'a, I>()
@@ -564,6 +571,7 @@ where
         hierarchical_net_identifier_parser()
             .map(|a| PsOrHierarchicalNetIdentifier::Hierarchical(a)),
     ))
+    .boxed()
 }
 
 pub fn ps_or_hierarchical_property_identifier_parser<'a, I>()
@@ -579,6 +587,7 @@ where
         hierarchical_property_identifier_parser()
             .map(|a| PsOrHierarchicalPropertyIdentifier::Hierarchical(a)),
     ))
+    .boxed()
 }
 
 pub fn ps_or_hierarchical_sequence_identifier_parser<'a, I>()
@@ -594,6 +603,7 @@ where
         hierarchical_sequence_identifier_parser()
             .map(|a| PsOrHierarchicalSequenceIdentifier::Hierarchical(a)),
     ))
+    .boxed()
 }
 
 pub fn ps_or_hierarchical_tf_identifier_parser<'a, I>()
@@ -608,6 +618,7 @@ where
             .map(|(a, b)| PsOrHierarchicalTfIdentifier::PackageScope(a, b)),
         hierarchical_tf_identifier_parser().map(|a| PsOrHierarchicalTfIdentifier::Hierarchical(a)),
     ))
+    .boxed()
 }
 
 pub fn ps_parameter_identifier_parser<'a, I>()
@@ -660,6 +671,7 @@ where
         .or_not()
         .then(type_identifier_parser())
         .map(|(a, b)| PsTypeIdentifier(a, b))
+        .boxed()
 }
 
 pub fn rs_production_identifier_parser<'a, I>()

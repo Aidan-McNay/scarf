@@ -28,6 +28,7 @@ where
             .then(token(Token::Class))
             .map(|(a, b)| ForwardType::InterfaceClass(a, b)),
     ))
+    .boxed()
 }
 
 pub fn lifetime_parser<'a, I>() -> impl Parser<'a, I, Lifetime<'a>, ParserError<'a>> + Clone
@@ -38,4 +39,5 @@ where
         token(Token::Static).map(|a| Lifetime::Static(a)),
         token(Token::Automatic).map(|a| Lifetime::Automatic(a)),
     ))
+    .boxed()
 }

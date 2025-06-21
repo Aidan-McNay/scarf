@@ -56,6 +56,7 @@ where
         z0s1_parser,
         z1s0_parser,
     ))
+    .boxed()
 }
 
 pub fn strength0_parser<'a, I>() -> impl Parser<'a, I, Strength0<'a>, ParserError<'a>> + Clone
@@ -68,6 +69,7 @@ where
         token(Token::Pull0).map(|a| Strength0::Pull0(a)),
         token(Token::Weak0).map(|a| Strength0::Weak0(a)),
     ))
+    .boxed()
 }
 
 pub fn strength1_parser<'a, I>() -> impl Parser<'a, I, Strength1<'a>, ParserError<'a>> + Clone
@@ -80,6 +82,7 @@ where
         token(Token::Pull1).map(|a| Strength1::Pull1(a)),
         token(Token::Weak1).map(|a| Strength1::Weak1(a)),
     ))
+    .boxed()
 }
 
 pub fn charge_strength_parser<'a, I>()
@@ -96,4 +99,5 @@ where
         .then(charge_strength_size_parser)
         .then(token(Token::EParen))
         .map(|((a, b), c)| ChargeStrength(a, b, c))
+        .boxed()
 }

@@ -16,7 +16,7 @@ where
 }
 
 pub fn assignment_pattern_net_lvalue_parser<'a, I>(
-    net_lvalue_parser: impl Parser<'a, I, NetLvalue<'a>, ParserError<'a>> + Clone,
+    net_lvalue_parser: impl Parser<'a, I, NetLvalue<'a>, ParserError<'a>> + Clone + 'a,
 ) -> impl Parser<'a, I, AssignmentPatternNetLvalue<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
@@ -32,11 +32,12 @@ where
         )
         .then(token(Token::EBrace))
         .map(|((((a, b), c), d), e)| AssignmentPatternNetLvalue(a, b, c, d, e))
+        .boxed()
 }
 
 // Inlined for variable_lvalue_parser
 pub fn assignment_pattern_variable_lvalue_parser<'a, I>(
-    variable_lvalue_parser: impl Parser<'a, I, VariableLvalue<'a>, ParserError<'a>> + Clone,
+    variable_lvalue_parser: impl Parser<'a, I, VariableLvalue<'a>, ParserError<'a>> + Clone + 'a,
 ) -> impl Parser<'a, I, AssignmentPatternVariableLvalue<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
@@ -52,4 +53,5 @@ where
         )
         .then(token(Token::EBrace))
         .map(|((((a, b), c), d), e)| AssignmentPatternVariableLvalue(a, b, c, d, e))
+        .boxed()
 }

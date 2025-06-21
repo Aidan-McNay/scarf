@@ -15,4 +15,5 @@ where
     token(Token::Colon)
         .then(token(Token::Final))
         .map(|(a, b)| FinalSpecifier(a, b))
+        .boxed()
 }

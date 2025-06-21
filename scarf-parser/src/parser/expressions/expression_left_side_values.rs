@@ -49,6 +49,7 @@ where
         package_scope_parser()
             .map(|a| ImplicitClassHandleOrPackageScope::PackageScope(Box::new(a))),
     ))
+    .boxed()
 }
 
 pub fn variable_lvalue_parser<'a, I>()
@@ -95,4 +96,5 @@ where
         .then(hierarchical_variable_identifier_parser())
         .then(nonrange_select_parser())
         .map(|((a, b), c)| NonrangeVariableLvalue(a, b, c))
+        .boxed()
 }

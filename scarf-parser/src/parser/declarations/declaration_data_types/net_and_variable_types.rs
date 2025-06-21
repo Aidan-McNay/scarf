@@ -29,6 +29,7 @@ where
     class_type_parser()
         .then(token(Token::ColonColon))
         .map(|(a, b)| ClassScope(a, b))
+        .boxed()
 }
 
 pub fn class_type_parser<'a, I>() -> impl Parser<'a, I, ClassType<'a>, ParserError<'a>> + Clone
@@ -59,6 +60,7 @@ where
         token(Token::Integer).map(|a| IntegerAtomType::Integer(a)),
         token(Token::Time).map(|a| IntegerAtomType::Time(a)),
     ))
+    .boxed()
 }
 
 pub fn integer_vector_type_parser<'a, I>()
@@ -71,6 +73,7 @@ where
         token(Token::Logic).map(|a| IntegerVectorType::Logic(a)),
         token(Token::Reg).map(|a| IntegerVectorType::Reg(a)),
     ))
+    .boxed()
 }
 
 pub fn non_integer_type_parser<'a, I>()
@@ -83,6 +86,7 @@ where
         token(Token::Real).map(|a| NonIntegerType::Real(a)),
         token(Token::Realtime).map(|a| NonIntegerType::Realtime(a)),
     ))
+    .boxed()
 }
 
 pub fn net_type_parser<'a, I>() -> impl Parser<'a, I, NetType<'a>, ParserError<'a>> + Clone
@@ -103,6 +107,7 @@ where
         token(Token::Wand).map(|a| NetType::Wand(a)),
         token(Token::Wor).map(|a| NetType::Wor(a)),
     ))
+    .boxed()
 }
 
 pub fn net_port_type_parser<'a, I>() -> impl Parser<'a, I, NetPortType<'a>, ParserError<'a>> + Clone
@@ -128,6 +133,7 @@ where
         token(Token::Signed).map(|a| Signing::Signed(a)),
         token(Token::Unsigned).map(|a| Signing::Unsigned(a)),
     ))
+    .boxed()
 }
 
 pub fn struct_union_parser<'a, I>() -> impl Parser<'a, I, StructUnion<'a>, ParserError<'a>> + Clone
@@ -144,6 +150,7 @@ where
             .then(soft_or_tagged_parser.or_not())
             .map(|(a, b)| StructUnion::Union(a, b)),
     ))
+    .boxed()
 }
 
 pub fn data_type_or_incomplete_class_scoped_type_parser<'a, I>()

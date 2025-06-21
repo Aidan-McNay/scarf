@@ -24,6 +24,7 @@ where
                 .or_not(),
         )
         .map(|((a, b), c)| ParamAssignment(a, b, c))
+        .boxed()
 }
 
 pub fn specparam_assignment_parser<'a, I>()
@@ -46,4 +47,5 @@ where
                 .or_not(),
         )
         .map(|(a, b)| TypeAssignment(a, b))
+        .boxed()
 }

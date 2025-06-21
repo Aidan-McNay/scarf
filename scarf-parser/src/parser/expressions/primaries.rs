@@ -28,6 +28,7 @@ where
             TimeLiteral::TimeLiteralUnsigned(Box::new((box_value.0, b)))
         }
     })
+    .boxed()
 }
 
 fn time_unit_parser<'a, I>() -> impl Parser<'a, I, TimeUnit<'a>, ParserError<'a>> + Clone
@@ -70,6 +71,7 @@ where
         TimeUnit::PS(metadata) => TimeUnit::S(replace_nodes(metadata, b)),
         TimeUnit::FS(metadata) => TimeUnit::S(replace_nodes(metadata, b)),
     })
+    .boxed()
 }
 
 pub fn select_parser<'a, I>() -> impl Parser<'a, I, Select<'a>, ParserError<'a>> + Clone
@@ -98,7 +100,7 @@ where
         .then(token(Token::Period))
         .then(token(Token::Super))
         .map(|((a, b), c)| ImplicitClassHandle::ThisSuper(a, b, c));
-    choice((_this_parser, _super_parser, _this_super_parser))
+    choice((_this_parser, _super_parser, _this_super_parser)).boxed()
 }
 
 pub fn constant_bit_select_parser<'a, I>()
@@ -113,6 +115,7 @@ where
         .repeated()
         .collect::<Vec<(Metadata<'a>, ConstantExpression<'a>, Metadata<'a>)>>()
         .map(|a| ConstantBitSelect(a))
+        .boxed()
 }
 
 pub fn constant_select_parser<'a, I>()

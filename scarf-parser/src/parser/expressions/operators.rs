@@ -25,6 +25,7 @@ where
         token(Token::TildeCaret).map(|a| UnaryOperator::TildeCaret(a)),
         token(Token::CaretTilde).map(|a| UnaryOperator::CaretTilde(a)),
     ))
+    .boxed()
 }
 
 pub fn binary_operator_parser<'a, I>()
@@ -79,6 +80,7 @@ where
         token(Token::PlusPlus).map(|a| IncOrDecOperator::PlusPlus(a)),
         token(Token::MinusMinus).map(|a| IncOrDecOperator::MinusMinus(a)),
     ))
+    .boxed()
 }
 
 pub fn unary_module_path_operator_parser<'a, I>()
@@ -97,6 +99,7 @@ where
         token(Token::TildeCaret).map(|a| UnaryModulePathOperator::TildeCaret(a)),
         token(Token::CaretTilde).map(|a| UnaryModulePathOperator::CaretTilde(a)),
     ))
+    .boxed()
 }
 
 pub fn binary_module_path_operator_parser<'a, I>()
@@ -115,4 +118,5 @@ where
         token(Token::CaretTilde).map(|a| BinaryModulePathOperator::CaretTilde(a)),
         token(Token::TildeCaret).map(|a| BinaryModulePathOperator::TildeCaret(a)),
     ))
+    .boxed()
 }
