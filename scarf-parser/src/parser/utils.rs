@@ -26,14 +26,18 @@ pub fn extra_node_parser<'a, I>()
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
-    select! {
+    let _comment_parser = select! {
         Token::OnelineComment(text) = e => (ExtraNode::OnelineComment(text), convert_span(e.span())),
-        Token::BlockComment(text) = e => (ExtraNode::BlockComment(text), convert_span(e.span())),
+        Token::BlockComment(text) = e => (ExtraNode::BlockComment(text), convert_span(e.span()))
+    }
+    .labelled("a comment");
+    let _whitespace_parser = select! {
         Token::Newline = e => (ExtraNode::Newline, convert_span(e.span()))
     }
-    .labelled("a comment or whitespace")
-    .repeated()
-    .collect::<Vec<(ExtraNode<'a>, Span)>>()
+    .labelled("whitespace");
+    choice((_comment_parser, _whitespace_parser))
+        .repeated()
+        .collect::<Vec<(ExtraNode<'a>, Span)>>()
 }
 
 // A mapping function for replacing extra nodes in metadata

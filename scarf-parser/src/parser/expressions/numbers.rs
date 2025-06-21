@@ -16,6 +16,7 @@ where
         real_number_parser().map(|a| Number::Real(Box::new(a))),
     ))
     .labelled("a number")
+    .boxed()
 }
 
 pub fn integral_number_parser<'a, I>()
@@ -30,6 +31,7 @@ where
         hex_number_parser().map(|a| IntegralNumber::Hex(Box::new(a))),
     ))
     .labelled("an integral number")
+    .boxed()
 }
 
 pub fn decimal_number_parser<'a, I>()
@@ -108,6 +110,7 @@ where
         scientific_number_parser().map(|a| RealNumber::Scientific(Box::new(a))),
     ))
     .labelled("a real number")
+    .boxed()
 }
 
 pub fn fixed_point_number_parser<'a, I>()
@@ -156,6 +159,7 @@ where
     .labelled("an unsigned number")
     .then(extra_node_parser())
     .map(|((text, metadata), b)| UnsignedNumber(text, replace_nodes(metadata, b)))
+    .boxed()
 }
 
 pub fn unbased_unsized_literal_parser<'a, I>()

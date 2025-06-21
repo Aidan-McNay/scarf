@@ -10,9 +10,9 @@ use chumsky::input::Stream;
 pub use chumsky::input::ValueInput;
 use chumsky::prelude::*;
 use lexer::*;
-pub use lexer::{Token, lex, report_lex_errors};
+pub use lexer::{Span, Token, lex, report_lex_errors};
+pub use parser::report_parse_errors;
 use parser::*;
-pub use parser::{parse, report_parse_errors};
 
 pub fn parse_from_lex<'a>(
     src: &'a str,
