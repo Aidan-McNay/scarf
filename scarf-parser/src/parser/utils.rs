@@ -31,7 +31,7 @@ where
         Token::BlockComment(text) = e => (ExtraNode::BlockComment(text), convert_span(e.span())),
         Token::Newline = e => (ExtraNode::Newline, convert_span(e.span()))
     }
-    .labelled("whitespace/comment")
+    .labelled("a comment or whitespace")
     .repeated()
     .collect::<Vec<(ExtraNode<'a>, Span)>>()
 }

@@ -32,13 +32,27 @@ struct FormatArgs {
 fn format(args: &FormatArgs) {
     for path in &args.paths {
         let src = std::fs::read_to_string(&path).unwrap();
-        let result = parse(&src);
-        println!("{:?}", parse(&src));
-        for report in report_parse_errors(result, &path) {
-            report
-                .print((path.as_str(), Source::from(src.as_str())))
-                .unwrap()
+        let lexed_src = lex(&src);
+        let lex_errors = report_lex_errors(&lexed_src, path);
+        if !lex_errors.is_empty() {
+            for report in lex_errors {
+                report
+                    .print((path.as_str(), Source::from(src.as_str())))
+                    .unwrap()
+            }
+            return;
         }
+        let parsed_src = parse_from_lex(&src, lexed_src);
+        let parse_errors = report_parse_errors(parsed_src.clone(), path);
+        if !parse_errors.is_empty() {
+            for report in parse_errors {
+                report
+                    .print((path.as_str(), Source::from(src.as_str())))
+                    .unwrap()
+            }
+            return;
+        }
+        println!("{:?}", parsed_src);
     }
 }
 

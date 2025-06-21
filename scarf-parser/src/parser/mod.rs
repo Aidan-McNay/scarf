@@ -93,6 +93,7 @@ pub fn report_parse_errors<'a, 'b>(
     let mut reports: Vec<Report<'a, (&'b str, std::ops::Range<usize>)>> = Vec::new();
     result.into_errors().into_iter().for_each(|e| {
         let report = Report::build(ReportKind::Error, (file_path, e.span().into_range()))
+            .with_code("P1")
             .with_config(ariadne::Config::new().with_index_type(ariadne::IndexType::Byte))
             .with_message(format_reason(e.reason()))
             .with_label(

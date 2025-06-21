@@ -792,7 +792,9 @@ pub enum Token<'a> {
     #[regex(r"([0-9][0-9_]*)?'[s|S]?(h|H)[0-9a-fA-FxXzZ\?][0-9a-fA-FxXzZ\?_]*", |lex| lex.slice())]
     HexNumber(&'a str),
     #[regex(r"[0-9][0-9_]*(\.[0-9][0-9_]*)?(e|E)(\+|-)?[0-9][0-9_]*", |lex| lex.slice())]
-    RealNumber(&'a str),
+    ScientificNumber(&'a str),
+    #[regex(r"('0|'1|'x|'X|'z|'Z|'?)", |lex| lex.slice())]
+    UnbasedUnsizedLiteral(&'a str),
     // Literals
     #[regex(r"\$[a-zA-Z0-9_\$]+", |lex| lex.slice())]
     SystemIdentifier(&'a str),
@@ -1193,12 +1195,13 @@ impl<'a> Token<'a> {
             Token::BlockCommentEnd => "*/",
             Token::BlockComment(_text) => "<block comment>",
             Token::UnsignedNumber(_text) => "<unsigned number>",
-            Token::FixedPointNumber(_text) => "<fixed point number>",
+            Token::FixedPointNumber(_text) => "<real number>",
             Token::BinaryNumber(_text) => "<binary number>",
             Token::OctalNumber(_text) => "<octal number>",
             Token::DecimalNumber(_text) => "<decimal number>",
             Token::HexNumber(_text) => "<hex number>",
-            Token::RealNumber(_text) => "<real number>",
+            Token::ScientificNumber(_text) => "<scientific number>",
+            Token::UnbasedUnsizedLiteral(_text) => "<unsized literal>",
             Token::SystemIdentifier(_text) => "<system identifier>",
             Token::SimpleIdentifier(_text) => "<simple identifier>",
             Token::EscapedIdentifier(_text) => "<escaped identifier>",
@@ -1232,7 +1235,7 @@ impl<'a> fmt::Display for Token<'a> {
                 temp_str.as_str()
             }
             Token::FixedPointNumber(text) => {
-                temp_str = format!("number '{}' ", text);
+                temp_str = format!("real number '{}' ", text);
                 temp_str.as_str()
             }
             Token::BinaryNumber(text) => {
@@ -1251,8 +1254,12 @@ impl<'a> fmt::Display for Token<'a> {
                 temp_str = format!("hexadecimal number '{}' ", text);
                 temp_str.as_str()
             }
-            Token::RealNumber(text) => {
+            Token::ScientificNumber(text) => {
                 temp_str = format!("real number '{}' ", text);
+                temp_str.as_str()
+            }
+            Token::UnbasedUnsizedLiteral(text) => {
+                temp_str = format!("unsized literal '{}' ", text);
                 temp_str.as_str()
             }
             Token::SystemIdentifier(text) => {

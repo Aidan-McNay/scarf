@@ -10,14 +10,15 @@ use chumsky::input::Stream;
 pub use chumsky::input::ValueInput;
 use chumsky::prelude::*;
 use lexer::*;
-pub use lexer::{lex, report_lex_errors};
-pub use parser::parse as parse_from_lex;
-pub use parser::report_parse_errors;
+pub use lexer::{Token, lex, report_lex_errors};
 use parser::*;
+pub use parser::{parse, report_parse_errors};
 
-pub fn parse<'a>(src: &'a str) -> ParseResult<SourceText<'a>, Rich<'a, Token<'a>>> {
-    let lexed_src = lex(src);
-    let mapped_lexed_src = lexed_src.into_iter().map(|(tok, span)| match tok {
+pub fn parse_from_lex<'a>(
+    src: &'a str,
+    lexed_stream: Vec<(Result<Token<'a>, String>, Span)>,
+) -> ParseResult<SourceText<'a>, Rich<'a, Token<'a>>> {
+    let mapped_lexed_src = lexed_stream.into_iter().map(|(tok, span)| match tok {
         Ok(tok) => (
             tok,
             <std::ops::Range<usize> as Into<SimpleSpan>>::into(span),
@@ -28,5 +29,5 @@ pub fn parse<'a>(src: &'a str) -> ParseResult<SourceText<'a>, Rich<'a, Token<'a>
         ),
     });
     let stream_lexed_src = Stream::from_iter(mapped_lexed_src).map((0..src.len()).into(), |x| x);
-    parse_from_lex(stream_lexed_src)
+    parse(stream_lexed_src)
 }
