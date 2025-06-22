@@ -5,6 +5,8 @@
 
 use crate::*;
 
+pub type ConstantPrimary<'a> = ();
+
 #[derive(Clone, Debug, PartialEq)]
 pub enum TimeLiteral<'a> {
     TimeLiteralUnsigned(Box<(UnsignedNumber<'a>, TimeUnit<'a>)>),

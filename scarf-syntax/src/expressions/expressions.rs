@@ -5,7 +5,36 @@
 
 use crate::*;
 
-pub type ConstantExpression<'a> = ();
+#[derive(Clone, Debug, PartialEq)]
+pub enum ConstantExpression<'a> {
+    Primary(Box<ConstantPrimary<'a>>),
+    Unary(
+        Box<(
+            UnaryOperator<'a>,
+            Vec<AttributeInstance<'a>>,
+            ConstantPrimary<'a>,
+        )>,
+    ),
+    Binary(
+        Box<(
+            ConstantExpression<'a>,
+            BinaryOperator<'a>,
+            Vec<AttributeInstance<'a>>,
+            ConstantExpression<'a>,
+        )>,
+    ),
+    Ternary(
+        Box<(
+            ConstantExpression<'a>,
+            Metadata<'a>, // ?
+            Vec<AttributeInstance<'a>>,
+            ConstantExpression<'a>,
+            Metadata<'a>, // :
+            ConstantExpression<'a>,
+        )>,
+    ),
+}
+
 pub type ConstantParamExpression<'a> = ();
 
 #[derive(Clone, Debug, PartialEq)]

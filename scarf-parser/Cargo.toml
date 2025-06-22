@@ -11,7 +11,7 @@ categories = ["development-tools", "parsing"]
 
 [dependencies]
 ariadne = { version = "0.5.1", features = ["auto-color"] }
-chumsky = "0.10.1"
+chumsky = { version = "0.10.1", features = ["pratt"] }
 scarf-syntax = { version = "0.1.0", path = "../scarf-syntax" }
 logos = "0.15.0"
 regex = "1.11.1"

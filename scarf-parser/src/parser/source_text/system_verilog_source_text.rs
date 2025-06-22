@@ -12,7 +12,7 @@ pub(crate) fn attribute_instance_vec_parser<'a, I>()
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
-    attribute_instance_parser()
+    attribute_instance_parser(constant_expression_parser())
         .repeated()
         .collect::<Vec<AttributeInstance>>()
 }

@@ -7,16 +7,17 @@ use crate::*;
 use chumsky::prelude::*;
 use scarf_syntax::*;
 
-pub fn attribute_instance_parser<'a, I>()
--> impl Parser<'a, I, AttributeInstance<'a>, ParserError<'a>> + Clone
+pub fn attribute_instance_parser<'a, I>(
+    constant_expression_parser: impl Parser<'a, I, ConstantExpression<'a>, ParserError<'a>> + Clone + 'a,
+) -> impl Parser<'a, I, AttributeInstance<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
     token(Token::ParenStar)
-        .then(attr_spec_parser())
+        .then(attr_spec_parser(constant_expression_parser.clone()))
         .then(
             token(Token::Comma)
-                .then(attr_spec_parser())
+                .then(attr_spec_parser(constant_expression_parser))
                 .repeated()
                 .collect::<Vec<(Metadata<'a>, AttrSpec<'a>)>>(),
         )
@@ -25,12 +26,14 @@ where
         .boxed()
 }
 
-pub fn attr_spec_parser<'a, I>() -> impl Parser<'a, I, AttrSpec<'a>, ParserError<'a>> + Clone
+pub fn attr_spec_parser<'a, I>(
+    constant_expression_parser: impl Parser<'a, I, ConstantExpression<'a>, ParserError<'a>> + Clone + 'a,
+) -> impl Parser<'a, I, AttrSpec<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
     attr_name_parser()
-        .then(token(Token::Eq).then(constant_expression_parser()).or_not())
+        .then(token(Token::Eq).then(constant_expression_parser).or_not())
         .map(|(a, b)| AttrSpec(a, b))
         .boxed()
 }

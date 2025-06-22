@@ -567,6 +567,8 @@ pub enum Token<'a> {
     Minus,
     #[token("!")]
     Exclamation,
+    #[token("?")]
+    Quest,
     #[token("~")]
     Tilde,
     #[token("&")]
@@ -1090,6 +1092,7 @@ impl<'a> Token<'a> {
             Token::Plus => "+",
             Token::Minus => "-",
             Token::Exclamation => "!",
+            Token::Quest => "?",
             Token::Tilde => "~",
             Token::Amp => "&",
             Token::TildeAmp => "~&",

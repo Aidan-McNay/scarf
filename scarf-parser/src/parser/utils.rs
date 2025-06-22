@@ -22,7 +22,7 @@ pub fn convert_span(simple_span: ParserSpan) -> Span {
 
 // A parser for matching extra nodes
 pub fn extra_node_parser<'a, I>()
--> impl Parser<'a, I, Vec<(ExtraNode<'a>, Span)>, ParserError<'a>> + Clone + Clone
+-> impl Parser<'a, I, Vec<(ExtraNode<'a>, Span)>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
@@ -54,7 +54,7 @@ pub fn replace_nodes<'a>(
 // A parser for matching a token and extra nodes, producing metadata
 pub fn token<'a, I>(
     token_to_match: Token<'a>,
-) -> impl Parser<'a, I, Metadata<'a>, ParserError<'a>> + Clone + Clone
+) -> impl Parser<'a, I, Metadata<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
