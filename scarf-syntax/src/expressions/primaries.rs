@@ -8,6 +8,14 @@ use crate::*;
 pub type ConstantPrimary<'a> = ();
 
 #[derive(Clone, Debug, PartialEq)]
+pub enum PrimaryLiteral<'a> {
+    Number(Box<Number<'a>>),
+    TimeLiteral(Box<TimeLiteral<'a>>),
+    UnbasedUnsizedLiteral(Box<UnbasedUnsizedLiteral<'a>>),
+    StringLiteral(Box<StringLiteral<'a>>),
+}
+
+#[derive(Clone, Debug, PartialEq)]
 pub enum TimeLiteral<'a> {
     TimeLiteralUnsigned(Box<(UnsignedNumber<'a>, TimeUnit<'a>)>),
     TimeLiteralFixedPoint(Box<(FixedPointNumber<'a>, TimeUnit<'a>)>),
@@ -41,4 +49,22 @@ pub struct ConstantBitSelect<'a>(
         Metadata<'a>, // ]
     )>,
 );
-pub type ConstantSelect<'a> = ();
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct ConstantSelect<'a>(
+    pub  Option<(
+        Vec<(
+            Metadata<'a>, // .
+            MemberIdentifier<'a>,
+            ConstantBitSelect<'a>,
+        )>,
+        Metadata<'a>, // .
+        MemberIdentifier<'a>,
+    )>,
+    pub ConstantBitSelect<'a>,
+    pub  Option<(
+        Metadata<'a>, // [
+        ConstantPartSelectRange<'a>,
+        Metadata<'a>, // ]
+    )>,
+);

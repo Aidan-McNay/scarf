@@ -20,7 +20,9 @@ where
         )
         .then(
             token(Token::Eq)
-                .then(constant_param_expression_parser())
+                .then(constant_param_expression_parser(
+                    constant_expression_parser(),
+                ))
                 .or_not(),
         )
         .map(|((a, b), c)| ParamAssignment(a, b, c))

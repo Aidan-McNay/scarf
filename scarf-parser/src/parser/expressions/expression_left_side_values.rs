@@ -13,7 +13,7 @@ where
 {
     let mut parser = Recursive::declare();
     let _selection_net_lvalue_parser = ps_or_hierarchical_net_identifier_parser()
-        .then(constant_select_parser())
+        .then(constant_select_parser(constant_expression_parser()))
         .map(|(a, b)| NetLvalue::Selection(Box::new(SelectionNetLvalue(a, b))));
     let _nested_net_lvalue_parser = token(Token::Brace)
         .then(parser.clone())

@@ -230,7 +230,7 @@ where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
     let identifiers_parser = identifier_parser()
-        .then(constant_bit_select_parser())
+        .then(constant_bit_select_parser(constant_expression_parser()))
         .then(token(Token::Period))
         .map(|((a, b), c)| (a, b, c))
         .repeated()

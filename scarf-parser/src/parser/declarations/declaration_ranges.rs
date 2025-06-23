@@ -13,7 +13,7 @@ where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
     let unpacked_range_parser = token(Token::Bracket)
-        .then(constant_range_parser())
+        .then(constant_range_parser(constant_expression_parser()))
         .then(token(Token::EBracket))
         .map(|((a, b), c)| UnpackedDimension::UnpackedRange(Box::new((a, b, c))));
     let unpacked_expression_parser = token(Token::Bracket)
@@ -29,7 +29,7 @@ where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
     let packed_range_parser = token(Token::Bracket)
-        .then(constant_range_parser())
+        .then(constant_range_parser(constant_expression_parser()))
         .then(token(Token::EBracket))
         .map(|((a, b), c)| PackedDimension::PackedRange(Box::new((a, b, c))));
     choice((

@@ -18,6 +18,21 @@ where
     todo_parser()
 }
 
+pub fn primary_literal_parser<'a, I>()
+-> impl Parser<'a, I, PrimaryLiteral<'a>, ParserError<'a>> + Clone
+where
+    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
+{
+    choice((
+        number_parser().map(|a| PrimaryLiteral::Number(Box::new(a))),
+        time_literal_parser().map(|a| PrimaryLiteral::TimeLiteral(Box::new(a))),
+        unbased_unsized_literal_parser()
+            .map(|a| PrimaryLiteral::UnbasedUnsizedLiteral(Box::new(a))),
+        string_literal_parser().map(|a| PrimaryLiteral::StringLiteral(Box::new(a))),
+    ))
+    .boxed()
+}
+
 pub fn time_literal_parser<'a, I>() -> impl Parser<'a, I, TimeLiteral<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
@@ -114,13 +129,14 @@ where
     choice((_this_parser, _super_parser, _this_super_parser)).boxed()
 }
 
-pub fn constant_bit_select_parser<'a, I>()
--> impl Parser<'a, I, ConstantBitSelect<'a>, ParserError<'a>> + Clone
+pub fn constant_bit_select_parser<'a, I>(
+    constant_expression_parser: impl Parser<'a, I, ConstantExpression<'a>, ParserError<'a>> + Clone + 'a,
+) -> impl Parser<'a, I, ConstantBitSelect<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
     token(Token::Bracket)
-        .then(constant_expression_parser())
+        .then(constant_expression_parser)
         .then(token(Token::EBracket))
         .map(|((a, b), c)| (a, b, c))
         .repeated()
@@ -129,10 +145,36 @@ where
         .boxed()
 }
 
-pub fn constant_select_parser<'a, I>()
--> impl Parser<'a, I, ConstantSelect<'a>, ParserError<'a>> + Clone
+pub fn constant_select_parser<'a, I>(
+    constant_expression_parser: impl Parser<'a, I, ConstantExpression<'a>, ParserError<'a>> + Clone + 'a,
+) -> impl Parser<'a, I, ConstantSelect<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
-    todo_parser()
+    let _hierarchy_parser = token(Token::Period)
+        .then(member_identifier_parser())
+        .then(constant_bit_select_parser(
+            constant_expression_parser.clone(),
+        ))
+        .map(|((a, b), c)| (a, b, c))
+        .repeated()
+        .collect::<Vec<(Metadata<'a>, MemberIdentifier<'a>, ConstantBitSelect<'a>)>>()
+        .then(token(Token::Period))
+        .then(member_identifier_parser())
+        .map(|((a, b), c)| (a, b, c));
+    _hierarchy_parser
+        .or_not()
+        .then(constant_bit_select_parser(
+            constant_expression_parser.clone(),
+        ))
+        .then(
+            token(Token::Bracket)
+                .then(constant_part_select_range_parser(
+                    constant_expression_parser,
+                ))
+                .then(token(Token::EBracket))
+                .map(|((a, b), c)| (a, b, c))
+                .or_not(),
+        )
+        .map(|((a, b), c)| ConstantSelect(a, b, c))
 }

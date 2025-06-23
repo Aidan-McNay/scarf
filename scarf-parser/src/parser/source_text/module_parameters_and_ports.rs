@@ -178,7 +178,7 @@ where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
     port_identifier_parser()
-        .then(constant_select_parser())
+        .then(constant_select_parser(constant_expression_parser()))
         .map(|(a, b)| PortReference(a, b))
         .boxed()
 }
