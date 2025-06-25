@@ -112,8 +112,9 @@ where
         .boxed()
 }
 
-pub fn streaming_concatenation_parser<'a, I>()
--> impl Parser<'a, I, StreamingConcatenation<'a>, ParserError<'a>> + Clone
+pub fn streaming_concatenation_parser<'a, I>(
+    _expression_parser: impl Parser<'a, I, Expression<'a>, ParserError<'a>> + Clone + 'a,
+) -> impl Parser<'a, I, StreamingConcatenation<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {

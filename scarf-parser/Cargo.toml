@@ -2,6 +2,7 @@
 name = "scarf-parser"
 description = "A helper crate of scarf for parsing a SystemVerilog source file"
 version = "0.1.0"
+authors = ["Aidan McNay <aidanmcnay@gmail.com>"]
 edition = "2024"
 license = "GPL-3.0-or-later"
 repository = "https://github.com/Aidan-McNay/scarf"

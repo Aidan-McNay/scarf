@@ -62,6 +62,73 @@ pub enum ModulePathPrimary<'a> {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+pub enum ClassQualifierOrPackageScope<'a> {
+    ClassQualifier(Box<ClassQualifier<'a>>),
+    PackageScope(Box<PackageScope<'a>>),
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum Primary<'a> {
+    PrimaryLiteral(Box<PrimaryLiteral<'a>>),
+    HierarchicalIdentifier(
+        Box<(
+            Option<ClassQualifierOrPackageScope<'a>>,
+            HierarchicalIdentifier<'a>,
+            Select<'a>,
+        )>,
+    ),
+    EmptyUnpackedArrayConcatenation(Box<EmptyUnpackedArrayConcatenation<'a>>),
+    Concatenation(
+        Box<(
+            Concatenation<'a>,
+            Option<(Metadata<'a>, RangeExpression<'a>, Metadata<'a>)>,
+        )>,
+    ),
+    MultipleConcatenation(
+        Box<(
+            MultipleConcatenation<'a>,
+            Option<(Metadata<'a>, RangeExpression<'a>, Metadata<'a>)>,
+        )>,
+    ),
+    FunctionSubroutineCall(
+        Box<(
+            FunctionSubroutineCall<'a>,
+            Option<(Metadata<'a>, RangeExpression<'a>, Metadata<'a>)>,
+        )>,
+    ),
+    LetExpression(Box<LetExpression<'a>>),
+    MintypmaxExpression(Box<(Metadata<'a>, MintypmaxExpression<'a>, Metadata<'a>)>),
+    Cast(Box<Cast<'a>>),
+    AssignmentPatternExpression(Box<AssignmentPatternExpression<'a>>),
+    StreamingConcatenation(Box<StreamingConcatenation<'a>>),
+    SequenceMethodCall(Box<SequenceMethodCall<'a>>),
+    This(Box<Metadata<'a>>),
+    Dollar(Box<Metadata<'a>>),
+    Null(Box<Metadata<'a>>),
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum ImplicitClassHandleOrClassScope<'a> {
+    ImplicitClassHandle(Box<(ImplicitClassHandle<'a>, Metadata<'a>)>),
+    ClassScope(Box<ClassScope<'a>>),
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct ClassQualifier<'a>(
+    pub  Option<(
+        Metadata<'a>, // local
+        Metadata<'a>, // ::
+    )>,
+    pub Option<ImplicitClassHandleOrClassScope<'a>>,
+);
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum RangeExpression<'a> {
+    Expression(Box<Expression<'a>>),
+    PartSelectRange(Box<PartSelectRange<'a>>),
+}
+
+#[derive(Clone, Debug, PartialEq)]
 pub enum PrimaryLiteral<'a> {
     Number(Box<Number<'a>>),
     TimeLiteral(Box<TimeLiteral<'a>>),
@@ -121,6 +188,15 @@ pub struct ConstantSelect<'a>(
         ConstantPartSelectRange<'a>,
         Metadata<'a>, // ]
     )>,
+);
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct Cast<'a>(
+    pub CastingType<'a>,
+    pub Metadata<'a>, // '
+    pub Metadata<'a>, // (
+    pub Expression<'a>,
+    pub Metadata<'a>, // )
 );
 
 #[derive(Clone, Debug, PartialEq)]

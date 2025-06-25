@@ -105,6 +105,127 @@ where
             .then(token(Token::EParen))
             .map(|((a, b), c)| ModulePathPrimary::MintypmaxExpression(Box::new((a, b, c)))),
     ))
+    .boxed()
+}
+
+pub fn primary_parser<'a, I>(
+    expression_parser: impl Parser<'a, I, Expression<'a>, ParserError<'a>> + Clone + 'a,
+) -> impl Parser<'a, I, Primary<'a>, ParserError<'a>> + Clone
+where
+    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
+{
+    let _range_slice_parser = token(Token::Bracket)
+        .then(range_expression_parser(expression_parser.clone()))
+        .then(token(Token::EBracket))
+        .map(|((a, b), c)| (a, b, c));
+    let _primary_literal_parser =
+        primary_literal_parser().map(|a| Primary::PrimaryLiteral(Box::new(a)));
+    let _hierarchical_identifier_parser = class_qualifier_or_package_scope_parser()
+        .or_not()
+        .then(hierarchical_identifier_parser())
+        .then(select_parser())
+        .map(|((a, b), c)| Primary::HierarchicalIdentifier(Box::new((a, b, c))));
+    let _empty_unpacked_array_concatenation_parser = empty_unpacked_array_concatenation_parser()
+        .map(|a| Primary::EmptyUnpackedArrayConcatenation(Box::new(a)));
+    let _concatenation_parser = concatenation_parser(expression_parser.clone())
+        .then(_range_slice_parser.clone().or_not())
+        .map(|(a, b)| Primary::Concatenation(Box::new((a, b))));
+    let _multiple_concatenation_parser = multiple_concatenation_parser(expression_parser.clone())
+        .then(_range_slice_parser.clone().or_not())
+        .map(|(a, b)| Primary::MultipleConcatenation(Box::new((a, b))));
+    let _function_subroutine_call_parser = function_subroutine_call_parser()
+        .then(_range_slice_parser.or_not())
+        .map(|(a, b)| Primary::FunctionSubroutineCall(Box::new((a, b))));
+    let _let_expression_parser = let_expression_parser(expression_parser.clone())
+        .map(|a| Primary::LetExpression(Box::new(a)));
+    let _mintypmax_parser = token(Token::Paren)
+        .then(mintypmax_expression_parser(expression_parser.clone()))
+        .then(token(Token::EParen))
+        .map(|((a, b), c)| Primary::MintypmaxExpression(Box::new((a, b, c))));
+    let _cast_parser = cast_parser(expression_parser.clone()).map(|a| Primary::Cast(Box::new(a)));
+    let _assignment_pattern_expression_parser =
+        assignment_pattern_expression_parser(expression_parser.clone())
+            .map(|a| Primary::AssignmentPatternExpression(Box::new(a)));
+    let _streaming_concatenation_parser = streaming_concatenation_parser(expression_parser.clone())
+        .map(|a| Primary::StreamingConcatenation(Box::new(a)));
+    let _sequence_method_call_parser = sequence_method_call_parser(expression_parser.clone())
+        .map(|a| Primary::SequenceMethodCall(Box::new(a)));
+    let _this_parser = token(Token::This).map(|a| Primary::This(Box::new(a)));
+    let _dollar_parser = token(Token::Dollar).map(|a| Primary::This(Box::new(a)));
+    let _null_parser = token(Token::Null).map(|a| Primary::This(Box::new(a)));
+    choice((
+        _primary_literal_parser,
+        _hierarchical_identifier_parser,
+        _empty_unpacked_array_concatenation_parser,
+        _concatenation_parser,
+        _multiple_concatenation_parser,
+        _function_subroutine_call_parser,
+        _let_expression_parser,
+        _mintypmax_parser,
+        _cast_parser,
+        _assignment_pattern_expression_parser,
+        _streaming_concatenation_parser,
+        _sequence_method_call_parser,
+        _this_parser,
+        _dollar_parser,
+        _null_parser,
+    ))
+    .boxed()
+}
+
+fn class_qualifier_or_package_scope_parser<'a, I>()
+-> impl Parser<'a, I, ClassQualifierOrPackageScope<'a>, ParserError<'a>> + Clone
+where
+    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
+{
+    choice((
+        class_qualifier_parser().map(|a| ClassQualifierOrPackageScope::ClassQualifier(Box::new(a))),
+        package_scope_parser().map(|a| ClassQualifierOrPackageScope::PackageScope(Box::new(a))),
+    ))
+    .boxed()
+}
+
+fn implicit_class_handle_or_class_scope_parser<'a, I>()
+-> impl Parser<'a, I, ImplicitClassHandleOrClassScope<'a>, ParserError<'a>> + Clone
+where
+    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
+{
+    choice((
+        implicit_class_handle_parser()
+            .then(token(Token::Period))
+            .map(|(a, b)| ImplicitClassHandleOrClassScope::ImplicitClassHandle(Box::new((a, b)))),
+        class_scope_parser().map(|a| ImplicitClassHandleOrClassScope::ClassScope(Box::new(a))),
+    ))
+    .boxed()
+}
+
+pub fn class_qualifier_parser<'a, I>()
+-> impl Parser<'a, I, ClassQualifier<'a>, ParserError<'a>> + Clone
+where
+    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
+{
+    token(Token::Local)
+        .then(token(Token::ColonColon))
+        .or_not()
+        .then(implicit_class_handle_or_class_scope_parser().or_not())
+        .map(|(a, b)| ClassQualifier(a, b))
+        .boxed()
+}
+
+pub fn range_expression_parser<'a, I>(
+    expression_parser: impl Parser<'a, I, Expression<'a>, ParserError<'a>> + Clone + 'a,
+) -> impl Parser<'a, I, RangeExpression<'a>, ParserError<'a>> + Clone
+where
+    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
+{
+    choice((
+        expression_parser
+            .clone()
+            .map(|a| RangeExpression::Expression(Box::new(a))),
+        part_select_range_parser(expression_parser)
+            .map(|a| RangeExpression::PartSelectRange(Box::new(a))),
+    ))
+    .boxed()
 }
 
 pub fn primary_literal_parser<'a, I>()
@@ -267,6 +388,24 @@ where
         )
         .map(|((a, b), c)| ConstantSelect(a, b, c))
         .boxed()
+}
+
+pub fn cast_parser<'a, I>(
+    expression_parser: impl Parser<'a, I, Expression<'a>, ParserError<'a>> + Clone + 'a,
+) -> impl Parser<'a, I, Cast<'a>, ParserError<'a>> + Clone
+where
+    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
+{
+    casting_type_parser(
+        constant_expression_parser(),
+        constant_primary_parser(constant_expression_parser()),
+    )
+    .then(token(Token::Apost))
+    .then(token(Token::Paren))
+    .then(expression_parser)
+    .then(token(Token::EParen))
+    .map(|((((a, b), c), d), e)| Cast(a, b, c, d, e))
+    .boxed()
 }
 
 pub fn constant_cast_parser<'a, I>(

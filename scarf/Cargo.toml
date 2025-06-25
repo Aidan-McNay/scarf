@@ -2,6 +2,7 @@
 name = "scarf"
 description = "A suite of tools for interacting with (System)Verilog hardware designs"
 version = "0.1.0"
+authors = ["Aidan McNay <aidanmcnay@gmail.com>"]
 edition = "2024"
 license = "GPL-3.0-or-later"
 repository = "https://github.com/Aidan-McNay/scarf"

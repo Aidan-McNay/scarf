@@ -38,7 +38,7 @@ pub enum ConstantExpression<'a> {
 #[derive(Clone, Debug, PartialEq)]
 pub enum ConstantMintypmaxExpression<'a> {
     Single(Box<ConstantExpression<'a>>),
-    MinTypMax(
+    Mintypmax(
         Box<(
             ConstantExpression<'a>,
             Metadata<'a>,
@@ -79,6 +79,20 @@ pub enum ConstantIndexedRange<'a> {
 pub type Expression<'a> = Metadata<'a>;
 
 #[derive(Clone, Debug, PartialEq)]
+pub enum MintypmaxExpression<'a> {
+    Single(Box<Expression<'a>>),
+    Mintypmax(
+        Box<(
+            Expression<'a>,
+            Metadata<'a>,
+            Expression<'a>,
+            Metadata<'a>,
+            Expression<'a>,
+        )>,
+    ),
+}
+
+#[derive(Clone, Debug, PartialEq)]
 pub struct ModulePathConditionalExpression<'a>(
     pub ModulePathExpression<'a>,
     pub Metadata<'a>, // ?
@@ -112,13 +126,37 @@ pub enum ModulePathExpression<'a> {
 #[derive(Clone, Debug, PartialEq)]
 pub enum ModulePathMintypmaxExpression<'a> {
     Single(Box<ModulePathExpression<'a>>),
-    MinTypMax(
+    Mintypmax(
         Box<(
             ModulePathExpression<'a>,
             Metadata<'a>,
             ModulePathExpression<'a>,
             Metadata<'a>,
             ModulePathExpression<'a>,
+        )>,
+    ),
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum PartSelectRange<'a> {
+    ConstantRange(Box<ConstantRange<'a>>),
+    IndexedRange(Box<IndexedRange<'a>>),
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum IndexedRange<'a> {
+    Plus(
+        Box<(
+            Expression<'a>,
+            Metadata<'a>, // +:
+            ConstantExpression<'a>,
+        )>,
+    ),
+    Minus(
+        Box<(
+            Expression<'a>,
+            Metadata<'a>, // -:
+            ConstantExpression<'a>,
         )>,
     ),
 }

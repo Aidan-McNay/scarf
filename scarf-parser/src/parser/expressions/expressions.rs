@@ -224,7 +224,7 @@ where
             .then(token(Token::Colon))
             .then(constant_expression_parser.clone())
             .map(|((((a, b), c), d), e)| {
-                ConstantMintypmaxExpression::MinTypMax(Box::new((a, b, c, d, e)))
+                ConstantMintypmaxExpression::Mintypmax(Box::new((a, b, c, d, e)))
             }),
         constant_expression_parser.map(|a| ConstantMintypmaxExpression::Single(Box::new(a))),
     ))
@@ -313,6 +313,25 @@ where
     token(Token::Error)
 }
 
+pub fn mintypmax_expression_parser<'a, I>(
+    expression_parser: impl Parser<'a, I, Expression<'a>, ParserError<'a>> + Clone + 'a,
+) -> impl Parser<'a, I, MintypmaxExpression<'a>, ParserError<'a>> + Clone
+where
+    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
+{
+    choice((
+        expression_parser
+            .clone()
+            .then(token(Token::Colon))
+            .then(expression_parser.clone())
+            .then(token(Token::Colon))
+            .then(expression_parser.clone())
+            .map(|((((a, b), c), d), e)| MintypmaxExpression::Mintypmax(Box::new((a, b, c, d, e)))),
+        expression_parser.map(|a| MintypmaxExpression::Single(Box::new(a))),
+    ))
+    .boxed()
+}
+
 pub fn module_path_conditional_expression_parser<'a, I>(
     module_path_expression_parser: impl Parser<'a, I, ModulePathExpression<'a>, ParserError<'a>>
     + Clone
@@ -329,6 +348,7 @@ where
         .then(token(Token::Colon))
         .then(module_path_expression_parser)
         .map(|(((((a, b), c), d), e), f)| ModulePathConditionalExpression(a, b, c, d, e, f))
+        .boxed()
 }
 
 pub fn module_path_expression_parser<'a, I>()
@@ -444,9 +464,44 @@ where
             .then(token(Token::Colon))
             .then(module_path_expression_parser.clone())
             .map(|((((a, b), c), d), e)| {
-                ModulePathMintypmaxExpression::MinTypMax(Box::new((a, b, c, d, e)))
+                ModulePathMintypmaxExpression::Mintypmax(Box::new((a, b, c, d, e)))
             }),
         module_path_expression_parser.map(|a| ModulePathMintypmaxExpression::Single(Box::new(a))),
+    ))
+    .boxed()
+}
+
+pub fn part_select_range_parser<'a, I>(
+    expression_parser: impl Parser<'a, I, Expression<'a>, ParserError<'a>> + Clone + 'a,
+) -> impl Parser<'a, I, PartSelectRange<'a>, ParserError<'a>> + Clone
+where
+    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
+{
+    choice((
+        constant_range_parser(constant_expression_parser())
+            .map(|a| PartSelectRange::ConstantRange(Box::new(a))),
+        indexed_range_parser(expression_parser).map(|a| PartSelectRange::IndexedRange(Box::new(a))),
+    ))
+    .boxed()
+}
+
+pub fn indexed_range_parser<'a, I>(
+    expression_parser: impl Parser<'a, I, Expression<'a>, ParserError<'a>> + Clone + 'a,
+) -> impl Parser<'a, I, IndexedRange<'a>, ParserError<'a>> + Clone
+where
+    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
+{
+    choice((
+        expression_parser
+            .clone()
+            .then(token(Token::PlusColon))
+            .then(constant_expression_parser())
+            .map(|((a, b), c)| IndexedRange::Plus(Box::new((a, b, c)))),
+        expression_parser
+            .clone()
+            .then(token(Token::MinusColon))
+            .then(constant_expression_parser())
+            .map(|((a, b), c)| IndexedRange::Minus(Box::new((a, b, c)))),
     ))
     .boxed()
 }

@@ -7,7 +7,7 @@ use clap::{Args, Parser, Subcommand};
 use scarf_parser::*;
 
 #[derive(Parser)]
-#[command(version, about, long_about = None)]
+#[command(version, author, about, long_about = None)]
 struct Cli {
     #[command(subcommand)]
     command: Commands,
