@@ -7,6 +7,73 @@ use crate::*;
 use chumsky::prelude::*;
 use scarf_syntax::*;
 
+pub fn pattern_parser<'a, I>() -> impl Parser<'a, I, Pattern<'a>, ParserError<'a>> + Clone
+where
+    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
+{
+    let mut parser = Recursive::declare();
+    let _parentheses_parser = token(Token::Paren)
+        .then(parser.clone())
+        .then(token(Token::EParen))
+        .map(|((a, b), c)| Pattern::Parentheses(Box::new((a, b, c))));
+    let _variable_identifier_parser = token(Token::Period)
+        .then(variable_identifier_parser())
+        .map(|(a, b)| Pattern::VariableIdentifier(Box::new((a, b))));
+    let _wildcard_parser = token(Token::Period)
+        .then(token(Token::Star))
+        .map(|(a, b)| Pattern::Wildcard(Box::new((a, b))));
+    let _constant_expression_parser =
+        constant_expression_parser().map(|a| Pattern::ConstantExpression(Box::new(a)));
+    let _tagged_member_parser = token(Token::Tagged)
+        .then(member_identifier_parser())
+        .then(parser.clone().or_not())
+        .map(|((a, b), c)| Pattern::TaggedMember(Box::new((a, b, c))));
+    let _multi_pattern_parser = token(Token::Apost)
+        .then(token(Token::Brace))
+        .then(parser.clone())
+        .then(
+            token(Token::Apost)
+                .then(parser.clone())
+                .repeated()
+                .collect::<Vec<(Metadata<'a>, Pattern<'a>)>>(),
+        )
+        .then(token(Token::EBrace))
+        .map(|((((a, b), c), d), e)| Pattern::MultiPattern(Box::new((a, b, c, d, e))));
+    let _multi_identifier_pattern_parser = token(Token::Apost)
+        .then(token(Token::Brace))
+        .then(member_identifier_parser())
+        .then(token(Token::Colon))
+        .then(parser.clone())
+        .then(
+            token(Token::Apost)
+                .then(member_identifier_parser())
+                .then(token(Token::Colon))
+                .then(parser.clone())
+                .map(|(((a, b), c), d)| (a, b, c, d))
+                .repeated()
+                .collect::<Vec<(
+                    Metadata<'a>,
+                    MemberIdentifier<'a>,
+                    Metadata<'a>,
+                    Pattern<'a>,
+                )>>(),
+        )
+        .then(token(Token::EBrace))
+        .map(|((((((a, b), c), d), e), f), g)| {
+            Pattern::MultiIdentifierPattern(Box::new((a, b, c, d, e, f, g)))
+        });
+    parser.define(choice((
+        _parentheses_parser,
+        _variable_identifier_parser,
+        _wildcard_parser,
+        _constant_expression_parser,
+        _tagged_member_parser,
+        _multi_pattern_parser,
+        _multi_identifier_pattern_parser,
+    )));
+    parser.boxed()
+}
+
 pub fn assignment_pattern_expression_parser<'a, I>(
     _expression_parser: impl Parser<'a, I, Expression<'a>, ParserError<'a>> + Clone + 'a,
 ) -> impl Parser<'a, I, AssignmentPatternExpression<'a>, ParserError<'a>> + Clone

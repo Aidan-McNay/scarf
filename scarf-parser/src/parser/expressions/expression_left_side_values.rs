@@ -52,8 +52,9 @@ where
     .boxed()
 }
 
-pub fn variable_lvalue_parser<'a, I>()
--> impl Parser<'a, I, VariableLvalue<'a>, ParserError<'a>> + Clone
+pub fn variable_lvalue_parser<'a, I>(
+    expression_parser: impl Parser<'a, I, Expression<'a>, ParserError<'a>> + Clone + 'a,
+) -> impl Parser<'a, I, VariableLvalue<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
@@ -76,7 +77,7 @@ where
         .or_not()
         .then(assignment_pattern_variable_lvalue_parser(parser.clone()))
         .map(|(a, b)| VariableLvalue::Assignment(Box::new(AssignmentVariableLvalue(a, b))));
-    let _streaming_variable_lvalue_parser = streaming_concatenation_parser(expression_parser())
+    let _streaming_variable_lvalue_parser = streaming_concatenation_parser(expression_parser)
         .map(|a| VariableLvalue::Streaming(Box::new(a)));
     parser.define(choice((
         _selection_variable_lvalue_parser,

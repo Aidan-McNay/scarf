@@ -9,6 +9,39 @@ use chumsky::pratt::*;
 use chumsky::prelude::*;
 use scarf_syntax::*;
 
+pub fn inc_or_dec_expression_parser<'a, I>(
+    expression_parser: impl Parser<'a, I, Expression<'a>, ParserError<'a>> + Clone + 'a,
+) -> impl Parser<'a, I, IncOrDecExpression<'a>, ParserError<'a>> + Clone
+where
+    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
+{
+    let _preop_parser = inc_or_dec_operator_parser()
+        .then(attribute_instance_vec_parser())
+        .then(variable_lvalue_parser(expression_parser.clone()))
+        .map(|((a, b), c)| IncOrDecExpression::Preop(Box::new((a, b, c))));
+    let _postop_parser = variable_lvalue_parser(expression_parser.clone())
+        .then(attribute_instance_vec_parser())
+        .then(inc_or_dec_operator_parser())
+        .map(|((a, b), c)| IncOrDecExpression::Postop(Box::new((a, b, c))));
+    choice((_preop_parser, _postop_parser)).boxed()
+}
+
+pub fn conditional_expression_parser<'a, I>(
+    expression_parser: impl Parser<'a, I, Expression<'a>, ParserError<'a>> + Clone + 'a,
+) -> impl Parser<'a, I, ConditionalExpression<'a>, ParserError<'a>> + Clone
+where
+    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
+{
+    cond_predicate_parser(expression_parser.clone())
+        .then(token(Token::Quest))
+        .then(attribute_instance_vec_parser())
+        .then(expression_parser.clone())
+        .then(token(Token::Colon))
+        .then(expression_parser)
+        .map(|(((((a, b), c), d), e), f)| ConditionalExpression(a, b, c, d, e, f))
+        .boxed()
+}
+
 pub fn constant_expression_parser<'a, I>()
 -> impl Parser<'a, I, ConstantExpression<'a>, ParserError<'a>> + Clone
 where
@@ -311,6 +344,35 @@ where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
     token(Token::Error)
+}
+
+pub fn tagged_union_expression_parser<'a, I>(
+    expression_parser: impl Parser<'a, I, Expression<'a>, ParserError<'a>> + Clone + 'a,
+) -> impl Parser<'a, I, TaggedUnionExpression<'a>, ParserError<'a>> + Clone
+where
+    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
+{
+    token(Token::Tagged)
+        .then(member_identifier_parser())
+        .then(primary_parser(expression_parser).or_not())
+        .map(|((a, b), c)| TaggedUnionExpression(a, b, c))
+        .boxed()
+}
+
+pub fn inside_expression_parser<'a, I>(
+    expression_parser: impl Parser<'a, I, Expression<'a>, ParserError<'a>> + Clone + 'a,
+) -> impl Parser<'a, I, InsideExpression<'a>, ParserError<'a>> + Clone
+where
+    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
+{
+    expression_parser
+        .clone()
+        .then(token(Token::Inside))
+        .then(token(Token::Brace))
+        .then(range_list_parser(expression_parser))
+        .then(token(Token::EBrace))
+        .map(|((((a, b), c), d), e)| InsideExpression(a, b, c, d, e))
+        .boxed()
 }
 
 pub fn mintypmax_expression_parser<'a, I>(

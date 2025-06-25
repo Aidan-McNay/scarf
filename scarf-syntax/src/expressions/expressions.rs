@@ -6,6 +6,34 @@
 use crate::*;
 
 #[derive(Clone, Debug, PartialEq)]
+pub enum IncOrDecExpression<'a> {
+    Preop(
+        Box<(
+            IncOrDecOperator<'a>,
+            Vec<AttributeInstance<'a>>,
+            VariableLvalue<'a>,
+        )>,
+    ),
+    Postop(
+        Box<(
+            VariableLvalue<'a>,
+            Vec<AttributeInstance<'a>>,
+            IncOrDecOperator<'a>,
+        )>,
+    ),
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct ConditionalExpression<'a>(
+    pub CondPredicate<'a>,
+    pub Metadata<'a>, // ?
+    pub Vec<AttributeInstance<'a>>,
+    pub Expression<'a>,
+    pub Metadata<'a>, // :
+    pub Expression<'a>,
+);
+
+#[derive(Clone, Debug, PartialEq)]
 pub enum ConstantExpression<'a> {
     Primary(Box<ConstantPrimary<'a>>),
     Unary(
@@ -77,6 +105,22 @@ pub enum ConstantIndexedRange<'a> {
 }
 
 pub type Expression<'a> = Metadata<'a>;
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct TaggedUnionExpression<'a>(
+    pub Metadata<'a>, // tagged
+    pub MemberIdentifier<'a>,
+    pub Option<Primary<'a>>,
+);
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct InsideExpression<'a>(
+    pub Expression<'a>,
+    pub Metadata<'a>, // inside
+    pub Metadata<'a>, // {
+    pub RangeList<'a>,
+    pub Metadata<'a>, // }
+);
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum MintypmaxExpression<'a> {

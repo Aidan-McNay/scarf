@@ -5,6 +5,43 @@
 
 use crate::*;
 
+#[derive(Clone, Debug, PartialEq)]
+pub enum Pattern<'a> {
+    Parentheses(Box<(Metadata<'a>, Pattern<'a>, Metadata<'a>)>),
+    VariableIdentifier(Box<(Metadata<'a>, VariableIdentifier<'a>)>),
+    Wildcard(Box<(Metadata<'a>, Metadata<'a>)>),
+    ConstantExpression(Box<ConstantExpression<'a>>),
+    TaggedMember(Box<(Metadata<'a>, MemberIdentifier<'a>, Option<Pattern<'a>>)>),
+    MultiPattern(
+        Box<(
+            Metadata<'a>, // '
+            Metadata<'a>, // {
+            Pattern<'a>,
+            Vec<(
+                Metadata<'a>, // ,
+                Pattern<'a>,
+            )>,
+            Metadata<'a>, // }
+        )>,
+    ),
+    MultiIdentifierPattern(
+        Box<(
+            Metadata<'a>, // '
+            Metadata<'a>, // {
+            MemberIdentifier<'a>,
+            Metadata<'a>, // :
+            Pattern<'a>,
+            Vec<(
+                Metadata<'a>, // ,
+                MemberIdentifier<'a>,
+                Metadata<'a>, // :
+                Pattern<'a>,
+            )>,
+            Metadata<'a>, // }
+        )>,
+    ),
+}
+
 pub type AssignmentPatternExpression<'a> = ();
 pub type AssignmentPatternExpressionType<'a> = ();
 
