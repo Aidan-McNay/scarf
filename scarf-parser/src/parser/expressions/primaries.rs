@@ -81,6 +81,32 @@ where
     parser.boxed()
 }
 
+pub fn module_path_primary_parser<'a, I>(
+    module_path_expression_parser: impl Parser<'a, I, ModulePathExpression<'a>, ParserError<'a>>
+    + Clone
+    + 'a,
+) -> impl Parser<'a, I, ModulePathPrimary<'a>, ParserError<'a>> + Clone
+where
+    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
+{
+    choice((
+        number_parser().map(|a| ModulePathPrimary::Number(Box::new(a))),
+        identifier_parser().map(|a| ModulePathPrimary::Identifier(Box::new(a))),
+        module_path_concatenation_parser(module_path_expression_parser.clone())
+            .map(|a| ModulePathPrimary::Concatenation(Box::new(a))),
+        module_path_multiple_concatenation_parser(module_path_expression_parser.clone())
+            .map(|a| ModulePathPrimary::MultipleConcatenation(Box::new(a))),
+        function_subroutine_call_parser()
+            .map(|a| ModulePathPrimary::FunctionSubroutineCall(Box::new(a))),
+        token(Token::Paren)
+            .then(module_path_mintypmax_expression_parser(
+                module_path_expression_parser,
+            ))
+            .then(token(Token::EParen))
+            .map(|((a, b), c)| ModulePathPrimary::MintypmaxExpression(Box::new((a, b, c)))),
+    ))
+}
+
 pub fn primary_literal_parser<'a, I>()
 -> impl Parser<'a, I, PrimaryLiteral<'a>, ParserError<'a>> + Clone
 where

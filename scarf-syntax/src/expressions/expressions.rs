@@ -77,3 +77,48 @@ pub enum ConstantIndexedRange<'a> {
 }
 
 pub type Expression<'a> = Metadata<'a>;
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct ModulePathConditionalExpression<'a>(
+    pub ModulePathExpression<'a>,
+    pub Metadata<'a>, // ?
+    pub Vec<AttributeInstance<'a>>,
+    pub ModulePathExpression<'a>,
+    pub Metadata<'a>, // :
+    pub ModulePathExpression<'a>,
+);
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum ModulePathExpression<'a> {
+    Primary(Box<ModulePathPrimary<'a>>),
+    Unary(
+        Box<(
+            UnaryModulePathOperator<'a>,
+            Vec<AttributeInstance<'a>>,
+            ModulePathPrimary<'a>,
+        )>,
+    ),
+    Binary(
+        Box<(
+            ModulePathExpression<'a>,
+            BinaryModulePathOperator<'a>,
+            Vec<AttributeInstance<'a>>,
+            ModulePathExpression<'a>,
+        )>,
+    ),
+    Conditional(Box<ModulePathConditionalExpression<'a>>),
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum ModulePathMintypmaxExpression<'a> {
+    Single(Box<ModulePathExpression<'a>>),
+    MinTypMax(
+        Box<(
+            ModulePathExpression<'a>,
+            Metadata<'a>,
+            ModulePathExpression<'a>,
+            Metadata<'a>,
+            ModulePathExpression<'a>,
+        )>,
+    ),
+}

@@ -18,6 +18,14 @@ where
     todo_parser()
 }
 
+pub fn function_subroutine_call_parser<'a, I>()
+-> impl Parser<'a, I, FunctionSubroutineCall<'a>, ParserError<'a>> + Clone
+where
+    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
+{
+    todo_parser()
+}
+
 pub fn list_of_arguments_parser<'a, I>()
 -> impl Parser<'a, I, ListOfArguments<'a>, ParserError<'a>> + Clone
 where

@@ -30,6 +30,22 @@ pub struct ConstantMultipleConcatenation<'a>(
 );
 
 #[derive(Clone, Debug, PartialEq)]
+pub struct ModulePathConcatenation<'a>(
+    pub Metadata<'a>, // {
+    pub ModulePathExpression<'a>,
+    pub Vec<(Metadata<'a>, ModulePathExpression<'a>)>,
+    pub Metadata<'a>, // }
+);
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct ModulePathMultipleConcatenation<'a>(
+    pub Metadata<'a>, // {
+    pub ConstantExpression<'a>,
+    pub ModulePathConcatenation<'a>,
+    pub Metadata<'a>, // }
+);
+
+#[derive(Clone, Debug, PartialEq)]
 pub struct MultipleConcatenation<'a>(
     pub Metadata<'a>, // {
     pub Expression<'a>,

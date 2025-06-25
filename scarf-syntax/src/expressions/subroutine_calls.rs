@@ -5,4 +5,6 @@
 
 pub type ConstantFunctionCall<'a> = ();
 
+pub type FunctionSubroutineCall<'a> = ();
+
 pub type ListOfArguments<'a> = ();

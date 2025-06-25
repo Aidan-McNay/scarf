@@ -46,6 +46,22 @@ pub enum ConstantPrimary<'a> {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+pub enum ModulePathPrimary<'a> {
+    Number(Box<Number<'a>>),
+    Identifier(Box<Identifier<'a>>),
+    Concatenation(Box<ModulePathConcatenation<'a>>),
+    MultipleConcatenation(Box<ModulePathMultipleConcatenation<'a>>),
+    FunctionSubroutineCall(Box<FunctionSubroutineCall<'a>>),
+    MintypmaxExpression(
+        Box<(
+            Metadata<'a>,
+            ModulePathMintypmaxExpression<'a>,
+            Metadata<'a>,
+        )>,
+    ),
+}
+
+#[derive(Clone, Debug, PartialEq)]
 pub enum PrimaryLiteral<'a> {
     Number(Box<Number<'a>>),
     TimeLiteral(Box<TimeLiteral<'a>>),

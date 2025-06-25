@@ -59,6 +59,45 @@ where
         .boxed()
 }
 
+pub fn module_path_concatenation_parser<'a, I>(
+    module_path_expression_parser: impl Parser<'a, I, ModulePathExpression<'a>, ParserError<'a>>
+    + Clone
+    + 'a,
+) -> impl Parser<'a, I, ModulePathConcatenation<'a>, ParserError<'a>> + Clone
+where
+    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
+{
+    token(Token::Brace)
+        .then(module_path_expression_parser.clone())
+        .then(
+            token(Token::Comma)
+                .then(module_path_expression_parser)
+                .repeated()
+                .collect::<Vec<(Metadata<'a>, ModulePathExpression<'a>)>>(),
+        )
+        .then(token(Token::EBrace))
+        .map(|(((a, b), c), d)| ModulePathConcatenation(a, b, c, d))
+        .boxed()
+}
+
+pub fn module_path_multiple_concatenation_parser<'a, I>(
+    module_path_expression_parser: impl Parser<'a, I, ModulePathExpression<'a>, ParserError<'a>>
+    + Clone
+    + 'a,
+) -> impl Parser<'a, I, ModulePathMultipleConcatenation<'a>, ParserError<'a>> + Clone
+where
+    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
+{
+    token(Token::Brace)
+        .then(constant_expression_parser())
+        .then(module_path_concatenation_parser(
+            module_path_expression_parser,
+        ))
+        .then(token(Token::EBrace))
+        .map(|(((a, b), c), d)| ModulePathMultipleConcatenation(a, b, c, d))
+        .boxed()
+}
+
 pub fn multiple_concatenation_parser<'a, I>(
     expression_parser: impl Parser<'a, I, Expression<'a>, ParserError<'a>> + Clone + 'a,
 ) -> impl Parser<'a, I, MultipleConcatenation<'a>, ParserError<'a>> + Clone

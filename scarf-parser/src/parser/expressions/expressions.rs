@@ -312,3 +312,141 @@ where
 {
     token(Token::Error)
 }
+
+pub fn module_path_conditional_expression_parser<'a, I>(
+    module_path_expression_parser: impl Parser<'a, I, ModulePathExpression<'a>, ParserError<'a>>
+    + Clone
+    + 'a,
+) -> impl Parser<'a, I, ModulePathConditionalExpression<'a>, ParserError<'a>> + Clone
+where
+    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
+{
+    module_path_expression_parser
+        .clone()
+        .then(token(Token::Quest))
+        .then(attribute_instance_vec_parser())
+        .then(module_path_expression_parser.clone())
+        .then(token(Token::Colon))
+        .then(module_path_expression_parser)
+        .map(|(((((a, b), c), d), e), f)| ModulePathConditionalExpression(a, b, c, d, e, f))
+}
+
+pub fn module_path_expression_parser<'a, I>()
+-> impl Parser<'a, I, ModulePathExpression<'a>, ParserError<'a>> + Clone
+where
+    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
+{
+    let mut parser = Recursive::declare();
+    let _primary_parser = module_path_primary_parser(parser.clone())
+        .map(|a| ModulePathExpression::Primary(Box::new(a)));
+    let _unary_parser = unary_module_path_operator_parser()
+        .then(attribute_instance_vec_parser())
+        .then(module_path_primary_parser(parser.clone()))
+        .map(|((a, b), c)| ModulePathExpression::Unary(Box::new((a, b, c))));
+    let _binop = |c, b: fn(Metadata<'a>) -> BinaryModulePathOperator<'a>| {
+        token(c)
+            .map(move |a| b(a))
+            .then(attribute_instance_vec_parser())
+    };
+    let _binop_map = |l,
+                      (op, attr),
+                      r,
+                      _: &mut MapExtra<'a, '_, I, extra::Err<Rich<'a, Token<'a>>>>|
+     -> ModulePathExpression {
+        ModulePathExpression::Binary(Box::new((l, op, attr, r)))
+    };
+    let _binary_parser = parser.clone().pratt((
+        infix(
+            left(6),
+            _binop(Token::EqEq, BinaryModulePathOperator::EqEq as fn(_) -> _),
+            _binop_map,
+        ),
+        infix(
+            left(6),
+            _binop(
+                Token::ExclEq,
+                BinaryModulePathOperator::ExclEq as fn(_) -> _,
+            ),
+            _binop_map,
+        ),
+        infix(
+            left(5),
+            _binop(Token::Amp, BinaryModulePathOperator::Amp as fn(_) -> _),
+            _binop_map,
+        ),
+        infix(
+            left(4),
+            _binop(Token::Caret, BinaryModulePathOperator::Caret as fn(_) -> _),
+            _binop_map,
+        ),
+        infix(
+            left(4),
+            _binop(
+                Token::CaretTilde,
+                BinaryModulePathOperator::CaretTilde as fn(_) -> _,
+            ),
+            _binop_map,
+        ),
+        infix(
+            left(4),
+            _binop(
+                Token::TildeCaret,
+                BinaryModulePathOperator::TildeCaret as fn(_) -> _,
+            ),
+            _binop_map,
+        ),
+        infix(
+            left(3),
+            _binop(Token::Pipe, BinaryModulePathOperator::Pipe as fn(_) -> _),
+            _binop_map,
+        ),
+        infix(
+            left(2),
+            _binop(
+                Token::AmpAmp,
+                BinaryModulePathOperator::AmpAmp as fn(_) -> _,
+            ),
+            _binop_map,
+        ),
+        infix(
+            left(1),
+            _binop(
+                Token::PipePipe,
+                BinaryModulePathOperator::PipePipe as fn(_) -> _,
+            ),
+            _binop_map,
+        ),
+    ));
+    let _conditional_parser = module_path_conditional_expression_parser(parser.clone())
+        .map(|a| ModulePathExpression::Conditional(Box::new(a)));
+    parser.define(choice((
+        _primary_parser,
+        _unary_parser,
+        _binary_parser,
+        _conditional_parser,
+    )));
+    parser.boxed()
+}
+
+pub fn module_path_mintypmax_expression_parser<'a, I>(
+    module_path_expression_parser: impl Parser<'a, I, ModulePathExpression<'a>, ParserError<'a>>
+    + Clone
+    + 'a,
+) -> impl Parser<'a, I, ModulePathMintypmaxExpression<'a>, ParserError<'a>> + Clone
+where
+    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
+{
+    choice((
+        module_path_expression_parser
+            .clone()
+            .then(token(Token::Colon))
+            .then(module_path_expression_parser.clone())
+            .then(token(Token::Colon))
+            .then(module_path_expression_parser.clone())
+            .map(|((((a, b), c), d), e)| {
+                ModulePathMintypmaxExpression::MinTypMax(Box::new((a, b, c, d, e)))
+            }),
+        module_path_expression_parser.map(|a| ModulePathMintypmaxExpression::Single(Box::new(a))),
+    ))
+    .boxed()
+}
