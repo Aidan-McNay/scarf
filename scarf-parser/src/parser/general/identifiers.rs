@@ -621,23 +621,31 @@ where
     .boxed()
 }
 
-pub fn ps_parameter_identifier_parser<'a, I>()
--> impl Parser<'a, I, PsParameterIdentifier<'a>, ParserError<'a>> + Clone
+pub fn package_or_class_scope_parser<'a, I>()
+-> impl Parser<'a, I, PackageOrClassScope<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
 {
-    let _scope_parser = choice((
-        class_scope_parser().map(|a| PsParameterIdentifierScope::ClassScope(a)),
-        package_scope_parser().map(|a| PsParameterIdentifierScope::PackageScope(a)),
-    ));
-    let _scoped_parser = _scope_parser
+    choice((
+        class_scope_parser().map(|a| PackageOrClassScope::ClassScope(a)),
+        package_scope_parser().map(|a| PackageOrClassScope::PackageScope(a)),
+    ))
+}
+
+pub fn ps_parameter_identifier_parser<'a, I>(
+    constant_expression_parser: impl Parser<'a, I, ConstantExpression<'a>, ParserError<'a>> + Clone + 'a,
+) -> impl Parser<'a, I, PsParameterIdentifier<'a>, ParserError<'a>> + Clone
+where
+    I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
+{
+    let _scoped_parser = package_or_class_scope_parser()
         .or_not()
         .then(parameter_identifier_parser())
         .map(|(a, b)| PsParameterIdentifier::Scoped(a, b));
     let _generated_parser = (generate_block_identifier_parser()
         .then(
             token(Token::Bracket)
-                .then(constant_expression_parser())
+                .then(constant_expression_parser)
                 .then(token(Token::EBracket))
                 .map(|((a, b), c)| (a, b, c))
                 .or_not(),

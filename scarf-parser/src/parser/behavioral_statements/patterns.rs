@@ -7,8 +7,28 @@ use crate::*;
 use chumsky::prelude::*;
 use scarf_syntax::*;
 
+pub fn assignment_pattern_expression_parser<'a, I>(
+    _expression_parser: impl Parser<'a, I, Expression<'a>, ParserError<'a>> + Clone + 'a,
+) -> impl Parser<'a, I, AssignmentPatternExpression<'a>, ParserError<'a>> + Clone
+where
+    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
+{
+    todo_parser()
+}
+
 pub fn assignment_pattern_expression_type_parser<'a, I>()
 -> impl Parser<'a, I, AssignmentPatternExpressionType<'a>, ParserError<'a>> + Clone
+where
+    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
+{
+    todo_parser()
+}
+
+pub fn constant_assignment_pattern_expression_parser<'a, I>(
+    _constant_expression_parser: impl Parser<'a, I, ConstantExpression<'a>, ParserError<'a>>
+    + Clone
+    + 'a,
+) -> impl Parser<'a, I, ConstantAssignmentPatternExpression<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {

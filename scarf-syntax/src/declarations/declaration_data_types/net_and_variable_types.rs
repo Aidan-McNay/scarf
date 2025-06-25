@@ -5,6 +5,15 @@
 
 use crate::*;
 
+#[derive(Clone, Debug, PartialEq)]
+pub enum CastingType<'a> {
+    SimpleType(Box<SimpleType<'a>>),
+    ConstantPrimary(Box<ConstantPrimary<'a>>),
+    Signing(Box<Signing<'a>>),
+    String(Box<Metadata<'a>>),
+    Const(Box<Metadata<'a>>),
+}
+
 pub type DataType<'a> = ();
 pub type DataTypeOrImplicit<'a> = ();
 
@@ -16,6 +25,12 @@ pub struct ClassScope<'a>(
 
 pub type ClassType<'a> = ();
 pub type InterfaceClassType = ();
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum IntegerType<'a> {
+    Vector(Box<IntegerVectorType<'a>>),
+    Atom(Box<IntegerAtomType<'a>>),
+}
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum IntegerAtomType<'a> {
@@ -67,6 +82,14 @@ pub enum Signing<'a> {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+pub enum SimpleType<'a> {
+    Integer(Box<IntegerType<'a>>),
+    NonInteger(Box<NonIntegerType<'a>>),
+    PsType(Box<PsTypeIdentifier<'a>>),
+    PsParameter(Box<PsParameterIdentifier<'a>>),
+}
+
+#[derive(Clone, Debug, PartialEq)]
 pub enum SoftOrTagged<'a> {
     Soft(Metadata<'a>),
     Tagged(Metadata<'a>),
@@ -76,6 +99,26 @@ pub enum SoftOrTagged<'a> {
 pub enum StructUnion<'a> {
     Struct(Metadata<'a>),
     Union(Metadata<'a>, Option<SoftOrTagged<'a>>),
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum TypeReference<'a> {
+    Expression(
+        Box<(
+            Metadata<'a>, // type
+            Metadata<'a>, // (
+            Expression<'a>,
+            Metadata<'a>, // )
+        )>,
+    ),
+    DataTypeOrIncompleteClassScopedType(
+        Box<(
+            Metadata<'a>, // type
+            Metadata<'a>, // (
+            DataTypeOrIncompleteClassScopedType<'a>,
+            Metadata<'a>, // )
+        )>,
+    ),
 }
 
 pub type DataTypeOrIncompleteClassScopedType<'a> = ();

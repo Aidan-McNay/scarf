@@ -35,6 +35,20 @@ pub enum ConstantExpression<'a> {
     ),
 }
 
+#[derive(Clone, Debug, PartialEq)]
+pub enum ConstantMintypmaxExpression<'a> {
+    Single(Box<ConstantExpression<'a>>),
+    MinTypMax(
+        Box<(
+            ConstantExpression<'a>,
+            Metadata<'a>,
+            ConstantExpression<'a>,
+            Metadata<'a>,
+            ConstantExpression<'a>,
+        )>,
+    ),
+}
+
 pub type ConstantParamExpression<'a> = ();
 
 #[derive(Clone, Debug, PartialEq)]
@@ -62,4 +76,4 @@ pub enum ConstantIndexedRange<'a> {
     Minus(Box<(ConstantExpression<'a>, Metadata<'a>, ConstantExpression<'a>)>),
 }
 
-pub type Expression = ();
+pub type Expression<'a> = Metadata<'a>;

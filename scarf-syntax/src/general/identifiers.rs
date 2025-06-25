@@ -235,17 +235,14 @@ pub enum PsOrHierarchicalTfIdentifier<'a> {
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub enum PsParameterIdentifierScope<'a> {
+pub enum PackageOrClassScope<'a> {
     ClassScope(ClassScope<'a>),
     PackageScope(PackageScope<'a>),
 }
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum PsParameterIdentifier<'a> {
-    Scoped(
-        Option<PsParameterIdentifierScope<'a>>,
-        ParameterIdentifier<'a>,
-    ),
+    Scoped(Option<PackageOrClassScope<'a>>, ParameterIdentifier<'a>),
     Generated(
         Vec<(
             GenerateBlockIdentifier<'a>,

@@ -5,7 +5,10 @@
 
 use crate::*;
 
+pub type AssignmentPatternExpression<'a> = ();
 pub type AssignmentPatternExpressionType<'a> = ();
+
+pub type ConstantAssignmentPatternExpression<'a> = ();
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct AssignmentPatternNetLvalue<'a>(

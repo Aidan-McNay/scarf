@@ -6,19 +6,19 @@
 use crate::*;
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct EnableTerminal(pub Expression);
+pub struct EnableTerminal<'a>(pub Expression<'a>);
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct InoutTerminal<'a>(pub NetLvalue<'a>);
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct InputTerminal(pub Expression);
+pub struct InputTerminal<'a>(pub Expression<'a>);
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct NcontrolTerminal(pub Expression);
+pub struct NcontrolTerminal<'a>(pub Expression<'a>);
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct OutputTerminal<'a>(pub NetLvalue<'a>);
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct PcontrolTerminal(pub Expression);
+pub struct PcontrolTerminal<'a>(pub Expression<'a>);

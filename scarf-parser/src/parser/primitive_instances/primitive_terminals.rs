@@ -7,7 +7,8 @@ use crate::*;
 use chumsky::prelude::*;
 use scarf_syntax::*;
 
-pub fn enable_terminal_parser<'a, I>() -> impl Parser<'a, I, EnableTerminal, ParserError<'a>> + Clone
+pub fn enable_terminal_parser<'a, I>()
+-> impl Parser<'a, I, EnableTerminal<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
@@ -22,7 +23,8 @@ where
     net_lvalue_parser().map(|a| InoutTerminal(a))
 }
 
-pub fn input_terminal_parser<'a, I>() -> impl Parser<'a, I, InputTerminal, ParserError<'a>> + Clone
+pub fn input_terminal_parser<'a, I>()
+-> impl Parser<'a, I, InputTerminal<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
@@ -30,7 +32,7 @@ where
 }
 
 pub fn ncontrol_terminal_parser<'a, I>()
--> impl Parser<'a, I, NcontrolTerminal, ParserError<'a>> + Clone
+-> impl Parser<'a, I, NcontrolTerminal<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
@@ -46,7 +48,7 @@ where
 }
 
 pub fn pcontrol_terminal_parser<'a, I>()
--> impl Parser<'a, I, PcontrolTerminal, ParserError<'a>> + Clone
+-> impl Parser<'a, I, PcontrolTerminal<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {

@@ -5,7 +5,45 @@
 
 use crate::*;
 
-pub type ConstantPrimary<'a> = ();
+#[derive(Clone, Debug, PartialEq)]
+pub enum ConstantPrimary<'a> {
+    PrimaryLiteral(Box<PrimaryLiteral<'a>>),
+    PsParameter(Box<(PsParameterIdentifier<'a>, ConstantSelect<'a>)>),
+    Specparam(
+        Box<(
+            SpecparamIdentifier<'a>,
+            Option<(Metadata<'a>, ConstantRangeExpression<'a>, Metadata<'a>)>,
+        )>,
+    ),
+    Genvar(Box<GenvarIdentifier<'a>>),
+    FormalPort(Box<(FormalPortIdentifier<'a>, ConstantSelect<'a>)>),
+    Enum(Box<(Option<PackageOrClassScope<'a>>, EnumIdentifier<'a>)>),
+    EmptyUnpackedArrayConcatenation(Box<EmptyUnpackedArrayConcatenation<'a>>),
+    Concatenation(
+        Box<(
+            ConstantConcatenation<'a>,
+            Option<(Metadata<'a>, ConstantRangeExpression<'a>, Metadata<'a>)>,
+        )>,
+    ),
+    MultipleConcatenation(
+        Box<(
+            ConstantMultipleConcatenation<'a>,
+            Option<(Metadata<'a>, ConstantRangeExpression<'a>, Metadata<'a>)>,
+        )>,
+    ),
+    FunctionCall(
+        Box<(
+            ConstantFunctionCall<'a>,
+            Option<(Metadata<'a>, ConstantRangeExpression<'a>, Metadata<'a>)>,
+        )>,
+    ),
+    LetExpression(Box<ConstantLetExpression<'a>>),
+    MintypmaxExpression(Box<(Metadata<'a>, ConstantMintypmaxExpression<'a>, Metadata<'a>)>),
+    Cast(Box<ConstantCast<'a>>),
+    AssignmentPatternExpression(Box<ConstantAssignmentPatternExpression<'a>>),
+    TypeReference(Box<TypeReference<'a>>),
+    Null(Box<Metadata<'a>>),
+}
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum PrimaryLiteral<'a> {
@@ -68,3 +106,14 @@ pub struct ConstantSelect<'a>(
         Metadata<'a>, // ]
     )>,
 );
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct ConstantCast<'a>(
+    pub CastingType<'a>,
+    pub Metadata<'a>, // '
+    pub Metadata<'a>, // (
+    pub ConstantExpression<'a>,
+    pub Metadata<'a>, // )
+);
+
+pub type ConstantLetExpression<'a> = ();

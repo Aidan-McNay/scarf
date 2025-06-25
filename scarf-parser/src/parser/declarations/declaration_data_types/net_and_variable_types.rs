@@ -7,6 +7,24 @@ use crate::*;
 use chumsky::prelude::*;
 use scarf_syntax::*;
 
+pub fn casting_type_parser<'a, I>(
+    constant_expression_parser: impl Parser<'a, I, ConstantExpression<'a>, ParserError<'a>> + Clone + 'a,
+    constant_primary_parser: impl Parser<'a, I, ConstantPrimary<'a>, ParserError<'a>> + Clone + 'a,
+) -> impl Parser<'a, I, CastingType<'a>, ParserError<'a>> + Clone
+where
+    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
+{
+    choice((
+        simple_type_parser(constant_expression_parser)
+            .map(|a| CastingType::SimpleType(Box::new(a))),
+        constant_primary_parser.map(|a| CastingType::ConstantPrimary(Box::new(a))),
+        signing_parser().map(|a| CastingType::Signing(Box::new(a))),
+        token(Token::String).map(|a| CastingType::String(Box::new(a))),
+        token(Token::Const).map(|a| CastingType::Const(Box::new(a))),
+    ))
+    .boxed()
+}
+
 pub fn data_type_parser<'a, I>() -> impl Parser<'a, I, DataType<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
@@ -45,6 +63,17 @@ where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
     todo_parser()
+}
+
+pub fn integer_type_parser<'a, I>() -> impl Parser<'a, I, IntegerType<'a>, ParserError<'a>> + Clone
+where
+    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
+{
+    choice((
+        integer_atom_type_parser().map(|a| IntegerType::Atom(Box::new(a))),
+        integer_vector_type_parser().map(|a| IntegerType::Vector(Box::new(a))),
+    ))
+    .boxed()
 }
 
 pub fn integer_atom_type_parser<'a, I>()
@@ -136,6 +165,22 @@ where
     .boxed()
 }
 
+pub fn simple_type_parser<'a, I>(
+    constant_expression_parser: impl Parser<'a, I, ConstantExpression<'a>, ParserError<'a>> + Clone + 'a,
+) -> impl Parser<'a, I, SimpleType<'a>, ParserError<'a>> + Clone
+where
+    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
+{
+    choice((
+        integer_type_parser().map(|a| SimpleType::Integer(Box::new(a))),
+        non_integer_type_parser().map(|a| SimpleType::NonInteger(Box::new(a))),
+        ps_type_identifier_parser().map(|a| SimpleType::PsType(Box::new(a))),
+        ps_parameter_identifier_parser(constant_expression_parser)
+            .map(|a| SimpleType::PsParameter(Box::new(a))),
+    ))
+    .boxed()
+}
+
 pub fn struct_union_parser<'a, I>() -> impl Parser<'a, I, StructUnion<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
@@ -149,6 +194,31 @@ where
         token(Token::Union)
             .then(soft_or_tagged_parser.or_not())
             .map(|(a, b)| StructUnion::Union(a, b)),
+    ))
+    .boxed()
+}
+
+pub fn type_reference_parser<'a, I>(
+    expression_parser: impl Parser<'a, I, Expression<'a>, ParserError<'a>> + Clone + 'a,
+) -> impl Parser<'a, I, TypeReference<'a>, ParserError<'a>> + Clone
+where
+    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
+{
+    let _expression_parser = token(Token::Type)
+        .then(token(Token::Paren))
+        .then(expression_parser)
+        .then(token(Token::EParen))
+        .map(|(((a, b), c), d)| TypeReference::Expression(Box::new((a, b, c, d))));
+    let _data_type_or_incomplete_class_scoped_type_parser = token(Token::Type)
+        .then(token(Token::Paren))
+        .then(data_type_or_incomplete_class_scoped_type_parser())
+        .then(token(Token::EParen))
+        .map(|(((a, b), c), d)| {
+            TypeReference::DataTypeOrIncompleteClassScopedType(Box::new((a, b, c, d)))
+        });
+    choice((
+        _expression_parser,
+        _data_type_or_incomplete_class_scoped_type_parser,
     ))
     .boxed()
 }

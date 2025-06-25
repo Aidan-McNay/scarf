@@ -24,13 +24,6 @@ where
         .then(_attribute_instance_vec_parser.clone())
         .then(constant_primary_parser(parser.clone()))
         .map(|((a, b), c)| ConstantExpression::Unary(Box::new((a, b, c))));
-    // TODO: Pratt parsing for operator precedence
-    // let _binary_parser = parser
-    //     .clone()
-    //     .then(binary_operator_parser())
-    //     .then(attribute_instance_vec_parser())
-    //     .then(parser.clone())
-    //     .map(|(((a, b), c), d)| ConstantExpression::Binary(Box::new((a, b, c, d))));
     let _binop = |c, b: fn(Metadata<'a>) -> BinaryOperator<'a>| {
         token(c)
             .map(move |a| b(a))
@@ -217,6 +210,27 @@ where
     parser.boxed()
 }
 
+pub fn constant_mintypmax_expression_parser<'a, I>(
+    constant_expression_parser: impl Parser<'a, I, ConstantExpression<'a>, ParserError<'a>> + Clone + 'a,
+) -> impl Parser<'a, I, ConstantMintypmaxExpression<'a>, ParserError<'a>> + Clone
+where
+    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
+{
+    choice((
+        constant_expression_parser
+            .clone()
+            .then(token(Token::Colon))
+            .then(constant_expression_parser.clone())
+            .then(token(Token::Colon))
+            .then(constant_expression_parser.clone())
+            .map(|((((a, b), c), d), e)| {
+                ConstantMintypmaxExpression::MinTypMax(Box::new((a, b, c, d, e)))
+            }),
+        constant_expression_parser.map(|a| ConstantMintypmaxExpression::Single(Box::new(a))),
+    ))
+    .boxed()
+}
+
 pub fn constant_param_expression_parser<'a, I>(
     _constant_expression_parser: impl Parser<'a, I, ConstantExpression<'a>, ParserError<'a>>
     + Clone
@@ -292,9 +306,9 @@ where
         .boxed()
 }
 
-pub fn expression_parser<'a, I>() -> impl Parser<'a, I, Expression, ParserError<'a>> + Clone
+pub fn expression_parser<'a, I>() -> impl Parser<'a, I, Expression<'a>, ParserError<'a>> + Clone
 where
     I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
 {
-    todo_parser()
+    token(Token::Error)
 }
