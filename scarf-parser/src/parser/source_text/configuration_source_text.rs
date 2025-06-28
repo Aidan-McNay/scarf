@@ -7,10 +7,7 @@ use crate::*;
 use chumsky::prelude::*;
 use scarf_syntax::*;
 
-pub fn config_declaration_parser<'a, I>()
--> impl Parser<'a, I, ConfigDeclaration, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn config_declaration_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, ConfigDeclaration, ParserError<'a>> + Clone {
     todo_parser()
 }

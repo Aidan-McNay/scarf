@@ -7,9 +7,7 @@ use crate::*;
 use chumsky::prelude::*;
 use scarf_syntax::*;
 
-pub fn number_parser<'a, I>() -> impl Parser<'a, I, Number<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
+pub fn number_parser<'a>() -> impl Parser<'a, ParserInput<'a>, Number<'a>, ParserError<'a>> + Clone
 {
     choice((
         integral_number_parser().map(|a| Number::Integral(Box::new(a))),
@@ -19,11 +17,8 @@ where
     .boxed()
 }
 
-pub fn integral_number_parser<'a, I>()
--> impl Parser<'a, I, IntegralNumber<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn integral_number_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, IntegralNumber<'a>, ParserError<'a>> + Clone {
     choice((
         decimal_number_parser().map(|a| IntegralNumber::Decimal(Box::new(a))),
         octal_number_parser().map(|a| IntegralNumber::Octal(Box::new(a))),
@@ -34,11 +29,8 @@ where
     .boxed()
 }
 
-pub fn decimal_number_parser<'a, I>()
--> impl Parser<'a, I, DecimalNumber<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn decimal_number_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, DecimalNumber<'a>, ParserError<'a>> + Clone {
     let _sized_parser = select! {
         Token::DecimalNumber(text) = e => (text, Metadata{
             span: convert_span(e.span()),
@@ -56,10 +48,8 @@ where
     .labelled("a decimal number")
 }
 
-pub fn binary_number_parser<'a, I>() -> impl Parser<'a, I, BinaryNumber<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn binary_number_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, BinaryNumber<'a>, ParserError<'a>> + Clone {
     select! {
         Token::BinaryNumber(text) = e => (text, Metadata{
             span: convert_span(e.span()),
@@ -71,10 +61,8 @@ where
     .map(|((text, metadata), b)| BinaryNumber(text, replace_nodes(metadata, b)))
 }
 
-pub fn octal_number_parser<'a, I>() -> impl Parser<'a, I, OctalNumber<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn octal_number_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, OctalNumber<'a>, ParserError<'a>> + Clone {
     select! {
         Token::OctalNumber(text) = e => (text, Metadata{
             span: convert_span(e.span()),
@@ -86,10 +74,8 @@ where
     .map(|((text, metadata), b)| OctalNumber(text, replace_nodes(metadata, b)))
 }
 
-pub fn hex_number_parser<'a, I>() -> impl Parser<'a, I, HexNumber<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn hex_number_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, HexNumber<'a>, ParserError<'a>> + Clone {
     select! {
         Token::HexNumber(text) = e => (text, Metadata{
             span: convert_span(e.span()),
@@ -101,10 +87,8 @@ where
     .map(|((text, metadata), b)| HexNumber(text, replace_nodes(metadata, b)))
 }
 
-pub fn real_number_parser<'a, I>() -> impl Parser<'a, I, RealNumber<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn real_number_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, RealNumber<'a>, ParserError<'a>> + Clone {
     choice((
         fixed_point_number_parser().map(|a| RealNumber::FixedPoint(Box::new(a))),
         scientific_number_parser().map(|a| RealNumber::Scientific(Box::new(a))),
@@ -113,11 +97,8 @@ where
     .boxed()
 }
 
-pub fn fixed_point_number_parser<'a, I>()
--> impl Parser<'a, I, FixedPointNumber<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn fixed_point_number_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, FixedPointNumber<'a>, ParserError<'a>> + Clone {
     select! {
         Token::FixedPointNumber(text) = e => (text, Metadata{
             span: convert_span(e.span()),
@@ -129,11 +110,8 @@ where
     .map(|((text, metadata), b)| FixedPointNumber(text, replace_nodes(metadata, b)))
 }
 
-pub fn scientific_number_parser<'a, I>()
--> impl Parser<'a, I, ScientificNumber<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn scientific_number_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, ScientificNumber<'a>, ParserError<'a>> + Clone {
     select! {
         Token::ScientificNumber(text) = e => (text, Metadata{
             span: convert_span(e.span()),
@@ -145,11 +123,8 @@ where
     .map(|((text, metadata), b)| ScientificNumber(text, replace_nodes(metadata, b)))
 }
 
-pub fn unsigned_number_parser<'a, I>()
--> impl Parser<'a, I, UnsignedNumber<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn unsigned_number_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, UnsignedNumber<'a>, ParserError<'a>> + Clone {
     select! {
         Token::UnsignedNumber(text) = e => (text, Metadata{
             span: convert_span(e.span()),
@@ -162,11 +137,8 @@ where
     .boxed()
 }
 
-pub fn unbased_unsized_literal_parser<'a, I>()
--> impl Parser<'a, I, UnbasedUnsizedLiteral<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn unbased_unsized_literal_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, UnbasedUnsizedLiteral<'a>, ParserError<'a>> + Clone {
     select! {
         Token::UnbasedUnsizedLiteral(text) = e => (text, Metadata{
             span: convert_span(e.span()),

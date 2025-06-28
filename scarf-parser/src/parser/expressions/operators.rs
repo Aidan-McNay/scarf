@@ -7,11 +7,8 @@ use crate::*;
 use chumsky::prelude::*;
 use scarf_syntax::*;
 
-pub fn unary_operator_parser<'a, I>()
--> impl Parser<'a, I, UnaryOperator<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn unary_operator_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, UnaryOperator<'a>, ParserError<'a>> + Clone {
     choice((
         token(Token::Plus).map(|a| UnaryOperator::Plus(a)),
         token(Token::Minus).map(|a| UnaryOperator::Minus(a)),
@@ -28,11 +25,8 @@ where
     .boxed()
 }
 
-pub fn binary_operator_parser<'a, I>()
--> impl Parser<'a, I, BinaryOperator<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn binary_operator_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, BinaryOperator<'a>, ParserError<'a>> + Clone {
     // Note: Got errors when combining these into one `choice`, seemingly because Rust used
     // alphabetic identifiers for each parser type, and didn't like more than 26...
     let temp1 = choice((
@@ -71,11 +65,8 @@ where
     choice((temp1, temp2)).boxed()
 }
 
-pub fn inc_or_dec_operator_parser<'a, I>()
--> impl Parser<'a, I, IncOrDecOperator<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn inc_or_dec_operator_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, IncOrDecOperator<'a>, ParserError<'a>> + Clone {
     choice((
         token(Token::PlusPlus).map(|a| IncOrDecOperator::PlusPlus(a)),
         token(Token::MinusMinus).map(|a| IncOrDecOperator::MinusMinus(a)),
@@ -83,11 +74,8 @@ where
     .boxed()
 }
 
-pub fn unary_module_path_operator_parser<'a, I>()
--> impl Parser<'a, I, UnaryModulePathOperator<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn unary_module_path_operator_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, UnaryModulePathOperator<'a>, ParserError<'a>> + Clone {
     choice((
         token(Token::Exclamation).map(|a| UnaryModulePathOperator::Exclamation(a)),
         token(Token::Tilde).map(|a| UnaryModulePathOperator::Tilde(a)),
@@ -102,11 +90,8 @@ where
     .boxed()
 }
 
-pub fn binary_module_path_operator_parser<'a, I>()
--> impl Parser<'a, I, BinaryModulePathOperator<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn binary_module_path_operator_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, BinaryModulePathOperator<'a>, ParserError<'a>> + Clone {
     choice((
         token(Token::EqEq).map(|a| BinaryModulePathOperator::EqEq(a)),
         token(Token::ExclEq).map(|a| BinaryModulePathOperator::ExclEq(a)),

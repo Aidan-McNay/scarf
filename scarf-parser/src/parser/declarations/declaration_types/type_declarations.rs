@@ -7,18 +7,13 @@ use crate::*;
 use chumsky::prelude::*;
 use scarf_syntax::*;
 
-pub fn package_import_declaration_parser<'a, I>()
--> impl Parser<'a, I, PackageImportDeclaration, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn package_import_declaration_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, PackageImportDeclaration, ParserError<'a>> + Clone {
     todo_parser()
 }
 
-pub fn forward_type_parser<'a, I>() -> impl Parser<'a, I, ForwardType<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn forward_type_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, ForwardType<'a>, ParserError<'a>> + Clone {
     choice((
         token(Token::Enum).map(|a| ForwardType::Enum(a)),
         token(Token::Struct).map(|a| ForwardType::Struct(a)),
@@ -31,10 +26,8 @@ where
     .boxed()
 }
 
-pub fn lifetime_parser<'a, I>() -> impl Parser<'a, I, Lifetime<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn lifetime_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, Lifetime<'a>, ParserError<'a>> + Clone {
     choice((
         token(Token::Static).map(|a| Lifetime::Static(a)),
         token(Token::Automatic).map(|a| Lifetime::Automatic(a)),

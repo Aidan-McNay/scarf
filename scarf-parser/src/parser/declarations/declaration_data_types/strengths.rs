@@ -7,11 +7,8 @@ use crate::*;
 use chumsky::prelude::*;
 use scarf_syntax::*;
 
-pub fn drive_strength_parser<'a, I>()
--> impl Parser<'a, I, DriveStrength<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn drive_strength_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, DriveStrength<'a>, ParserError<'a>> + Clone {
     let s0s1_parser = token(Token::Paren)
         .then(strength0_parser())
         .then(token(Token::Comma))
@@ -59,10 +56,8 @@ where
     .boxed()
 }
 
-pub fn strength0_parser<'a, I>() -> impl Parser<'a, I, Strength0<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn strength0_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, Strength0<'a>, ParserError<'a>> + Clone {
     choice((
         token(Token::Supply0).map(|a| Strength0::Supply0(a)),
         token(Token::Strong0).map(|a| Strength0::Strong0(a)),
@@ -72,10 +67,8 @@ where
     .boxed()
 }
 
-pub fn strength1_parser<'a, I>() -> impl Parser<'a, I, Strength1<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn strength1_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, Strength1<'a>, ParserError<'a>> + Clone {
     choice((
         token(Token::Supply1).map(|a| Strength1::Supply1(a)),
         token(Token::Strong1).map(|a| Strength1::Strong1(a)),
@@ -85,11 +78,8 @@ where
     .boxed()
 }
 
-pub fn charge_strength_parser<'a, I>()
--> impl Parser<'a, I, ChargeStrength<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn charge_strength_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, ChargeStrength<'a>, ParserError<'a>> + Clone {
     let charge_strength_size_parser = choice((
         token(Token::Small).map(|a| ChargeStrengthSize::Small(a)),
         token(Token::Medium).map(|a| ChargeStrengthSize::Medium(a)),

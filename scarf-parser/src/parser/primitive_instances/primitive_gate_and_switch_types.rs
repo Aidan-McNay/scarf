@@ -7,11 +7,8 @@ use crate::*;
 use chumsky::prelude::*;
 use scarf_syntax::*;
 
-pub fn cmos_switchtype_parser<'a, I>()
--> impl Parser<'a, I, CmosSwitchtype<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn cmos_switchtype_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, CmosSwitchtype<'a>, ParserError<'a>> + Clone {
     choice((
         token(Token::Cmos).map(|a| CmosSwitchtype::Cmos(a)),
         token(Token::Rcmos).map(|a| CmosSwitchtype::Rcmos(a)),
@@ -19,11 +16,8 @@ where
     .boxed()
 }
 
-pub fn enable_gatetype_parser<'a, I>()
--> impl Parser<'a, I, EnableGatetype<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn enable_gatetype_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, EnableGatetype<'a>, ParserError<'a>> + Clone {
     choice((
         token(Token::Bufif0).map(|a| EnableGatetype::Bufif0(a)),
         token(Token::Bufif1).map(|a| EnableGatetype::Bufif1(a)),
@@ -33,11 +27,8 @@ where
     .boxed()
 }
 
-pub fn mos_switchtype_parser<'a, I>()
--> impl Parser<'a, I, MosSwitchtype<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn mos_switchtype_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, MosSwitchtype<'a>, ParserError<'a>> + Clone {
     choice((
         token(Token::Nmos).map(|a| MosSwitchtype::Nmos(a)),
         token(Token::Pmos).map(|a| MosSwitchtype::Pmos(a)),
@@ -47,11 +38,8 @@ where
     .boxed()
 }
 
-pub fn n_input_gatetype_parser<'a, I>()
--> impl Parser<'a, I, NInputGatetype<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn n_input_gatetype_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, NInputGatetype<'a>, ParserError<'a>> + Clone {
     choice((
         token(Token::And).map(|a| NInputGatetype::And(a)),
         token(Token::Nand).map(|a| NInputGatetype::Nand(a)),
@@ -63,11 +51,8 @@ where
     .boxed()
 }
 
-pub fn n_output_gatetype_parser<'a, I>()
--> impl Parser<'a, I, NOutputGatetype<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn n_output_gatetype_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, NOutputGatetype<'a>, ParserError<'a>> + Clone {
     choice((
         token(Token::Buf).map(|a| NOutputGatetype::Buf(a)),
         token(Token::Not).map(|a| NOutputGatetype::Not(a)),
@@ -75,11 +60,8 @@ where
     .boxed()
 }
 
-pub fn pass_en_switchtype_parser<'a, I>()
--> impl Parser<'a, I, PassEnSwitchtype<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn pass_en_switchtype_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, PassEnSwitchtype<'a>, ParserError<'a>> + Clone {
     choice((
         token(Token::Tranif0).map(|a| PassEnSwitchtype::Tranif0(a)),
         token(Token::Tranif1).map(|a| PassEnSwitchtype::Tranif1(a)),
@@ -89,11 +71,8 @@ where
     .boxed()
 }
 
-pub fn pass_switchtype_parser<'a, I>()
--> impl Parser<'a, I, PassSwitchtype<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn pass_switchtype_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, PassSwitchtype<'a>, ParserError<'a>> + Clone {
     choice((
         token(Token::Tran).map(|a| PassSwitchtype::Tran(a)),
         token(Token::Rtran).map(|a| PassSwitchtype::Rtran(a)),

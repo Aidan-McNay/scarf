@@ -7,12 +7,16 @@ use crate::*;
 use chumsky::prelude::*;
 use scarf_syntax::*;
 
-pub fn constant_primary_parser<'a, I>(
-    constant_expression_parser: impl Parser<'a, I, ConstantExpression<'a>, ParserError<'a>> + Clone + 'a,
-) -> impl Parser<'a, I, ConstantPrimary<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn constant_primary_parser<'a>(
+    constant_expression_parser: impl Parser<
+        'a,
+        ParserInput<'a>,
+        ConstantExpression<'a>,
+        ParserError<'a>,
+    > + Clone
+    + 'a,
+    expression_parser: impl Parser<'a, ParserInput<'a>, Expression<'a>, ParserError<'a>> + Clone + 'a,
+) -> impl Parser<'a, ParserInput<'a>, ConstantPrimary<'a>, ParserError<'a>> + Clone {
     let mut parser = Recursive::declare();
     let _range_slice_parser = token(Token::Bracket)
         .then(constant_range_expression_parser(
@@ -58,7 +62,7 @@ where
     let _assignment_pattern_expression_parser =
         constant_assignment_pattern_expression_parser(constant_expression_parser)
             .map(|a| ConstantPrimary::AssignmentPatternExpression(Box::new(a)));
-    let _type_reference_parser = type_reference_parser(expression_parser())
+    let _type_reference_parser = type_reference_parser(expression_parser)
         .map(|a| ConstantPrimary::TypeReference(Box::new(a)));
     let _null_parser = token(Token::Null).map(|a| ConstantPrimary::Null(Box::new(a)));
     parser.define(choice((
@@ -81,14 +85,15 @@ where
     parser.boxed()
 }
 
-pub fn module_path_primary_parser<'a, I>(
-    module_path_expression_parser: impl Parser<'a, I, ModulePathExpression<'a>, ParserError<'a>>
-    + Clone
+pub fn module_path_primary_parser<'a>(
+    module_path_expression_parser: impl Parser<
+        'a,
+        ParserInput<'a>,
+        ModulePathExpression<'a>,
+        ParserError<'a>,
+    > + Clone
     + 'a,
-) -> impl Parser<'a, I, ModulePathPrimary<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+) -> impl Parser<'a, ParserInput<'a>, ModulePathPrimary<'a>, ParserError<'a>> + Clone {
     choice((
         number_parser().map(|a| ModulePathPrimary::Number(Box::new(a))),
         identifier_parser().map(|a| ModulePathPrimary::Identifier(Box::new(a))),
@@ -108,12 +113,9 @@ where
     .boxed()
 }
 
-pub fn primary_parser<'a, I>(
-    expression_parser: impl Parser<'a, I, Expression<'a>, ParserError<'a>> + Clone + 'a,
-) -> impl Parser<'a, I, Primary<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn primary_parser<'a>(
+    expression_parser: impl Parser<'a, ParserInput<'a>, Expression<'a>, ParserError<'a>> + Clone + 'a,
+) -> impl Parser<'a, ParserInput<'a>, Primary<'a>, ParserError<'a>> + Clone {
     let _range_slice_parser = token(Token::Bracket)
         .then(range_expression_parser(expression_parser.clone()))
         .then(token(Token::EBracket))
@@ -122,7 +124,7 @@ where
         primary_literal_parser().map(|a| Primary::PrimaryLiteral(Box::new(a)));
     let _hierarchical_identifier_parser = class_qualifier_or_package_scope_parser()
         .or_not()
-        .then(hierarchical_identifier_parser())
+        .then(hierarchical_identifier_parser(expression_parser.clone()))
         .then(select_parser())
         .map(|((a, b), c)| Primary::HierarchicalIdentifier(Box::new((a, b, c))));
     let _empty_unpacked_array_concatenation_parser = empty_unpacked_array_concatenation_parser()
@@ -173,11 +175,8 @@ where
     .boxed()
 }
 
-fn class_qualifier_or_package_scope_parser<'a, I>()
--> impl Parser<'a, I, ClassQualifierOrPackageScope<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+fn class_qualifier_or_package_scope_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, ClassQualifierOrPackageScope<'a>, ParserError<'a>> + Clone {
     choice((
         class_qualifier_parser().map(|a| ClassQualifierOrPackageScope::ClassQualifier(Box::new(a))),
         package_scope_parser().map(|a| ClassQualifierOrPackageScope::PackageScope(Box::new(a))),
@@ -185,11 +184,8 @@ where
     .boxed()
 }
 
-fn implicit_class_handle_or_class_scope_parser<'a, I>()
--> impl Parser<'a, I, ImplicitClassHandleOrClassScope<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+fn implicit_class_handle_or_class_scope_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, ImplicitClassHandleOrClassScope<'a>, ParserError<'a>> + Clone {
     choice((
         implicit_class_handle_parser()
             .then(token(Token::Period))
@@ -199,11 +195,8 @@ where
     .boxed()
 }
 
-pub fn class_qualifier_parser<'a, I>()
--> impl Parser<'a, I, ClassQualifier<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn class_qualifier_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, ClassQualifier<'a>, ParserError<'a>> + Clone {
     token(Token::Local)
         .then(token(Token::ColonColon))
         .or_not()
@@ -212,12 +205,9 @@ where
         .boxed()
 }
 
-pub fn range_expression_parser<'a, I>(
-    expression_parser: impl Parser<'a, I, Expression<'a>, ParserError<'a>> + Clone + 'a,
-) -> impl Parser<'a, I, RangeExpression<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn range_expression_parser<'a>(
+    expression_parser: impl Parser<'a, ParserInput<'a>, Expression<'a>, ParserError<'a>> + Clone + 'a,
+) -> impl Parser<'a, ParserInput<'a>, RangeExpression<'a>, ParserError<'a>> + Clone {
     choice((
         expression_parser
             .clone()
@@ -228,11 +218,8 @@ where
     .boxed()
 }
 
-pub fn primary_literal_parser<'a, I>()
--> impl Parser<'a, I, PrimaryLiteral<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn primary_literal_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, PrimaryLiteral<'a>, ParserError<'a>> + Clone {
     choice((
         number_parser().map(|a| PrimaryLiteral::Number(Box::new(a))),
         time_literal_parser().map(|a| PrimaryLiteral::TimeLiteral(Box::new(a))),
@@ -243,10 +230,8 @@ where
     .boxed()
 }
 
-pub fn time_literal_parser<'a, I>() -> impl Parser<'a, I, TimeLiteral<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn time_literal_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, TimeLiteral<'a>, ParserError<'a>> + Clone {
     choice((
         fixed_point_number_parser().map(|a| {
             TimeLiteral::TimeLiteralFixedPoint(Box::new((a, TimeUnit::S(Metadata::default()))))
@@ -267,9 +252,7 @@ where
     .boxed()
 }
 
-fn time_unit_parser<'a, I>() -> impl Parser<'a, I, TimeUnit<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
+fn time_unit_parser<'a>() -> impl Parser<'a, ParserInput<'a>, TimeUnit<'a>, ParserError<'a>> + Clone
 {
     select! {
         Token::TimeUnit(unit) = e if unit == "s" => TimeUnit::S(Metadata{
@@ -310,26 +293,18 @@ where
     .boxed()
 }
 
-pub fn select_parser<'a, I>() -> impl Parser<'a, I, Select<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
+pub fn select_parser<'a>() -> impl Parser<'a, ParserInput<'a>, Select<'a>, ParserError<'a>> + Clone
 {
     todo_parser()
 }
 
-pub fn nonrange_select_parser<'a, I>()
--> impl Parser<'a, I, NonrangeSelect<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn nonrange_select_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, NonrangeSelect<'a>, ParserError<'a>> + Clone {
     todo_parser()
 }
 
-pub fn implicit_class_handle_parser<'a, I>()
--> impl Parser<'a, I, ImplicitClassHandle<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn implicit_class_handle_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, ImplicitClassHandle<'a>, ParserError<'a>> + Clone {
     let _this_parser = token(Token::This).map(|a| ImplicitClassHandle::This(a));
     let _super_parser = token(Token::Super).map(|a| ImplicitClassHandle::Super(a));
     let _this_super_parser = token(Token::This)
@@ -339,12 +314,15 @@ where
     choice((_this_parser, _super_parser, _this_super_parser)).boxed()
 }
 
-pub fn constant_bit_select_parser<'a, I>(
-    constant_expression_parser: impl Parser<'a, I, ConstantExpression<'a>, ParserError<'a>> + Clone + 'a,
-) -> impl Parser<'a, I, ConstantBitSelect<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn constant_bit_select_parser<'a>(
+    constant_expression_parser: impl Parser<
+        'a,
+        ParserInput<'a>,
+        ConstantExpression<'a>,
+        ParserError<'a>,
+    > + Clone
+    + 'a,
+) -> impl Parser<'a, ParserInput<'a>, ConstantBitSelect<'a>, ParserError<'a>> + Clone {
     token(Token::Bracket)
         .then(constant_expression_parser)
         .then(token(Token::EBracket))
@@ -355,12 +333,15 @@ where
         .boxed()
 }
 
-pub fn constant_select_parser<'a, I>(
-    constant_expression_parser: impl Parser<'a, I, ConstantExpression<'a>, ParserError<'a>> + Clone + 'a,
-) -> impl Parser<'a, I, ConstantSelect<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn constant_select_parser<'a>(
+    constant_expression_parser: impl Parser<
+        'a,
+        ParserInput<'a>,
+        ConstantExpression<'a>,
+        ParserError<'a>,
+    > + Clone
+    + 'a,
+) -> impl Parser<'a, ParserInput<'a>, ConstantSelect<'a>, ParserError<'a>> + Clone {
     let _hierarchy_parser = token(Token::Period)
         .then(member_identifier_parser())
         .then(constant_bit_select_parser(
@@ -390,15 +371,15 @@ where
         .boxed()
 }
 
-pub fn cast_parser<'a, I>(
-    expression_parser: impl Parser<'a, I, Expression<'a>, ParserError<'a>> + Clone + 'a,
-) -> impl Parser<'a, I, Cast<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn cast_parser<'a>(
+    expression_parser: impl Parser<'a, ParserInput<'a>, Expression<'a>, ParserError<'a>> + Clone + 'a,
+) -> impl Parser<'a, ParserInput<'a>, Cast<'a>, ParserError<'a>> + Clone {
     casting_type_parser(
-        constant_expression_parser(),
-        constant_primary_parser(constant_expression_parser()),
+        constant_expression_parser(expression_parser.clone()),
+        constant_primary_parser(
+            constant_expression_parser(expression_parser.clone()),
+            expression_parser.clone(),
+        ),
     )
     .then(token(Token::Apost))
     .then(token(Token::Paren))
@@ -408,13 +389,18 @@ where
     .boxed()
 }
 
-pub fn constant_cast_parser<'a, I>(
-    constant_expression_parser: impl Parser<'a, I, ConstantExpression<'a>, ParserError<'a>> + Clone + 'a,
-    constant_primary_parser: impl Parser<'a, I, ConstantPrimary<'a>, ParserError<'a>> + Clone + 'a,
-) -> impl Parser<'a, I, ConstantCast<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn constant_cast_parser<'a>(
+    constant_expression_parser: impl Parser<
+        'a,
+        ParserInput<'a>,
+        ConstantExpression<'a>,
+        ParserError<'a>,
+    > + Clone
+    + 'a,
+    constant_primary_parser: impl Parser<'a, ParserInput<'a>, ConstantPrimary<'a>, ParserError<'a>>
+    + Clone
+    + 'a,
+) -> impl Parser<'a, ParserInput<'a>, ConstantCast<'a>, ParserError<'a>> + Clone {
     casting_type_parser(constant_expression_parser.clone(), constant_primary_parser)
         .then(token(Token::Apost))
         .then(token(Token::Paren))
@@ -424,13 +410,14 @@ where
         .boxed()
 }
 
-pub fn constant_let_expression_parser<'a, I>(
-    _constant_expression_parser: impl Parser<'a, I, ConstantExpression<'a>, ParserError<'a>>
-    + Clone
+pub fn constant_let_expression_parser<'a>(
+    _constant_expression_parser: impl Parser<
+        'a,
+        ParserInput<'a>,
+        ConstantExpression<'a>,
+        ParserError<'a>,
+    > + Clone
     + 'a,
-) -> impl Parser<'a, I, ConstantLetExpression<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+) -> impl Parser<'a, ParserInput<'a>, ConstantLetExpression<'a>, ParserError<'a>> + Clone {
     todo_parser()
 }

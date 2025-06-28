@@ -7,10 +7,9 @@ use crate::*;
 use chumsky::prelude::*;
 use scarf_syntax::*;
 
-pub fn pattern_parser<'a, I>() -> impl Parser<'a, I, Pattern<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn pattern_parser<'a>(
+    expression_parser: impl Parser<'a, ParserInput<'a>, Expression<'a>, ParserError<'a>> + Clone + 'a,
+) -> impl Parser<'a, ParserInput<'a>, Pattern<'a>, ParserError<'a>> + Clone {
     let mut parser = Recursive::declare();
     let _parentheses_parser = token(Token::Paren)
         .then(parser.clone())
@@ -22,8 +21,8 @@ where
     let _wildcard_parser = token(Token::Period)
         .then(token(Token::Star))
         .map(|(a, b)| Pattern::Wildcard(Box::new((a, b))));
-    let _constant_expression_parser =
-        constant_expression_parser().map(|a| Pattern::ConstantExpression(Box::new(a)));
+    let _constant_expression_parser = constant_expression_parser(expression_parser)
+        .map(|a| Pattern::ConstantExpression(Box::new(a)));
     let _tagged_member_parser = token(Token::Tagged)
         .then(member_identifier_parser())
         .then(parser.clone().or_not())
@@ -74,40 +73,33 @@ where
     parser.boxed()
 }
 
-pub fn assignment_pattern_expression_parser<'a, I>(
-    _expression_parser: impl Parser<'a, I, Expression<'a>, ParserError<'a>> + Clone + 'a,
-) -> impl Parser<'a, I, AssignmentPatternExpression<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn assignment_pattern_expression_parser<'a>(
+    _expression_parser: impl Parser<'a, ParserInput<'a>, Expression<'a>, ParserError<'a>> + Clone + 'a,
+) -> impl Parser<'a, ParserInput<'a>, AssignmentPatternExpression<'a>, ParserError<'a>> + Clone {
     todo_parser()
 }
 
-pub fn assignment_pattern_expression_type_parser<'a, I>()
--> impl Parser<'a, I, AssignmentPatternExpressionType<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn assignment_pattern_expression_type_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, AssignmentPatternExpressionType<'a>, ParserError<'a>> + Clone {
     todo_parser()
 }
 
-pub fn constant_assignment_pattern_expression_parser<'a, I>(
-    _constant_expression_parser: impl Parser<'a, I, ConstantExpression<'a>, ParserError<'a>>
-    + Clone
+pub fn constant_assignment_pattern_expression_parser<'a>(
+    _constant_expression_parser: impl Parser<
+        'a,
+        ParserInput<'a>,
+        ConstantExpression<'a>,
+        ParserError<'a>,
+    > + Clone
     + 'a,
-) -> impl Parser<'a, I, ConstantAssignmentPatternExpression<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
+) -> impl Parser<'a, ParserInput<'a>, ConstantAssignmentPatternExpression<'a>, ParserError<'a>> + Clone
 {
     todo_parser()
 }
 
-pub fn assignment_pattern_net_lvalue_parser<'a, I>(
-    net_lvalue_parser: impl Parser<'a, I, NetLvalue<'a>, ParserError<'a>> + Clone + 'a,
-) -> impl Parser<'a, I, AssignmentPatternNetLvalue<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn assignment_pattern_net_lvalue_parser<'a>(
+    net_lvalue_parser: impl Parser<'a, ParserInput<'a>, NetLvalue<'a>, ParserError<'a>> + Clone + 'a,
+) -> impl Parser<'a, ParserInput<'a>, AssignmentPatternNetLvalue<'a>, ParserError<'a>> + Clone {
     token(Token::Apost)
         .then(token(Token::Brace))
         .then(net_lvalue_parser.clone())
@@ -123,11 +115,11 @@ where
 }
 
 // Inlined for variable_lvalue_parser
-pub fn assignment_pattern_variable_lvalue_parser<'a, I>(
-    variable_lvalue_parser: impl Parser<'a, I, VariableLvalue<'a>, ParserError<'a>> + Clone + 'a,
-) -> impl Parser<'a, I, AssignmentPatternVariableLvalue<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
+pub fn assignment_pattern_variable_lvalue_parser<'a>(
+    variable_lvalue_parser: impl Parser<'a, ParserInput<'a>, VariableLvalue<'a>, ParserError<'a>>
+    + Clone
+    + 'a,
+) -> impl Parser<'a, ParserInput<'a>, AssignmentPatternVariableLvalue<'a>, ParserError<'a>> + Clone
 {
     token(Token::Apost)
         .then(token(Token::Brace))

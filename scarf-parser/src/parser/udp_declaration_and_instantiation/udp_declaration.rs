@@ -7,9 +7,7 @@ use crate::*;
 use chumsky::prelude::*;
 use scarf_syntax::*;
 
-pub fn udp_declaration_parser<'a, I>() -> impl Parser<'a, I, UdpDeclaration, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = SimpleSpan>,
-{
+pub fn udp_declaration_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, UdpDeclaration, ParserError<'a>> + Clone {
     todo_parser()
 }

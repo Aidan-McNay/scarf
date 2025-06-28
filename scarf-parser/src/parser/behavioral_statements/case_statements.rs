@@ -7,12 +7,9 @@ use crate::*;
 use chumsky::prelude::*;
 use scarf_syntax::*;
 
-pub fn range_list_parser<'a, I>(
-    expression_parser: impl Parser<'a, I, Expression<'a>, ParserError<'a>> + Clone + 'a,
-) -> impl Parser<'a, I, RangeList<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn range_list_parser<'a>(
+    expression_parser: impl Parser<'a, ParserInput<'a>, Expression<'a>, ParserError<'a>> + Clone + 'a,
+) -> impl Parser<'a, ParserInput<'a>, RangeList<'a>, ParserError<'a>> + Clone {
     let _value_range_vec_parser = token(Token::Comma)
         .then(value_range_parser(expression_parser.clone()))
         .repeated()
@@ -23,12 +20,9 @@ where
         .boxed()
 }
 
-pub fn value_range_parser<'a, I>(
-    expression_parser: impl Parser<'a, I, Expression<'a>, ParserError<'a>> + Clone + 'a,
-) -> impl Parser<'a, I, ValueRange<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn value_range_parser<'a>(
+    expression_parser: impl Parser<'a, ParserInput<'a>, Expression<'a>, ParserError<'a>> + Clone + 'a,
+) -> impl Parser<'a, ParserInput<'a>, ValueRange<'a>, ParserError<'a>> + Clone {
     let _expression_parser = expression_parser
         .clone()
         .map(|a| ValueRange::Expression(Box::new(a)));

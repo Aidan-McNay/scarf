@@ -7,11 +7,8 @@ use crate::*;
 use chumsky::prelude::*;
 use scarf_syntax::*;
 
-pub fn final_specifier_parser<'a, I>()
--> impl Parser<'a, I, FinalSpecifier<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn final_specifier_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, FinalSpecifier<'a>, ParserError<'a>> + Clone {
     token(Token::Colon)
         .then(token(Token::Final))
         .map(|(a, b)| FinalSpecifier(a, b))

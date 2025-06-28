@@ -7,9 +7,7 @@ use crate::*;
 use chumsky::prelude::*;
 use scarf_syntax::*;
 
-pub fn package_item_parser<'a, I>() -> impl Parser<'a, I, PackageItem, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn package_item_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, PackageItem, ParserError<'a>> + Clone {
     todo_parser()
 }

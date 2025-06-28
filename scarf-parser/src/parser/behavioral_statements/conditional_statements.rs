@@ -7,12 +7,9 @@ use crate::*;
 use chumsky::prelude::*;
 use scarf_syntax::*;
 
-pub fn cond_predicate_parser<'a, I>(
-    expression_parser: impl Parser<'a, I, Expression<'a>, ParserError<'a>> + Clone + 'a,
-) -> impl Parser<'a, I, CondPredicate<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn cond_predicate_parser<'a>(
+    expression_parser: impl Parser<'a, ParserInput<'a>, Expression<'a>, ParserError<'a>> + Clone + 'a,
+) -> impl Parser<'a, ParserInput<'a>, CondPredicate<'a>, ParserError<'a>> + Clone {
     expression_or_cond_pattern_parser(expression_parser.clone())
         .then(
             token(Token::AmpAmpAmp)
@@ -24,12 +21,9 @@ where
         .boxed()
 }
 
-pub fn expression_or_cond_pattern_parser<'a, I>(
-    expression_parser: impl Parser<'a, I, Expression<'a>, ParserError<'a>> + Clone + 'a,
-) -> impl Parser<'a, I, ExpressionOrCondPattern<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn expression_or_cond_pattern_parser<'a>(
+    expression_parser: impl Parser<'a, ParserInput<'a>, Expression<'a>, ParserError<'a>> + Clone + 'a,
+) -> impl Parser<'a, ParserInput<'a>, ExpressionOrCondPattern<'a>, ParserError<'a>> + Clone {
     choice((
         expression_parser
             .clone()
@@ -40,15 +34,13 @@ where
     .boxed()
 }
 
-pub fn cond_pattern_parser<'a, I>(
-    expression_parser: impl Parser<'a, I, Expression<'a>, ParserError<'a>> + Clone + 'a,
-) -> impl Parser<'a, I, CondPattern<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn cond_pattern_parser<'a>(
+    expression_parser: impl Parser<'a, ParserInput<'a>, Expression<'a>, ParserError<'a>> + Clone + 'a,
+) -> impl Parser<'a, ParserInput<'a>, CondPattern<'a>, ParserError<'a>> + Clone {
     expression_parser
+        .clone()
         .then(token(Token::Matches))
-        .then(pattern_parser())
+        .then(pattern_parser(expression_parser))
         .map(|((a, b), c)| CondPattern(a, b, c))
         .boxed()
 }

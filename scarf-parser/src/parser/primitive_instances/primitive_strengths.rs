@@ -7,11 +7,8 @@ use crate::*;
 use chumsky::prelude::*;
 use scarf_syntax::*;
 
-pub fn pulldown_strength_parser<'a, I>()
--> impl Parser<'a, I, PulldownStrength<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn pulldown_strength_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, PulldownStrength<'a>, ParserError<'a>> + Clone {
     let _s0s1_parser = token(Token::Paren)
         .then(strength0_parser())
         .then(token(Token::Comma))
@@ -31,11 +28,8 @@ where
     choice((_s0s1_parser, _s1s0_parser, _s0_parser)).boxed()
 }
 
-pub fn pullup_strength_parser<'a, I>()
--> impl Parser<'a, I, PullupStrength<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn pullup_strength_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, PullupStrength<'a>, ParserError<'a>> + Clone {
     let _s0s1_parser = token(Token::Paren)
         .then(strength0_parser())
         .then(token(Token::Comma))

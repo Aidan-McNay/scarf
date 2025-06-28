@@ -17,7 +17,7 @@ use ariadne::Report;
 use ariadne::{Color, Label, ReportKind};
 pub use behavioral_statements::*;
 use chumsky::error::{RichPattern, RichReason};
-use chumsky::input::ValueInput;
+use chumsky::input::{BoxedStream, MappedInput};
 use chumsky::prelude::*;
 pub use declarations::*;
 pub use errors::*;
@@ -30,11 +30,15 @@ pub use udp_declaration_and_instantiation::*;
 pub use utils::*;
 
 pub type ParserSpan = SimpleSpan;
+// Hard-code input type to be able to cache parsers
+pub type ParserInput<'a> = MappedInput<
+    Token<'a>,
+    ParserSpan,
+    BoxedStream<'a, (Token<'a>, SimpleSpan)>,
+    fn((Token<'a>, ParserSpan)) -> (Token<'a>, ParserSpan),
+>;
 
-pub fn parse<'a, I>(src: I) -> ParseResult<SourceText<'a>, Rich<'a, Token<'a>>>
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn parse<'a>(src: ParserInput<'a>) -> ParseResult<SourceText<'a>, Rich<'a, Token<'a>>> {
     source_text_parser().parse(src)
 }
 

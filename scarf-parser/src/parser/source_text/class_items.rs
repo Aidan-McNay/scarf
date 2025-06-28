@@ -7,17 +7,12 @@ use crate::*;
 use chumsky::prelude::*;
 use scarf_syntax::*;
 
-pub fn class_item_parser<'a, I>() -> impl Parser<'a, I, ClassItem, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn class_item_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, ClassItem, ParserError<'a>> + Clone {
     todo_parser()
 }
 
-pub fn interface_class_item_parser<'a, I>()
--> impl Parser<'a, I, InterfaceClassItem, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn interface_class_item_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, InterfaceClassItem, ParserError<'a>> + Clone {
     todo_parser()
 }

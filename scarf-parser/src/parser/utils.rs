@@ -4,7 +4,6 @@
 // Helper functions for implementing parsers
 
 use crate::*;
-use chumsky::input::ValueInput;
 use chumsky::prelude::*;
 use scarf_syntax::Span;
 use scarf_syntax::*;
@@ -21,11 +20,8 @@ pub fn convert_span(simple_span: ParserSpan) -> Span {
 }
 
 // A parser for matching extra nodes
-pub fn extra_node_parser<'a, I>()
--> impl Parser<'a, I, Vec<(ExtraNode<'a>, Span)>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn extra_node_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, Vec<(ExtraNode<'a>, Span)>, ParserError<'a>> + Clone {
     let _comment_parser = select! {
         Token::OnelineComment(text) = e => (ExtraNode::OnelineComment(text), convert_span(e.span())),
         Token::BlockComment(text) = e => (ExtraNode::BlockComment(text), convert_span(e.span()))
@@ -52,12 +48,9 @@ pub fn replace_nodes<'a>(
 }
 
 // A parser for matching a token and extra nodes, producing metadata
-pub fn token<'a, I>(
+pub fn token<'a>(
     token_to_match: Token<'a>,
-) -> impl Parser<'a, I, Metadata<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+) -> impl Parser<'a, ParserInput<'a>, Metadata<'a>, ParserError<'a>> + Clone {
     just(token_to_match)
         .map_with(|_, e| Metadata {
             span: convert_span(e.span()),
@@ -67,10 +60,7 @@ where
         .map(|(a, b)| replace_nodes(a, b))
 }
 
-pub fn todo_parser<'a, I>() -> impl Parser<'a, I, (), ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn todo_parser<'a>() -> impl Parser<'a, ParserInput<'a>, (), ParserError<'a>> + Clone {
     // Match against nothing
     just(Token::Error).to(())
 }

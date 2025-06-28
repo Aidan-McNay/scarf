@@ -7,13 +7,18 @@ use crate::*;
 use chumsky::prelude::*;
 use scarf_syntax::*;
 
-pub fn casting_type_parser<'a, I>(
-    constant_expression_parser: impl Parser<'a, I, ConstantExpression<'a>, ParserError<'a>> + Clone + 'a,
-    constant_primary_parser: impl Parser<'a, I, ConstantPrimary<'a>, ParserError<'a>> + Clone + 'a,
-) -> impl Parser<'a, I, CastingType<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn casting_type_parser<'a>(
+    constant_expression_parser: impl Parser<
+        'a,
+        ParserInput<'a>,
+        ConstantExpression<'a>,
+        ParserError<'a>,
+    > + Clone
+    + 'a,
+    constant_primary_parser: impl Parser<'a, ParserInput<'a>, ConstantPrimary<'a>, ParserError<'a>>
+    + Clone
+    + 'a,
+) -> impl Parser<'a, ParserInput<'a>, CastingType<'a>, ParserError<'a>> + Clone {
     choice((
         simple_type_parser(constant_expression_parser)
             .map(|a| CastingType::SimpleType(Box::new(a))),
@@ -25,50 +30,36 @@ where
     .boxed()
 }
 
-pub fn data_type_parser<'a, I>() -> impl Parser<'a, I, DataType<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn data_type_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, DataType<'a>, ParserError<'a>> + Clone {
     todo_parser()
 }
 
-pub fn data_type_or_implicit_parser<'a, I>()
--> impl Parser<'a, I, DataTypeOrImplicit<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn data_type_or_implicit_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, DataTypeOrImplicit<'a>, ParserError<'a>> + Clone {
     todo_parser()
 }
 
-pub fn class_scope_parser<'a, I>() -> impl Parser<'a, I, ClassScope<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn class_scope_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, ClassScope<'a>, ParserError<'a>> + Clone {
     class_type_parser()
         .then(token(Token::ColonColon))
         .map(|(a, b)| ClassScope(a, b))
         .boxed()
 }
 
-pub fn class_type_parser<'a, I>() -> impl Parser<'a, I, ClassType<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn class_type_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, ClassType<'a>, ParserError<'a>> + Clone {
     todo_parser()
 }
 
-pub fn interface_class_type_parser<'a, I>()
--> impl Parser<'a, I, InterfaceClassType, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn interface_class_type_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, InterfaceClassType, ParserError<'a>> + Clone {
     todo_parser()
 }
 
-pub fn integer_type_parser<'a, I>() -> impl Parser<'a, I, IntegerType<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn integer_type_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, IntegerType<'a>, ParserError<'a>> + Clone {
     choice((
         integer_atom_type_parser().map(|a| IntegerType::Atom(Box::new(a))),
         integer_vector_type_parser().map(|a| IntegerType::Vector(Box::new(a))),
@@ -76,11 +67,8 @@ where
     .boxed()
 }
 
-pub fn integer_atom_type_parser<'a, I>()
--> impl Parser<'a, I, IntegerAtomType<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn integer_atom_type_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, IntegerAtomType<'a>, ParserError<'a>> + Clone {
     choice((
         token(Token::Byte).map(|a| IntegerAtomType::Byte(a)),
         token(Token::Shortint).map(|a| IntegerAtomType::Shortint(a)),
@@ -92,11 +80,8 @@ where
     .boxed()
 }
 
-pub fn integer_vector_type_parser<'a, I>()
--> impl Parser<'a, I, IntegerVectorType<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn integer_vector_type_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, IntegerVectorType<'a>, ParserError<'a>> + Clone {
     choice((
         token(Token::Bit).map(|a| IntegerVectorType::Bit(a)),
         token(Token::Logic).map(|a| IntegerVectorType::Logic(a)),
@@ -105,11 +90,8 @@ where
     .boxed()
 }
 
-pub fn non_integer_type_parser<'a, I>()
--> impl Parser<'a, I, NonIntegerType<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn non_integer_type_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, NonIntegerType<'a>, ParserError<'a>> + Clone {
     choice((
         token(Token::Shortreal).map(|a| NonIntegerType::Shortreal(a)),
         token(Token::Real).map(|a| NonIntegerType::Real(a)),
@@ -118,10 +100,8 @@ where
     .boxed()
 }
 
-pub fn net_type_parser<'a, I>() -> impl Parser<'a, I, NetType<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn net_type_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, NetType<'a>, ParserError<'a>> + Clone {
     choice((
         token(Token::Supply0).map(|a| NetType::Supply0(a)),
         token(Token::Supply1).map(|a| NetType::Supply1(a)),
@@ -139,24 +119,17 @@ where
     .boxed()
 }
 
-pub fn net_port_type_parser<'a, I>() -> impl Parser<'a, I, NetPortType<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn net_port_type_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, NetPortType<'a>, ParserError<'a>> + Clone {
     todo_parser()
 }
 
-pub fn variable_port_type_parser<'a, I>()
--> impl Parser<'a, I, VariablePortType<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn variable_port_type_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, VariablePortType<'a>, ParserError<'a>> + Clone {
     todo_parser()
 }
 
-pub fn signing_parser<'a, I>() -> impl Parser<'a, I, Signing<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
+pub fn signing_parser<'a>() -> impl Parser<'a, ParserInput<'a>, Signing<'a>, ParserError<'a>> + Clone
 {
     choice((
         token(Token::Signed).map(|a| Signing::Signed(a)),
@@ -165,12 +138,15 @@ where
     .boxed()
 }
 
-pub fn simple_type_parser<'a, I>(
-    constant_expression_parser: impl Parser<'a, I, ConstantExpression<'a>, ParserError<'a>> + Clone + 'a,
-) -> impl Parser<'a, I, SimpleType<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn simple_type_parser<'a>(
+    constant_expression_parser: impl Parser<
+        'a,
+        ParserInput<'a>,
+        ConstantExpression<'a>,
+        ParserError<'a>,
+    > + Clone
+    + 'a,
+) -> impl Parser<'a, ParserInput<'a>, SimpleType<'a>, ParserError<'a>> + Clone {
     choice((
         integer_type_parser().map(|a| SimpleType::Integer(Box::new(a))),
         non_integer_type_parser().map(|a| SimpleType::NonInteger(Box::new(a))),
@@ -181,10 +157,8 @@ where
     .boxed()
 }
 
-pub fn struct_union_parser<'a, I>() -> impl Parser<'a, I, StructUnion<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn struct_union_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, StructUnion<'a>, ParserError<'a>> + Clone {
     let soft_or_tagged_parser = choice((
         token(Token::Soft).map(|a| SoftOrTagged::Soft(a)),
         token(Token::Tagged).map(|a| SoftOrTagged::Tagged(a)),
@@ -198,12 +172,9 @@ where
     .boxed()
 }
 
-pub fn type_reference_parser<'a, I>(
-    expression_parser: impl Parser<'a, I, Expression<'a>, ParserError<'a>> + Clone + 'a,
-) -> impl Parser<'a, I, TypeReference<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn type_reference_parser<'a>(
+    expression_parser: impl Parser<'a, ParserInput<'a>, Expression<'a>, ParserError<'a>> + Clone + 'a,
+) -> impl Parser<'a, ParserInput<'a>, TypeReference<'a>, ParserError<'a>> + Clone {
     let _expression_parser = token(Token::Type)
         .then(token(Token::Paren))
         .then(expression_parser)
@@ -223,10 +194,8 @@ where
     .boxed()
 }
 
-pub fn data_type_or_incomplete_class_scoped_type_parser<'a, I>()
--> impl Parser<'a, I, DataTypeOrIncompleteClassScopedType<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
+pub fn data_type_or_incomplete_class_scoped_type_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, DataTypeOrIncompleteClassScopedType<'a>, ParserError<'a>> + Clone
 {
     todo_parser()
 }

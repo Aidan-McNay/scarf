@@ -7,11 +7,8 @@ use crate::*;
 use chumsky::prelude::*;
 use scarf_syntax::*;
 
-pub fn system_severity_task_parser<'a, I>()
--> impl Parser<'a, I, SystemSeverityTask<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn system_severity_task_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, SystemSeverityTask<'a>, ParserError<'a>> + Clone {
     choice((
         fatal_system_severity_task_parser().map(|a| SystemSeverityTask::Fatal(Box::new(a))),
         error_system_severity_task_parser().map(|a| SystemSeverityTask::Error(Box::new(a))),
@@ -21,11 +18,8 @@ where
     .boxed()
 }
 
-pub fn fatal_system_severity_task_parser<'a, I>()
--> impl Parser<'a, I, FatalSystemSeverityTask<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn fatal_system_severity_task_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, FatalSystemSeverityTask<'a>, ParserError<'a>> + Clone {
     token(Token::DollarFatal)
         .then(
             token(Token::Paren)
@@ -44,11 +38,8 @@ where
         .boxed()
 }
 
-pub fn error_system_severity_task_parser<'a, I>()
--> impl Parser<'a, I, ErrorSystemSeverityTask<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn error_system_severity_task_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, ErrorSystemSeverityTask<'a>, ParserError<'a>> + Clone {
     token(Token::DollarError)
         .then(
             token(Token::Paren)
@@ -62,11 +53,8 @@ where
         .boxed()
 }
 
-pub fn warning_system_severity_task_parser<'a, I>()
--> impl Parser<'a, I, WarningSystemSeverityTask<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn warning_system_severity_task_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, WarningSystemSeverityTask<'a>, ParserError<'a>> + Clone {
     token(Token::DollarWarning)
         .then(
             token(Token::Paren)
@@ -80,11 +68,8 @@ where
         .boxed()
 }
 
-pub fn info_system_severity_task_parser<'a, I>()
--> impl Parser<'a, I, InfoSystemSeverityTask<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn info_system_severity_task_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, InfoSystemSeverityTask<'a>, ParserError<'a>> + Clone {
     token(Token::DollarInfo)
         .then(
             token(Token::Paren)
@@ -98,10 +83,8 @@ where
         .boxed()
 }
 
-pub fn finish_number_parser<'a, I>() -> impl Parser<'a, I, FinishNumber<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn finish_number_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, FinishNumber<'a>, ParserError<'a>> + Clone {
     select! {
         Token::UnsignedNumber(num) = e if num == "0" => FinishNumber::Zero(Metadata{
             span: convert_span(e.span()),
@@ -118,32 +101,22 @@ where
     }
 }
 
-pub fn elaboration_system_severity_task_parser<'a, I>()
--> impl Parser<'a, I, ElaborationSystemSeverityTask<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn elaboration_system_severity_task_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, ElaborationSystemSeverityTask<'a>, ParserError<'a>> + Clone {
     system_severity_task_parser().map(|a| ElaborationSystemSeverityTask(a))
 }
 
-pub fn bind_directive_parser<'a, I>() -> impl Parser<'a, I, BindDirective, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn bind_directive_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, BindDirective, ParserError<'a>> + Clone {
     todo_parser()
 }
 
-pub fn module_item_parser<'a, I>() -> impl Parser<'a, I, ModuleItem, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn module_item_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, ModuleItem, ParserError<'a>> + Clone {
     todo_parser()
 }
 
-pub fn non_port_module_item_parser<'a, I>()
--> impl Parser<'a, I, NonPortModuleItem, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn non_port_module_item_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, NonPortModuleItem, ParserError<'a>> + Clone {
     todo_parser()
 }

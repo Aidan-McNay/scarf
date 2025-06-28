@@ -7,11 +7,8 @@ use crate::*;
 use chumsky::prelude::*;
 use scarf_syntax::*;
 
-pub fn list_of_interface_identifiers_parser<'a, I>()
--> impl Parser<'a, I, ListOfInterfaceIdentifiers<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn list_of_interface_identifiers_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, ListOfInterfaceIdentifiers<'a>, ParserError<'a>> + Clone {
     interface_identifier_parser()
         .then(
             unpacked_dimension_parser()
@@ -38,11 +35,8 @@ where
         .boxed()
 }
 
-pub fn list_of_param_assignments_parser<'a, I>()
--> impl Parser<'a, I, ListOfParamAssignments<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn list_of_param_assignments_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, ListOfParamAssignments<'a>, ParserError<'a>> + Clone {
     param_assignment_parser()
         .then(
             token(Token::Comma)
@@ -54,11 +48,8 @@ where
         .boxed()
 }
 
-pub fn list_of_port_identifiers_parser<'a, I>()
--> impl Parser<'a, I, ListOfPortIdentifiers<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn list_of_port_identifiers_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, ListOfPortIdentifiers<'a>, ParserError<'a>> + Clone {
     port_identifier_parser()
         .then(
             unpacked_dimension_parser()
@@ -85,11 +76,8 @@ where
         .boxed()
 }
 
-pub fn list_of_specparam_assignments_parser<'a, I>()
--> impl Parser<'a, I, ListOfSpecparamAssignments<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn list_of_specparam_assignments_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, ListOfSpecparamAssignments<'a>, ParserError<'a>> + Clone {
     specparam_assignment_parser()
         .then(
             token(Token::Comma)
@@ -101,11 +89,8 @@ where
         .boxed()
 }
 
-pub fn list_of_type_assignments_parser<'a, I>()
--> impl Parser<'a, I, ListOfTypeAssignments<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn list_of_type_assignments_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, ListOfTypeAssignments<'a>, ParserError<'a>> + Clone {
     type_assignment_parser()
         .then(
             token(Token::Comma)
@@ -117,11 +102,8 @@ where
         .boxed()
 }
 
-pub fn list_of_variable_identifiers_parser<'a, I>()
--> impl Parser<'a, I, ListOfVariableIdentifiers<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn list_of_variable_identifiers_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, ListOfVariableIdentifiers<'a>, ParserError<'a>> + Clone {
     variable_identifier_parser()
         .then(
             variable_dimension_parser()

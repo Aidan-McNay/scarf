@@ -7,11 +7,8 @@ use crate::*;
 use chumsky::prelude::*;
 use scarf_syntax::*;
 
-pub fn parameter_port_list_parser<'a, I>()
--> impl Parser<'a, I, ParameterPortList<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn parameter_port_list_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, ParameterPortList<'a>, ParserError<'a>> + Clone {
     let defaults_parser = token(Token::Pound)
         .then(token(Token::Paren))
         .then(list_of_param_assignments_parser())
@@ -41,11 +38,8 @@ where
     choice((defaults_parser, no_defaults_parser, empty_parser)).boxed()
 }
 
-pub fn parameter_port_declaration_parser<'a, I>()
--> impl Parser<'a, I, ParameterPortDeclaration<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn parameter_port_declaration_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, ParameterPortDeclaration<'a>, ParserError<'a>> + Clone {
     choice((
         parameter_declaration_parser()
             .map(|a| ParameterPortDeclaration::ParameterDeclaration(Box::new(a))),
@@ -60,10 +54,8 @@ where
     .boxed()
 }
 
-pub fn list_of_ports_parser<'a, I>() -> impl Parser<'a, I, ListOfPorts<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn list_of_ports_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, ListOfPorts<'a>, ParserError<'a>> + Clone {
     token(Token::Paren)
         .then(port_parser())
         .then(
@@ -77,11 +69,8 @@ where
         .boxed()
 }
 
-pub fn list_of_port_declarations_parser<'a, I>()
--> impl Parser<'a, I, ListOfPortDeclarations<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn list_of_port_declarations_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, ListOfPortDeclarations<'a>, ParserError<'a>> + Clone {
     token(Token::Paren)
         .then(
             attribute_instance_vec_parser()
@@ -106,11 +95,8 @@ where
         .boxed()
 }
 
-pub fn port_declaration_parser<'a, I>()
--> impl Parser<'a, I, PortDeclaration<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn port_declaration_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, PortDeclaration<'a>, ParserError<'a>> + Clone {
     let _inout_declaration_parser = attribute_instance_vec_parser()
         .then(inout_declaration_parser())
         .map(|(a, b)| PortDeclaration::InoutDeclaration(Box::new((a, b))));
@@ -136,10 +122,7 @@ where
     .boxed()
 }
 
-pub fn port_parser<'a, I>() -> impl Parser<'a, I, Port<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn port_parser<'a>() -> impl Parser<'a, ParserInput<'a>, Port<'a>, ParserError<'a>> + Clone {
     let _port_expression_parser = port_expression_parser()
         .or_not()
         .map(|a| Port::PortExpression(Box::new(a)));
@@ -152,11 +135,8 @@ where
     choice((_port_expression_parser, _port_identifier_parser)).boxed()
 }
 
-pub fn port_expression_parser<'a, I>()
--> impl Parser<'a, I, PortExpression<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn port_expression_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, PortExpression<'a>, ParserError<'a>> + Clone {
     let single_port_reference_parser =
         port_reference_parser().map(|a| PortExpression::SinglePortReference(Box::new(a)));
     let multi_port_reference_parser = token(Token::Brace)
@@ -172,22 +152,18 @@ where
     choice((single_port_reference_parser, multi_port_reference_parser)).boxed()
 }
 
-pub fn port_reference_parser<'a, I>()
--> impl Parser<'a, I, PortReference<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn port_reference_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, PortReference<'a>, ParserError<'a>> + Clone {
     port_identifier_parser()
-        .then(constant_select_parser(constant_expression_parser()))
+        .then(constant_select_parser(constant_expression_parser(
+            expression_parser(),
+        )))
         .map(|(a, b)| PortReference(a, b))
         .boxed()
 }
 
-pub fn port_direction_parser<'a, I>()
--> impl Parser<'a, I, PortDirection<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn port_direction_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, PortDirection<'a>, ParserError<'a>> + Clone {
     choice((
         token(Token::Input).map(|a| PortDirection::Input(a)),
         token(Token::Output).map(|a| PortDirection::Output(a)),
@@ -197,11 +173,8 @@ where
     .boxed()
 }
 
-pub fn net_port_header_parser<'a, I>()
--> impl Parser<'a, I, NetPortHeader<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn net_port_header_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, NetPortHeader<'a>, ParserError<'a>> + Clone {
     port_direction_parser()
         .or_not()
         .then(net_port_type_parser())
@@ -209,11 +182,8 @@ where
         .boxed()
 }
 
-pub fn variable_port_header_parser<'a, I>()
--> impl Parser<'a, I, VariablePortHeader<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn variable_port_header_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, VariablePortHeader<'a>, ParserError<'a>> + Clone {
     port_direction_parser()
         .or_not()
         .then(variable_port_type_parser())
@@ -221,11 +191,8 @@ where
         .boxed()
 }
 
-pub fn interface_port_header_parser<'a, I>()
--> impl Parser<'a, I, InterfacePortHeader<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn interface_port_header_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, InterfacePortHeader<'a>, ParserError<'a>> + Clone {
     let _interface_identifier_parser = interface_identifier_parser()
         .then(
             token(Token::Period)
@@ -243,11 +210,8 @@ where
     choice((_interface_identifier_parser, _interface_parser)).boxed()
 }
 
-pub fn ansi_port_declaration_parser<'a, I>()
--> impl Parser<'a, I, AnsiPortDeclaration<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn ansi_port_declaration_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, AnsiPortDeclaration<'a>, ParserError<'a>> + Clone {
     choice((
         ansi_net_port_declaration_parser().map(|a| AnsiPortDeclaration::NetPort(Box::new(a))),
         ansi_variable_port_declaration_parser()
@@ -258,11 +222,8 @@ where
     .boxed()
 }
 
-pub fn ansi_net_port_declaration_parser<'a, I>()
--> impl Parser<'a, I, AnsiNetPortDeclaration<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn ansi_net_port_declaration_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, AnsiNetPortDeclaration<'a>, ParserError<'a>> + Clone {
     let net_or_interface_port_header_parser = choice((
         net_port_header_parser().map(|a| NetOrInterfacePortHeader::NetPortHeader(Box::new(a))),
         interface_port_header_parser()
@@ -276,16 +237,17 @@ where
                 .repeated()
                 .collect::<Vec<UnpackedDimension<'a>>>(),
         )
-        .then(token(Token::Eq).then(constant_expression_parser()).or_not())
+        .then(
+            token(Token::Eq)
+                .then(constant_expression_parser(expression_parser()))
+                .or_not(),
+        )
         .map(|(((a, b), c), d)| AnsiNetPortDeclaration(a, b, c, d))
         .boxed()
 }
 
-pub fn ansi_variable_port_declaration_parser<'a, I>()
--> impl Parser<'a, I, AnsiVariablePortDeclaration<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn ansi_variable_port_declaration_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, AnsiVariablePortDeclaration<'a>, ParserError<'a>> + Clone {
     variable_port_header_parser()
         .or_not()
         .then(port_identifier_parser())
@@ -294,16 +256,17 @@ where
                 .repeated()
                 .collect::<Vec<VariableDimension<'a>>>(),
         )
-        .then(token(Token::Eq).then(constant_expression_parser()).or_not())
+        .then(
+            token(Token::Eq)
+                .then(constant_expression_parser(expression_parser()))
+                .or_not(),
+        )
         .map(|(((a, b), c), d)| AnsiVariablePortDeclaration(a, b, c, d))
         .boxed()
 }
 
-pub fn ansi_constant_port_declaration_parser<'a, I>()
--> impl Parser<'a, I, AnsiConstantPortDeclaration<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn ansi_constant_port_declaration_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, AnsiConstantPortDeclaration<'a>, ParserError<'a>> + Clone {
     port_direction_parser()
         .or_not()
         .then(token(Token::Period))

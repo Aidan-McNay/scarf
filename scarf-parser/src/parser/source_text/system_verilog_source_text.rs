@@ -7,20 +7,15 @@ use crate::*;
 use chumsky::prelude::*;
 use scarf_syntax::*;
 
-pub(crate) fn attribute_instance_vec_parser<'a, I>()
--> impl Parser<'a, I, Vec<AttributeInstance<'a>>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
-    attribute_instance_parser(constant_expression_parser())
+pub(crate) fn attribute_instance_vec_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, Vec<AttributeInstance<'a>>, ParserError<'a>> + Clone {
+    attribute_instance_parser(constant_expression_parser(expression_parser()))
         .repeated()
         .collect::<Vec<AttributeInstance>>()
 }
 
-pub fn source_text_parser<'a, I>() -> impl Parser<'a, I, SourceText<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn source_text_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, SourceText<'a>, ParserError<'a>> + Clone {
     extra_node_parser()
         .then(timeunits_declaration_parser().or_not())
         .then(
@@ -32,10 +27,8 @@ where
         .boxed()
 }
 
-pub fn description_parser<'a, I>() -> impl Parser<'a, I, Description<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn description_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, Description<'a>, ParserError<'a>> + Clone {
     let description_package_item_parser = attribute_instance_vec_parser()
         .then(package_item_parser())
         .map(|(a, b)| DescriptionPackageItem(a, b));
@@ -56,11 +49,8 @@ where
     .boxed()
 }
 
-pub fn module_declaration_parser<'a, I>()
--> impl Parser<'a, I, ModuleDeclaration<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn module_declaration_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, ModuleDeclaration<'a>, ParserError<'a>> + Clone {
     choice((
         module_declaration_nonansi_parser()
             .map(|a| ModuleDeclaration::ModuleDeclarationNonansi(Box::new(a))),
@@ -76,11 +66,8 @@ where
     .boxed()
 }
 
-pub fn module_declaration_nonansi_parser<'a, I>()
--> impl Parser<'a, I, ModuleDeclarationNonansi<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn module_declaration_nonansi_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, ModuleDeclarationNonansi<'a>, ParserError<'a>> + Clone {
     module_nonansi_header_parser()
         .then(timeunits_declaration_parser().or_not())
         .then(
@@ -98,11 +85,8 @@ where
         .boxed()
 }
 
-pub fn module_declaration_ansi_parser<'a, I>()
--> impl Parser<'a, I, ModuleDeclarationAnsi<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn module_declaration_ansi_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, ModuleDeclarationAnsi<'a>, ParserError<'a>> + Clone {
     module_ansi_header_parser()
         .then(timeunits_declaration_parser().or_not())
         .then(
@@ -120,11 +104,8 @@ where
         .boxed()
 }
 
-pub fn module_nonansi_header_parser<'a, I>()
--> impl Parser<'a, I, ModuleNonansiHeader<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn module_nonansi_header_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, ModuleNonansiHeader<'a>, ParserError<'a>> + Clone {
     attribute_instance_vec_parser()
         .then(module_keyword_parser())
         .then(lifetime_parser().or_not())
@@ -141,11 +122,8 @@ where
         .boxed()
 }
 
-pub fn module_ansi_header_parser<'a, I>()
--> impl Parser<'a, I, ModuleAnsiHeader<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn module_ansi_header_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, ModuleAnsiHeader<'a>, ParserError<'a>> + Clone {
     attribute_instance_vec_parser()
         .then(module_keyword_parser())
         .then(lifetime_parser().or_not())
@@ -162,11 +140,8 @@ where
         .boxed()
 }
 
-pub fn module_declaration_wildcard_parser<'a, I>()
--> impl Parser<'a, I, ModuleDeclarationWildcard<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn module_declaration_wildcard_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, ModuleDeclarationWildcard<'a>, ParserError<'a>> + Clone {
     attribute_instance_vec_parser()
         .then(module_keyword_parser())
         .then(lifetime_parser().or_not())
@@ -193,33 +168,24 @@ where
         .boxed()
 }
 
-pub fn module_declaration_extern_nonansi_parser<'a, I>()
--> impl Parser<'a, I, ModuleDeclarationExternNonansi<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn module_declaration_extern_nonansi_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, ModuleDeclarationExternNonansi<'a>, ParserError<'a>> + Clone {
     token(Token::Extern)
         .then(module_nonansi_header_parser())
         .map(|(a, b)| ModuleDeclarationExternNonansi(a, b))
         .boxed()
 }
 
-pub fn module_declaration_extern_ansi_parser<'a, I>()
--> impl Parser<'a, I, ModuleDeclarationExternAnsi<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn module_declaration_extern_ansi_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, ModuleDeclarationExternAnsi<'a>, ParserError<'a>> + Clone {
     token(Token::Extern)
         .then(module_ansi_header_parser())
         .map(|(a, b)| ModuleDeclarationExternAnsi(a, b))
         .boxed()
 }
 
-pub fn module_keyword_parser<'a, I>()
--> impl Parser<'a, I, ModuleKeyword<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn module_keyword_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, ModuleKeyword<'a>, ParserError<'a>> + Clone {
     choice((
         token(Token::Module).map(|a| ModuleKeyword::Module(a)),
         token(Token::Macromodule).map(|a| ModuleKeyword::Macromodule(a)),
@@ -227,11 +193,8 @@ where
     .boxed()
 }
 
-pub fn interface_declaration_parser<'a, I>()
--> impl Parser<'a, I, InterfaceDeclaration<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn interface_declaration_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, InterfaceDeclaration<'a>, ParserError<'a>> + Clone {
     choice((
         interface_declaration_nonansi_parser()
             .map(|a| InterfaceDeclaration::InterfaceDeclarationNonansi(Box::new(a))),
@@ -247,11 +210,8 @@ where
     .boxed()
 }
 
-pub fn interface_declaration_nonansi_parser<'a, I>()
--> impl Parser<'a, I, InterfaceDeclarationNonansi<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn interface_declaration_nonansi_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, InterfaceDeclarationNonansi<'a>, ParserError<'a>> + Clone {
     interface_nonansi_header_parser()
         .then(timeunits_declaration_parser().or_not())
         .then(
@@ -269,11 +229,8 @@ where
         .boxed()
 }
 
-pub fn interface_declaration_ansi_parser<'a, I>()
--> impl Parser<'a, I, InterfaceDeclarationAnsi<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn interface_declaration_ansi_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, InterfaceDeclarationAnsi<'a>, ParserError<'a>> + Clone {
     interface_ansi_header_parser()
         .then(timeunits_declaration_parser().or_not())
         .then(
@@ -291,11 +248,8 @@ where
         .boxed()
 }
 
-pub fn interface_declaration_wildcard_parser<'a, I>()
--> impl Parser<'a, I, InterfaceDeclarationWildcard<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn interface_declaration_wildcard_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, InterfaceDeclarationWildcard<'a>, ParserError<'a>> + Clone {
     attribute_instance_vec_parser()
         .then(token(Token::Interface))
         .then(interface_identifier_parser())
@@ -321,10 +275,8 @@ where
         .boxed()
 }
 
-pub fn interface_declaration_extern_nonansi_parser<'a, I>()
--> impl Parser<'a, I, InterfaceDeclarationExternNonansi<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
+pub fn interface_declaration_extern_nonansi_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, InterfaceDeclarationExternNonansi<'a>, ParserError<'a>> + Clone
 {
     token(Token::Extern)
         .then(interface_nonansi_header_parser())
@@ -332,22 +284,16 @@ where
         .boxed()
 }
 
-pub fn interface_declaration_extern_ansi_parser<'a, I>()
--> impl Parser<'a, I, InterfaceDeclarationExternAnsi<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn interface_declaration_extern_ansi_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, InterfaceDeclarationExternAnsi<'a>, ParserError<'a>> + Clone {
     token(Token::Extern)
         .then(interface_ansi_header_parser())
         .map(|(a, b)| InterfaceDeclarationExternAnsi(a, b))
         .boxed()
 }
 
-pub fn interface_nonansi_header_parser<'a, I>()
--> impl Parser<'a, I, InterfaceNonansiHeader<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn interface_nonansi_header_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, InterfaceNonansiHeader<'a>, ParserError<'a>> + Clone {
     attribute_instance_vec_parser()
         .then(token(Token::Interface))
         .then(lifetime_parser().or_not())
@@ -364,11 +310,8 @@ where
         .boxed()
 }
 
-pub fn interface_ansi_header_parser<'a, I>()
--> impl Parser<'a, I, InterfaceAnsiHeader<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn interface_ansi_header_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, InterfaceAnsiHeader<'a>, ParserError<'a>> + Clone {
     attribute_instance_vec_parser()
         .then(token(Token::Interface))
         .then(lifetime_parser().or_not())
@@ -385,11 +328,8 @@ where
         .boxed()
 }
 
-pub fn program_declaration_parser<'a, I>()
--> impl Parser<'a, I, ProgramDeclaration<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn program_declaration_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, ProgramDeclaration<'a>, ParserError<'a>> + Clone {
     choice((
         program_declaration_nonansi_parser()
             .map(|a| ProgramDeclaration::ProgramDeclarationNonansi(Box::new(a))),
@@ -405,11 +345,8 @@ where
     .boxed()
 }
 
-pub fn program_declaration_nonansi_parser<'a, I>()
--> impl Parser<'a, I, ProgramDeclarationNonansi<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn program_declaration_nonansi_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, ProgramDeclarationNonansi<'a>, ParserError<'a>> + Clone {
     program_nonansi_header_parser()
         .then(timeunits_declaration_parser().or_not())
         .then(
@@ -427,11 +364,8 @@ where
         .boxed()
 }
 
-pub fn program_declaration_ansi_parser<'a, I>()
--> impl Parser<'a, I, ProgramDeclarationAnsi<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn program_declaration_ansi_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, ProgramDeclarationAnsi<'a>, ParserError<'a>> + Clone {
     program_ansi_header_parser()
         .then(timeunits_declaration_parser().or_not())
         .then(
@@ -449,11 +383,8 @@ where
         .boxed()
 }
 
-pub fn program_declaration_wildcard_parser<'a, I>()
--> impl Parser<'a, I, ProgramDeclarationWildcard<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn program_declaration_wildcard_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, ProgramDeclarationWildcard<'a>, ParserError<'a>> + Clone {
     attribute_instance_vec_parser()
         .then(token(Token::Program))
         .then(program_identifier_parser())
@@ -479,33 +410,24 @@ where
         .boxed()
 }
 
-pub fn program_declaration_extern_nonansi_parser<'a, I>()
--> impl Parser<'a, I, ProgramDeclarationExternNonansi<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn program_declaration_extern_nonansi_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, ProgramDeclarationExternNonansi<'a>, ParserError<'a>> + Clone {
     token(Token::Extern)
         .then(program_nonansi_header_parser())
         .map(|(a, b)| ProgramDeclarationExternNonansi(a, b))
         .boxed()
 }
 
-pub fn program_declaration_extern_ansi_parser<'a, I>()
--> impl Parser<'a, I, ProgramDeclarationExternAnsi<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn program_declaration_extern_ansi_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, ProgramDeclarationExternAnsi<'a>, ParserError<'a>> + Clone {
     token(Token::Extern)
         .then(program_ansi_header_parser())
         .map(|(a, b)| ProgramDeclarationExternAnsi(a, b))
         .boxed()
 }
 
-pub fn program_nonansi_header_parser<'a, I>()
--> impl Parser<'a, I, ProgramNonansiHeader<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn program_nonansi_header_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, ProgramNonansiHeader<'a>, ParserError<'a>> + Clone {
     attribute_instance_vec_parser()
         .then(token(Token::Program))
         .then(lifetime_parser().or_not())
@@ -522,11 +444,8 @@ where
         .boxed()
 }
 
-pub fn program_ansi_header_parser<'a, I>()
--> impl Parser<'a, I, ProgramAnsiHeader<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn program_ansi_header_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, ProgramAnsiHeader<'a>, ParserError<'a>> + Clone {
     attribute_instance_vec_parser()
         .then(token(Token::Program))
         .then(lifetime_parser().or_not())
@@ -543,11 +462,8 @@ where
         .boxed()
 }
 
-pub fn checker_declaration_parser<'a, I>()
--> impl Parser<'a, I, CheckerDeclaration<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn checker_declaration_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, CheckerDeclaration<'a>, ParserError<'a>> + Clone {
     let checker_declaration_port_list_parser = token(Token::Paren)
         .then(checker_port_list_parser())
         .then(token(Token::EParen))
@@ -571,11 +487,8 @@ where
         .boxed()
 }
 
-pub fn class_declaration_parser<'a, I>()
--> impl Parser<'a, I, ClassDeclaration<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn class_declaration_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, ClassDeclaration<'a>, ParserError<'a>> + Clone {
     let class_declaration_extension_parser = token(Token::Extends)
         .then(class_type_parser())
         .then(
@@ -618,11 +531,8 @@ where
         .boxed()
 }
 
-pub fn interface_class_declaration_parser<'a, I>()
--> impl Parser<'a, I, InterfaceClassDeclaration<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn interface_class_declaration_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, InterfaceClassDeclaration<'a>, ParserError<'a>> + Clone {
     let interface_class_declaration_extension_parser = token(Token::Extends)
         .then(interface_class_type_parser())
         .then(
@@ -651,11 +561,8 @@ where
         .boxed()
 }
 
-pub fn package_declaration_parser<'a, I>()
--> impl Parser<'a, I, PackageDeclaration<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn package_declaration_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, PackageDeclaration<'a>, ParserError<'a>> + Clone {
     let attribute_package_items_parser = attribute_instance_vec_parser()
         .then(package_item_parser())
         .repeated()
@@ -679,11 +586,8 @@ where
         .boxed()
 }
 
-pub fn timeunits_declaration_parser<'a, I>()
--> impl Parser<'a, I, TimeunitsDeclaration<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn timeunits_declaration_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, TimeunitsDeclaration<'a>, ParserError<'a>> + Clone {
     let timeunit_parser = token(Token::Timeunit)
         .then(time_literal_parser())
         .then(token(Token::Slash).then(time_literal_parser()).or_not())

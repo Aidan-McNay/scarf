@@ -7,13 +7,13 @@ use crate::*;
 use chumsky::prelude::*;
 use scarf_syntax::*;
 
-pub fn net_lvalue_parser<'a, I>() -> impl Parser<'a, I, NetLvalue<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn net_lvalue_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, NetLvalue<'a>, ParserError<'a>> + Clone {
     let mut parser = Recursive::declare();
     let _selection_net_lvalue_parser = ps_or_hierarchical_net_identifier_parser()
-        .then(constant_select_parser(constant_expression_parser()))
+        .then(constant_select_parser(constant_expression_parser(
+            expression_parser(),
+        )))
         .map(|(a, b)| NetLvalue::Selection(Box::new(SelectionNetLvalue(a, b))));
     let _nested_net_lvalue_parser = token(Token::Brace)
         .then(parser.clone())
@@ -37,10 +37,8 @@ where
     parser.boxed()
 }
 
-fn implicit_class_handle_or_package_scope_parser<'a, I>()
--> impl Parser<'a, I, ImplicitClassHandleOrPackageScope<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
+fn implicit_class_handle_or_package_scope_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, ImplicitClassHandleOrPackageScope<'a>, ParserError<'a>> + Clone
 {
     choice((
         implicit_class_handle_parser()
@@ -52,15 +50,14 @@ where
     .boxed()
 }
 
-pub fn variable_lvalue_parser<'a, I>(
-    expression_parser: impl Parser<'a, I, Expression<'a>, ParserError<'a>> + Clone + 'a,
-) -> impl Parser<'a, I, VariableLvalue<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn variable_lvalue_parser<'a>(
+    expression_parser: impl Parser<'a, ParserInput<'a>, Expression<'a>, ParserError<'a>> + Clone + 'a,
+) -> impl Parser<'a, ParserInput<'a>, VariableLvalue<'a>, ParserError<'a>> + Clone {
     let mut parser = Recursive::declare();
     let _selection_variable_lvalue_parser = implicit_class_handle_or_package_scope_parser()
-        .then(hierarchical_variable_identifier_parser())
+        .then(hierarchical_variable_identifier_parser(
+            expression_parser.clone(),
+        ))
         .then(select_parser())
         .map(|((a, b), c)| VariableLvalue::Selection(Box::new(SelectionVariableLvalue(a, b, c))));
     let _nested_variable_lvalue_parser = token(Token::Brace)
@@ -88,13 +85,10 @@ where
     parser.boxed()
 }
 
-pub fn nonrange_variable_lvalue_parser<'a, I>()
--> impl Parser<'a, I, NonrangeVariableLvalue<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn nonrange_variable_lvalue_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, NonrangeVariableLvalue<'a>, ParserError<'a>> + Clone {
     implicit_class_handle_or_package_scope_parser()
-        .then(hierarchical_variable_identifier_parser())
+        .then(hierarchical_variable_identifier_parser(expression_parser()))
         .then(nonrange_select_parser())
         .map(|((a, b), c)| NonrangeVariableLvalue(a, b, c))
         .boxed()

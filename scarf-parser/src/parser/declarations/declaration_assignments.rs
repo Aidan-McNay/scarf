@@ -7,11 +7,8 @@ use crate::*;
 use chumsky::prelude::*;
 use scarf_syntax::*;
 
-pub fn param_assignment_parser<'a, I>()
--> impl Parser<'a, I, ParamAssignment<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn param_assignment_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, ParamAssignment<'a>, ParserError<'a>> + Clone {
     parameter_identifier_parser()
         .then(
             variable_dimension_parser()
@@ -21,7 +18,7 @@ where
         .then(
             token(Token::Eq)
                 .then(constant_param_expression_parser(
-                    constant_expression_parser(),
+                    constant_expression_parser(expression_parser()),
                 ))
                 .or_not(),
         )
@@ -29,19 +26,13 @@ where
         .boxed()
 }
 
-pub fn specparam_assignment_parser<'a, I>()
--> impl Parser<'a, I, SpecparamAssignment<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn specparam_assignment_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, SpecparamAssignment<'a>, ParserError<'a>> + Clone {
     todo_parser()
 }
 
-pub fn type_assignment_parser<'a, I>()
--> impl Parser<'a, I, TypeAssignment<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn type_assignment_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, TypeAssignment<'a>, ParserError<'a>> + Clone {
     type_identifier_parser()
         .then(
             token(Token::Eq)

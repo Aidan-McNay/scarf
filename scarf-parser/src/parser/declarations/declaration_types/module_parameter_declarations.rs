@@ -7,11 +7,8 @@ use crate::*;
 use chumsky::prelude::*;
 use scarf_syntax::*;
 
-pub fn local_parameter_declaration_parser<'a, I>()
--> impl Parser<'a, I, LocalParameterDeclaration<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn local_parameter_declaration_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, LocalParameterDeclaration<'a>, ParserError<'a>> + Clone {
     let data_parameter_parser = token(Token::Localparam)
         .then(data_type_or_implicit_parser())
         .then(list_of_param_assignments_parser())
@@ -22,11 +19,8 @@ where
     choice((data_parameter_parser, type_parameter_parser)).boxed()
 }
 
-pub fn parameter_declaration_parser<'a, I>()
--> impl Parser<'a, I, ParameterDeclaration<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn parameter_declaration_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, ParameterDeclaration<'a>, ParserError<'a>> + Clone {
     let data_parameter_parser = token(Token::Parameter)
         .then(data_type_or_implicit_parser())
         .then(list_of_param_assignments_parser())
@@ -37,11 +31,8 @@ where
     choice((data_parameter_parser, type_parameter_parser)).boxed()
 }
 
-pub fn type_parameter_declaration_parser<'a, I>()
--> impl Parser<'a, I, TypeParameterDeclaration<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn type_parameter_declaration_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, TypeParameterDeclaration<'a>, ParserError<'a>> + Clone {
     token(Token::Type)
         .then(forward_type_parser().or_not())
         .then(list_of_type_assignments_parser())
@@ -49,11 +40,8 @@ where
         .boxed()
 }
 
-pub fn specparam_declaration_parser<'a, I>()
--> impl Parser<'a, I, SpecparamDeclaration<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn specparam_declaration_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, SpecparamDeclaration<'a>, ParserError<'a>> + Clone {
     token(Token::Specparam)
         .then(packed_dimension_parser().or_not())
         .then(list_of_specparam_assignments_parser())

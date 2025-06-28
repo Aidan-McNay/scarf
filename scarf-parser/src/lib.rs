@@ -14,6 +14,10 @@ pub use lexer::{Span, Token, lex, report_lex_errors};
 pub use parser::report_parse_errors;
 use parser::*;
 
+fn map_span<'a>(src: (Token<'a>, SimpleSpan)) -> (Token<'a>, ParserSpan) {
+    src
+}
+
 pub fn parse_from_lex<'a>(
     src: &'a str,
     lexed_stream: Vec<(Result<Token<'a>, String>, Span)>,
@@ -28,6 +32,9 @@ pub fn parse_from_lex<'a>(
             <std::ops::Range<usize> as Into<SimpleSpan>>::into(span),
         ),
     });
-    let stream_lexed_src = Stream::from_iter(mapped_lexed_src).map((0..src.len()).into(), |x| x);
+    let stream_lexed_src = Stream::from_iter(mapped_lexed_src).boxed().map(
+        (0..src.len()).into(),
+        map_span as fn((Token<'a>, SimpleSpan)) -> (Token<'a>, ParserSpan),
+    );
     parse(stream_lexed_src)
 }

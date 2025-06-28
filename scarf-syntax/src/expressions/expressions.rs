@@ -104,7 +104,24 @@ pub enum ConstantIndexedRange<'a> {
     Minus(Box<(ConstantExpression<'a>, Metadata<'a>, ConstantExpression<'a>)>),
 }
 
-pub type Expression<'a> = Metadata<'a>;
+#[derive(Clone, Debug, PartialEq)]
+pub enum Expression<'a> {
+    Primary(Box<Primary<'a>>),
+    Unary(Box<(UnaryOperator<'a>, Vec<AttributeInstance<'a>>, Primary<'a>)>),
+    IncOrDecExpression(Box<IncOrDecExpression<'a>>),
+    OperatorAssignment(Box<(Metadata<'a>, OperatorAssignment<'a>, Metadata<'a>)>),
+    Binary(
+        Box<(
+            Expression<'a>,
+            BinaryOperator<'a>,
+            Vec<AttributeInstance<'a>>,
+            Expression<'a>,
+        )>,
+    ),
+    ConditionalExpression(Box<ConditionalExpression<'a>>),
+    InsideExpression(Box<InsideExpression<'a>>),
+    TaggedUnionExpression(Box<TaggedUnionExpression<'a>>),
+}
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct TaggedUnionExpression<'a>(

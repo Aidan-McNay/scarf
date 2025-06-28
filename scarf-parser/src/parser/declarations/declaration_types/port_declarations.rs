@@ -7,11 +7,8 @@ use crate::*;
 use chumsky::prelude::*;
 use scarf_syntax::*;
 
-pub fn inout_declaration_parser<'a, I>()
--> impl Parser<'a, I, InoutDeclaration<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn inout_declaration_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, InoutDeclaration<'a>, ParserError<'a>> + Clone {
     token(Token::Inout)
         .then(net_port_type_parser())
         .then(list_of_port_identifiers_parser())
@@ -19,11 +16,8 @@ where
         .boxed()
 }
 
-pub fn input_declaration_parser<'a, I>()
--> impl Parser<'a, I, InputDeclaration<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn input_declaration_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, InputDeclaration<'a>, ParserError<'a>> + Clone {
     let net_input_declaration_parser = token(Token::Input)
         .then(net_port_type_parser())
         .then(list_of_port_identifiers_parser())
@@ -39,11 +33,8 @@ where
     .boxed()
 }
 
-pub fn output_declaration_parser<'a, I>()
--> impl Parser<'a, I, OutputDeclaration<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn output_declaration_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, OutputDeclaration<'a>, ParserError<'a>> + Clone {
     let net_output_declaration_parser = token(Token::Output)
         .then(net_port_type_parser())
         .then(list_of_port_identifiers_parser())
@@ -59,11 +50,8 @@ where
     .boxed()
 }
 
-pub fn interface_port_declaration_parser<'a, I>()
--> impl Parser<'a, I, InterfacePortDeclaration<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn interface_port_declaration_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, InterfacePortDeclaration<'a>, ParserError<'a>> + Clone {
     let interface_parser = interface_identifier_parser()
         .then(list_of_interface_identifiers_parser())
         .map(|(a, b)| InterfacePortDeclaration::Interface(Box::new((a, b))));
@@ -75,11 +63,8 @@ where
     choice((interface_parser, modport_parser)).boxed()
 }
 
-pub fn ref_declaration_parser<'a, I>()
--> impl Parser<'a, I, RefDeclaration<'a>, ParserError<'a>> + Clone
-where
-    I: ValueInput<'a, Token = Token<'a>, Span = ParserSpan>,
-{
+pub fn ref_declaration_parser<'a>()
+-> impl Parser<'a, ParserInput<'a>, RefDeclaration<'a>, ParserError<'a>> + Clone {
     token(Token::Ref)
         .then(variable_port_type_parser())
         .then(list_of_variable_identifiers_parser())
