@@ -22,7 +22,6 @@ pub fn let_declaration_parser<'a>()
         .then(expression_parser())
         .then(token(Token::SColon))
         .map(|(((((a, b), c), d), e), f)| LetDeclaration(a, b, c, d, e, f))
-        .boxed()
 }
 
 pub fn let_identifier_parser<'a>()
@@ -40,7 +39,6 @@ pub fn let_port_list_parser<'a>()
                 .collect::<Vec<(Metadata<'a>, LetPortItem<'a>)>>(),
         )
         .map(|(a, b)| LetPortList(a, b))
-        .boxed()
 }
 
 pub fn let_port_item_parser<'a>()
@@ -55,7 +53,6 @@ pub fn let_port_item_parser<'a>()
         )
         .then(token(Token::Eq).then(expression_parser()).or_not())
         .map(|((((a, b), c), d), e)| LetPortItem(a, b, c, d, e))
-        .boxed()
 }
 
 pub fn let_formal_type_parser<'a>()
@@ -64,7 +61,6 @@ pub fn let_formal_type_parser<'a>()
         data_type_or_implicit_parser().map(|a| LetFormalType::DataTypeOrImplicit(Box::new(a))),
         token(Token::Untyped).map(|a| LetFormalType::Untyped(Box::new(a))),
     ))
-    .boxed()
 }
 
 pub fn let_expression_parser<'a>(
@@ -124,7 +120,6 @@ pub fn let_list_of_arguments_parser<'a>(
         _partial_identifier_parser.map(|a| LetListOfArguments::PartialIdentifier(Box::new(a))),
         _identifier_parser.map(|a| LetListOfArguments::Identifier(Box::new(a))),
     ))
-    .boxed()
 }
 
 pub fn let_actual_arg_parser<'a>(

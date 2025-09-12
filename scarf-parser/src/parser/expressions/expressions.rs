@@ -25,7 +25,7 @@ pub fn inc_or_dec_expression_parser<'a>(
         .then(_attribute_instance_vec_parser)
         .then(inc_or_dec_operator_parser())
         .map(|((a, b), c)| IncOrDecExpression::Postop(Box::new((a, b, c))));
-    choice((_preop_parser, _postop_parser)).boxed()
+    choice((_preop_parser, _postop_parser))
 }
 
 pub fn conditional_expression_parser<'a>(
@@ -42,7 +42,6 @@ pub fn conditional_expression_parser<'a>(
         .then(token(Token::Colon))
         .then(expression_parser)
         .map(|(((((a, b), c), d), e), f)| ConditionalExpression(a, b, c, d, e, f))
-        .boxed()
 }
 
 pub fn constant_expression_parser<'a>(
@@ -241,7 +240,7 @@ pub fn constant_expression_parser<'a>(
         _ternary_parser,
         _binary_parser_3,
     )));
-    parser.boxed()
+    parser
 }
 
 pub fn constant_mintypmax_expression_parser<'a>(
@@ -265,7 +264,6 @@ pub fn constant_mintypmax_expression_parser<'a>(
             }),
         constant_expression_parser.map(|a| ConstantMintypmaxExpression::Single(Box::new(a))),
     ))
-    .boxed()
 }
 
 pub fn constant_param_expression_parser<'a>(
@@ -296,7 +294,6 @@ pub fn constant_range_expression_parser<'a>(
         constant_part_select_range_parser(constant_expression_parser)
             .map(|a| ConstantRangeExpression::PartSelectRange(Box::new(a))),
     ))
-    .boxed()
 }
 
 pub fn constant_part_select_range_parser<'a>(
@@ -314,7 +311,6 @@ pub fn constant_part_select_range_parser<'a>(
         constant_indexed_range_parser(constant_expression_parser)
             .map(|a| ConstantPartSelectRange::IndexedRange(Box::new(a))),
     ))
-    .boxed()
 }
 
 pub fn constant_indexed_range_parser<'a>(
@@ -336,7 +332,7 @@ pub fn constant_indexed_range_parser<'a>(
         .then(token(Token::MinusColon))
         .then(constant_expression_parser.clone())
         .map(|((a, b), c)| ConstantIndexedRange::Minus(Box::new((a, b, c))));
-    choice((_plus_parser, _minus_parser)).boxed()
+    choice((_plus_parser, _minus_parser))
 }
 
 pub fn constant_range_parser<'a>(
@@ -353,7 +349,6 @@ pub fn constant_range_parser<'a>(
         .then(token(Token::Colon))
         .then(constant_expression_parser)
         .map(|((a, b), c)| ConstantRange(a, b, c))
-        .boxed()
 }
 
 pub fn expression_parser<'a>()
@@ -544,7 +539,7 @@ pub fn expression_parser<'a>()
         _inside_expression_parser,
         _tagged_union_expression_parser,
     )));
-    parser.boxed()
+    parser
 }
 
 pub fn tagged_union_expression_parser<'a>(
@@ -554,7 +549,6 @@ pub fn tagged_union_expression_parser<'a>(
         .then(member_identifier_parser())
         .then(primary_parser(expression_parser).or_not())
         .map(|((a, b), c)| TaggedUnionExpression(a, b, c))
-        .boxed()
 }
 
 pub fn inside_expression_parser<'a>(
@@ -567,7 +561,6 @@ pub fn inside_expression_parser<'a>(
         .then(range_list_parser(expression_parser))
         .then(token(Token::EBrace))
         .map(|((((a, b), c), d), e)| InsideExpression(a, b, c, d, e))
-        .boxed()
 }
 
 pub fn mintypmax_expression_parser<'a>(
@@ -583,7 +576,6 @@ pub fn mintypmax_expression_parser<'a>(
             .map(|((((a, b), c), d), e)| MintypmaxExpression::Mintypmax(Box::new((a, b, c, d, e)))),
         expression_parser.map(|a| MintypmaxExpression::Single(Box::new(a))),
     ))
-    .boxed()
 }
 
 pub fn module_path_conditional_expression_parser<'a>(
@@ -604,7 +596,6 @@ pub fn module_path_conditional_expression_parser<'a>(
         .then(token(Token::Colon))
         .then(module_path_expression_parser)
         .map(|(((((a, b), c), d), e), f)| ModulePathConditionalExpression(a, b, c, d, e, f))
-        .boxed()
 }
 
 pub fn module_path_expression_parser<'a>()
@@ -699,7 +690,7 @@ pub fn module_path_expression_parser<'a>()
         _binary_parser,
         _conditional_parser,
     )));
-    parser.boxed()
+    parser
 }
 
 pub fn module_path_mintypmax_expression_parser<'a>(
@@ -723,7 +714,6 @@ pub fn module_path_mintypmax_expression_parser<'a>(
             }),
         module_path_expression_parser.map(|a| ModulePathMintypmaxExpression::Single(Box::new(a))),
     ))
-    .boxed()
 }
 
 pub fn part_select_range_parser<'a>(
@@ -734,7 +724,6 @@ pub fn part_select_range_parser<'a>(
             .map(|a| PartSelectRange::ConstantRange(Box::new(a))),
         indexed_range_parser(expression_parser).map(|a| PartSelectRange::IndexedRange(Box::new(a))),
     ))
-    .boxed()
 }
 
 pub fn indexed_range_parser<'a>(
@@ -752,5 +741,4 @@ pub fn indexed_range_parser<'a>(
             .then(constant_expression_parser(expression_parser))
             .map(|((a, b), c)| IndexedRange::Minus(Box::new((a, b, c)))),
     ))
-    .boxed()
 }

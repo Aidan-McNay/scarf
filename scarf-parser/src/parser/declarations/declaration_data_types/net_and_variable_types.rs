@@ -27,7 +27,6 @@ pub fn casting_type_parser<'a>(
         token(Token::String).map(|a| CastingType::String(Box::new(a))),
         token(Token::Const).map(|a| CastingType::Const(Box::new(a))),
     ))
-    .boxed()
 }
 
 pub fn data_type_parser<'a>()

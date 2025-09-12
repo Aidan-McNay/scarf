@@ -20,7 +20,6 @@ pub fn concatenation_parser<'a>(
         )
         .then(token(Token::EBrace))
         .map(|(((a, b), c), d)| Concatenation(a, b, c, d))
-        .boxed()
 }
 
 pub fn constant_concatenation_parser<'a>(
@@ -42,7 +41,6 @@ pub fn constant_concatenation_parser<'a>(
         )
         .then(token(Token::EBrace))
         .map(|(((a, b), c), d)| ConstantConcatenation(a, b, c, d))
-        .boxed()
 }
 
 pub fn constant_multiple_concatenation_parser<'a>(
@@ -59,7 +57,6 @@ pub fn constant_multiple_concatenation_parser<'a>(
         .then(constant_concatenation_parser(constant_expression_parser))
         .then(token(Token::EBrace))
         .map(|(((a, b), c), d)| ConstantMultipleConcatenation(a, b, c, d))
-        .boxed()
 }
 
 pub fn module_path_concatenation_parser<'a>(
@@ -81,7 +78,6 @@ pub fn module_path_concatenation_parser<'a>(
         )
         .then(token(Token::EBrace))
         .map(|(((a, b), c), d)| ModulePathConcatenation(a, b, c, d))
-        .boxed()
 }
 
 pub fn module_path_multiple_concatenation_parser<'a>(
@@ -101,7 +97,6 @@ pub fn module_path_multiple_concatenation_parser<'a>(
         ))
         .then(token(Token::EBrace))
         .map(|(((a, b), c), d)| ModulePathMultipleConcatenation(a, b, c, d))
-        .boxed()
 }
 
 pub fn multiple_concatenation_parser<'a>(
@@ -112,7 +107,6 @@ pub fn multiple_concatenation_parser<'a>(
         .then(concatenation_parser(expression_parser))
         .then(token(Token::EBrace))
         .map(|(((a, b), c), d)| MultipleConcatenation(a, b, c, d))
-        .boxed()
 }
 
 pub fn streaming_concatenation_parser<'a>(

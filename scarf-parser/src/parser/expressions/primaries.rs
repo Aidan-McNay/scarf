@@ -82,7 +82,7 @@ pub fn constant_primary_parser<'a>(
         _type_reference_parser,
         _null_parser,
     )));
-    parser.boxed()
+    parser
 }
 
 pub fn module_path_primary_parser<'a>(
@@ -110,7 +110,6 @@ pub fn module_path_primary_parser<'a>(
             .then(token(Token::EParen))
             .map(|((a, b), c)| ModulePathPrimary::MintypmaxExpression(Box::new((a, b, c)))),
     ))
-    .boxed()
 }
 
 pub fn primary_parser<'a>(
@@ -172,7 +171,6 @@ pub fn primary_parser<'a>(
         _dollar_parser,
         _null_parser,
     ))
-    .boxed()
 }
 
 fn class_qualifier_or_package_scope_parser<'a>()
@@ -181,7 +179,6 @@ fn class_qualifier_or_package_scope_parser<'a>()
         class_qualifier_parser().map(|a| ClassQualifierOrPackageScope::ClassQualifier(Box::new(a))),
         package_scope_parser().map(|a| ClassQualifierOrPackageScope::PackageScope(Box::new(a))),
     ))
-    .boxed()
 }
 
 fn implicit_class_handle_or_class_scope_parser<'a>()
@@ -192,7 +189,6 @@ fn implicit_class_handle_or_class_scope_parser<'a>()
             .map(|(a, b)| ImplicitClassHandleOrClassScope::ImplicitClassHandle(Box::new((a, b)))),
         class_scope_parser().map(|a| ImplicitClassHandleOrClassScope::ClassScope(Box::new(a))),
     ))
-    .boxed()
 }
 
 pub fn class_qualifier_parser<'a>()
@@ -202,7 +198,6 @@ pub fn class_qualifier_parser<'a>()
         .or_not()
         .then(implicit_class_handle_or_class_scope_parser().or_not())
         .map(|(a, b)| ClassQualifier(a, b))
-        .boxed()
 }
 
 pub fn range_expression_parser<'a>(
@@ -215,7 +210,6 @@ pub fn range_expression_parser<'a>(
         part_select_range_parser(expression_parser)
             .map(|a| RangeExpression::PartSelectRange(Box::new(a))),
     ))
-    .boxed()
 }
 
 pub fn primary_literal_parser<'a>()
@@ -227,7 +221,6 @@ pub fn primary_literal_parser<'a>()
             .map(|a| PrimaryLiteral::UnbasedUnsizedLiteral(Box::new(a))),
         string_literal_parser().map(|a| PrimaryLiteral::StringLiteral(Box::new(a))),
     ))
-    .boxed()
 }
 
 pub fn time_literal_parser<'a>()
@@ -249,7 +242,6 @@ pub fn time_literal_parser<'a>()
             TimeLiteral::TimeLiteralUnsigned(Box::new((box_value.0, b)))
         }
     })
-    .boxed()
 }
 
 fn time_unit_parser<'a>() -> impl Parser<'a, ParserInput<'a>, TimeUnit<'a>, ParserError<'a>> + Clone
@@ -330,7 +322,6 @@ pub fn constant_bit_select_parser<'a>(
         .repeated()
         .collect::<Vec<(Metadata<'a>, ConstantExpression<'a>, Metadata<'a>)>>()
         .map(|a| ConstantBitSelect(a))
-        .boxed()
 }
 
 pub fn constant_select_parser<'a>(
@@ -368,7 +359,6 @@ pub fn constant_select_parser<'a>(
                 .or_not(),
         )
         .map(|((a, b), c)| ConstantSelect(a, b, c))
-        .boxed()
 }
 
 pub fn cast_parser<'a>(
@@ -386,7 +376,6 @@ pub fn cast_parser<'a>(
     .then(expression_parser)
     .then(token(Token::EParen))
     .map(|((((a, b), c), d), e)| Cast(a, b, c, d, e))
-    .boxed()
 }
 
 pub fn constant_cast_parser<'a>(
@@ -407,7 +396,6 @@ pub fn constant_cast_parser<'a>(
         .then(constant_expression_parser)
         .then(token(Token::EParen))
         .map(|((((a, b), c), d), e)| ConstantCast(a, b, c, d, e))
-        .boxed()
 }
 
 pub fn constant_let_expression_parser<'a>(

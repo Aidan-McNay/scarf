@@ -18,7 +18,6 @@ pub fn cond_predicate_parser<'a>(
                 .collect::<Vec<(Metadata<'a>, ExpressionOrCondPattern<'a>)>>(),
         )
         .map(|(a, b)| CondPredicate(a, b))
-        .boxed()
 }
 
 pub fn expression_or_cond_pattern_parser<'a>(
@@ -31,7 +30,6 @@ pub fn expression_or_cond_pattern_parser<'a>(
         cond_pattern_parser(expression_parser)
             .map(|a| ExpressionOrCondPattern::CondPattern(Box::new(a))),
     ))
-    .boxed()
 }
 
 pub fn cond_pattern_parser<'a>(
@@ -42,5 +40,4 @@ pub fn cond_pattern_parser<'a>(
         .then(token(Token::Matches))
         .then(pattern_parser(expression_parser))
         .map(|((a, b), c)| CondPattern(a, b, c))
-        .boxed()
 }

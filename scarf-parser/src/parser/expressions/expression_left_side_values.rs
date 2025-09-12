@@ -82,7 +82,7 @@ pub fn variable_lvalue_parser<'a>(
         _assignment_variable_lvalue_parser,
         _streaming_variable_lvalue_parser,
     )));
-    parser.boxed()
+    parser
 }
 
 pub fn nonrange_variable_lvalue_parser<'a>()
