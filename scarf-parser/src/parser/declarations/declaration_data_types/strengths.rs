@@ -11,7 +11,7 @@ use winnow::error::ModalResult;
 
 pub fn drive_strength_parser<'s>(
     input: &mut Tokens<'s>,
-) -> ModalResult<DriveStrength<'s>> {
+) -> ModalResult<DriveStrength<'s>, VerboseError<'s>> {
     alt((
         (
             token(Token::Paren),
@@ -67,7 +67,7 @@ pub fn drive_strength_parser<'s>(
 
 pub fn strength0_parser<'s>(
     input: &mut Tokens<'s>,
-) -> ModalResult<Strength0<'s>> {
+) -> ModalResult<Strength0<'s>, VerboseError<'s>> {
     alt((
         token(Token::Supply0).map(|a| Strength0::Supply0(a)),
         token(Token::Strong0).map(|a| Strength0::Strong0(a)),
@@ -79,7 +79,7 @@ pub fn strength0_parser<'s>(
 
 pub fn strength1_parser<'s>(
     input: &mut Tokens<'s>,
-) -> ModalResult<Strength1<'s>> {
+) -> ModalResult<Strength1<'s>, VerboseError<'s>> {
     alt((
         token(Token::Supply1).map(|a| Strength1::Supply1(a)),
         token(Token::Strong1).map(|a| Strength1::Strong1(a)),

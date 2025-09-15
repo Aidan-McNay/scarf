@@ -11,7 +11,7 @@ use winnow::combinator::alt;
 
 pub fn cmos_switchtype_parser<'s>(
     input: &mut Tokens<'s>,
-) -> ModalResult<CmosSwitchtype<'s>> {
+) -> ModalResult<CmosSwitchtype<'s>, VerboseError<'s>> {
     alt((
         token(Token::Cmos).map(|a| CmosSwitchtype::Cmos(a)),
         token(Token::Rcmos).map(|a| CmosSwitchtype::Rcmos(a)),
@@ -21,7 +21,7 @@ pub fn cmos_switchtype_parser<'s>(
 
 pub fn enable_gatetype_parser<'s>(
     input: &mut Tokens<'s>,
-) -> ModalResult<EnableGatetype<'s>> {
+) -> ModalResult<EnableGatetype<'s>, VerboseError<'s>> {
     alt((
         token(Token::Bufif0).map(|a| EnableGatetype::Bufif0(a)),
         token(Token::Bufif1).map(|a| EnableGatetype::Bufif1(a)),
@@ -33,7 +33,7 @@ pub fn enable_gatetype_parser<'s>(
 
 pub fn mos_switchtype_parser<'s>(
     input: &mut Tokens<'s>,
-) -> ModalResult<MosSwitchtype<'s>> {
+) -> ModalResult<MosSwitchtype<'s>, VerboseError<'s>> {
     alt((
         token(Token::Nmos).map(|a| MosSwitchtype::Nmos(a)),
         token(Token::Pmos).map(|a| MosSwitchtype::Pmos(a)),
@@ -45,7 +45,7 @@ pub fn mos_switchtype_parser<'s>(
 
 pub fn n_input_gatetype_parser<'s>(
     input: &mut Tokens<'s>,
-) -> ModalResult<NInputGatetype<'s>> {
+) -> ModalResult<NInputGatetype<'s>, VerboseError<'s>> {
     alt((
         token(Token::And).map(|a| NInputGatetype::And(a)),
         token(Token::Nand).map(|a| NInputGatetype::Nand(a)),
@@ -59,7 +59,7 @@ pub fn n_input_gatetype_parser<'s>(
 
 pub fn n_output_gatetype_parser<'s>(
     input: &mut Tokens<'s>,
-) -> ModalResult<NOutputGatetype<'s>> {
+) -> ModalResult<NOutputGatetype<'s>, VerboseError<'s>> {
     alt((
         token(Token::Buf).map(|a| NOutputGatetype::Buf(a)),
         token(Token::Not).map(|a| NOutputGatetype::Not(a)),
@@ -69,7 +69,7 @@ pub fn n_output_gatetype_parser<'s>(
 
 pub fn pass_en_switchtype_parser<'s>(
     input: &mut Tokens<'s>,
-) -> ModalResult<PassEnSwitchtype<'s>> {
+) -> ModalResult<PassEnSwitchtype<'s>, VerboseError<'s>> {
     alt((
         token(Token::Tranif0).map(|a| PassEnSwitchtype::Tranif0(a)),
         token(Token::Tranif1).map(|a| PassEnSwitchtype::Tranif1(a)),
@@ -81,7 +81,7 @@ pub fn pass_en_switchtype_parser<'s>(
 
 pub fn pass_switchtype_parser<'s>(
     input: &mut Tokens<'s>,
-) -> ModalResult<PassSwitchtype<'s>> {
+) -> ModalResult<PassSwitchtype<'s>, VerboseError<'s>> {
     alt((
         token(Token::Tran).map(|a| PassSwitchtype::Tran(a)),
         token(Token::Rtran).map(|a| PassSwitchtype::Rtran(a)),

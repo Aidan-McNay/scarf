@@ -44,15 +44,15 @@ fn format(args: &FormatArgs) {
         }
         let parser_stream = lex_to_parse_stream(lexed_src);
         let parsed_src = parse(&parser_stream[..]);
-        // let parse_errors = report_parse_errors(parsed_src.clone(), path);
-        // if !parse_errors.is_empty() {
-        //     for report in parse_errors {
-        //         report
-        //             .print((path.as_str(), Source::from(src.as_str())))
-        //             .unwrap()
-        //     }
-        //     return;
-        // }
+        let parse_errors = report_parse_errors(&parsed_src, path);
+        if !parse_errors.is_empty() {
+            for report in parse_errors {
+                report
+                    .print((path.as_str(), Source::from(src.as_str())))
+                    .unwrap()
+            }
+            return;
+        }
         println!("{:?}", parsed_src);
     }
 }

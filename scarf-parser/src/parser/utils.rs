@@ -12,15 +12,10 @@ use winnow::combinator::repeat;
 use winnow::error::ModalResult;
 use winnow::token::any;
 
-// Span conversion
-// pub fn convert_span(simple_span: LexerSpan) -> Span {
-//     simple_span.into()
-// }
-
 // A parser for matching extra nodes
 pub fn extra_node_parser<'s>(
     input: &mut Tokens<'s>,
-) -> ModalResult<Vec<(ExtraNode<'s>, Span)>> {
+) -> ModalResult<Vec<(ExtraNode<'s>, Span)>, VerboseError<'s>> {
     let comment_parser = any.verify_map(|s: &'s SpannedToken<'s>| match s.0 {
         Token::OnelineComment(text) => {
             Some((ExtraNode::OnelineComment(text), s.1.clone()))
@@ -37,32 +32,18 @@ pub fn extra_node_parser<'s>(
     repeat(0.., alt((comment_parser, newline_parser))).parse_next(input)
 }
 
-// A mapping function for replacing extra nodes in metadata
-// pub fn replace_nodes<'a>(
-//     old_metadata: Metadata<'a>,
-//     new_nodes: Vec<(ExtraNode<'a>, Span)>,
-// ) -> Metadata<'a> {
-//     Metadata {
-//         span: old_metadata.span,
-//         extra_nodes: new_nodes,
-//     }
-// }
-
 // A parser for matching a token and extra nodes, producing metadata
 pub fn token<'s>(
     token_to_match: Token<'s>,
-) -> impl FnMut(&mut Tokens<'s>) -> ModalResult<Metadata<'s>> {
+) -> impl FnMut(&mut Tokens<'s>) -> ModalResult<Metadata<'s>, VerboseError<'s>>
+{
     move |input: &mut Tokens<'s>| {
-        (token_to_match, extra_node_parser).parse_next(input).map(
-            |(spanned_token, extra_nodes)| Metadata {
+        (token_to_match, extra_node_parser)
+            .context(token_to_match)
+            .parse_next(input)
+            .map(|(spanned_token, extra_nodes)| Metadata {
                 span: spanned_token.1.clone(),
                 extra_nodes: extra_nodes,
-            },
-        )
+            })
     }
 }
-
-// pub fn todo_parser<'a>() -> impl Parser<'a, ParserInput<'a>, (), ParserError<'a>> + Clone {
-//     // Match against nothing
-//     just(Token::Error).to(())
-// }

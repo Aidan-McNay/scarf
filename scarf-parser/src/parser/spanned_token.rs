@@ -7,7 +7,6 @@ use crate::*;
 use lexer::{Span, Token};
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::error::ContextError;
 use winnow::error::ErrMode;
 use winnow::stream::TokenSlice;
 use winnow::token::literal;
@@ -26,13 +25,13 @@ impl<'s> From<(Token<'s>, Span)> for SpannedToken<'s> {
 }
 
 pub type Tokens<'s> = TokenSlice<'s, SpannedToken<'s>>;
-impl<'s> Parser<Tokens<'s>, &'s SpannedToken<'s>, ErrMode<ContextError>>
+impl<'s> Parser<Tokens<'s>, &'s SpannedToken<'s>, ErrMode<VerboseError<'s>>>
     for Token<'s>
 {
     fn parse_next(
         &mut self,
         input: &mut Tokens<'s>,
-    ) -> ModalResult<&'s SpannedToken<'s>> {
+    ) -> ModalResult<&'s SpannedToken<'s>, VerboseError<'s>> {
         literal(*self).parse_next(input).map(|t| &t[0])
     }
 }

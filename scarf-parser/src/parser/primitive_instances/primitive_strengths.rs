@@ -11,7 +11,7 @@ use winnow::combinator::alt;
 
 pub fn pulldown_strength_parser<'s>(
     input: &mut Tokens<'s>,
-) -> ModalResult<PulldownStrength<'s>> {
+) -> ModalResult<PulldownStrength<'s>, VerboseError<'s>> {
     alt((
         (
             token(Token::Paren),
@@ -41,7 +41,7 @@ pub fn pulldown_strength_parser<'s>(
 
 pub fn pullup_strength_parser<'s>(
     input: &mut Tokens<'s>,
-) -> ModalResult<PullupStrength<'s>> {
+) -> ModalResult<PullupStrength<'s>, VerboseError<'s>> {
     alt((
         (
             token(Token::Paren),
