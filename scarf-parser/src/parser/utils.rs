@@ -3,12 +3,10 @@
 // =======================================================================
 // Helper functions for implementing parsers
 
-use crate::parser::SpannedToken;
 use crate::*;
 use scarf_syntax::*;
 use winnow::Parser;
 use winnow::error::ModalResult;
-use winnow::token::any;
 
 // Span conversion
 // pub fn convert_span(simple_span: LexerSpan) -> Span {
@@ -44,11 +42,11 @@ use winnow::token::any;
 // }
 
 // A parser for matching a token and extra nodes, producing metadata
-pub fn parse_token<'s>(
-    token_to_match: Token<'s>,
-) -> impl Fn(&mut Tokens<'s>) -> ModalResult<Metadata<'s>> {
+pub fn token<'s>(
+    mut token_to_match: Token<'s>,
+) -> impl FnMut(&mut Tokens<'s>) -> ModalResult<Metadata<'s>> {
     move |input: &mut Tokens<'s>| {
-        any.verify(|spanned_token: &SpannedToken<'s>| spanned_token.0 == token_to_match)
+        token_to_match
             .parse_next(input)
             .map(|spanned_token| Metadata {
                 span: spanned_token.1.clone(),

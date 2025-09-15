@@ -42,16 +42,17 @@ fn format(args: &FormatArgs) {
             }
             return;
         }
-        let parsed_src = parse_from_lex(&src, lexed_src);
-        let parse_errors = report_parse_errors(parsed_src.clone(), path);
-        if !parse_errors.is_empty() {
-            for report in parse_errors {
-                report
-                    .print((path.as_str(), Source::from(src.as_str())))
-                    .unwrap()
-            }
-            return;
-        }
+        let parser_stream = lex_to_parse_stream(lexed_src);
+        let parsed_src = parse(&parser_stream[..]);
+        // let parse_errors = report_parse_errors(parsed_src.clone(), path);
+        // if !parse_errors.is_empty() {
+        //     for report in parse_errors {
+        //         report
+        //             .print((path.as_str(), Source::from(src.as_str())))
+        //             .unwrap()
+        //     }
+        //     return;
+        // }
         println!("{:?}", parsed_src);
     }
 }

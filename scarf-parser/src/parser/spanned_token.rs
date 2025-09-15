@@ -5,9 +5,10 @@
 
 use crate::*;
 use lexer::{Span, Token};
+use winnow::ModalResult;
 use winnow::Parser;
-use winnow::Result;
 use winnow::error::ContextError;
+use winnow::error::ErrMode;
 use winnow::stream::TokenSlice;
 use winnow::token::literal;
 
@@ -18,10 +19,20 @@ impl<'s> PartialEq<Token<'s>> for SpannedToken<'s> {
         self.0 == *other
     }
 }
+impl<'s> From<(Token<'s>, Span)> for SpannedToken<'s> {
+    fn from(item: (Token<'s>, Span)) -> Self {
+        (item.0, item.1).into()
+    }
+}
 
 pub type Tokens<'s> = TokenSlice<'s, SpannedToken<'s>>;
-impl<'s> Parser<Tokens<'s>, &'s SpannedToken<'s>, ContextError> for Token<'s> {
-    fn parse_next(&mut self, input: &mut Tokens<'s>) -> Result<&'s SpannedToken<'s>> {
+impl<'s> Parser<Tokens<'s>, &'s SpannedToken<'s>, ErrMode<ContextError>>
+    for Token<'s>
+{
+    fn parse_next(
+        &mut self,
+        input: &mut Tokens<'s>,
+    ) -> ModalResult<&'s SpannedToken<'s>> {
         literal(*self).parse_next(input).map(|t| &t[0])
     }
 }
