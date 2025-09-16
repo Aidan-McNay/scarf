@@ -13,6 +13,7 @@ use std::fmt;
 #[logos(extras = usize)] // Used for time unit disambiguation
 pub enum Token<'a> {
     Error,
+    EOI,
     // 1364-1995
     #[token("always")]
     Always,
@@ -818,6 +819,7 @@ pub enum Token<'a> {
 impl<'a> Token<'a> {
     pub fn as_str(&self) -> &'static str {
         match self {
+            Token::EOI => "end of input",
             Token::Error => "a lexer error",
             Token::Always => "always",
             Token::And => "and",

@@ -9,10 +9,12 @@ mod primitive_instances;
 mod spanned_token;
 mod utils;
 use crate::*;
+use core::ops::Range;
 pub use declarations::*;
 pub use errors::*;
 pub use primitive_instances::*;
 pub use spanned_token::*;
+use std::fs;
 pub use utils::*;
 
 pub fn parse<'s>(
@@ -75,21 +77,30 @@ pub fn report_parse_errors<'s, 'b>(
         Vec::new();
     if let &Err(ref parse_error) = result {
         let verbose_error = parse_error.inner();
-        let report = Report::build(
-            ReportKind::Error,
-            (file_path, verbose_error.span.clone()),
-        )
-        .with_code("P1")
-        .with_config(
-            ariadne::Config::new().with_index_type(ariadne::IndexType::Byte),
-        )
-        .with_message(format_reason(verbose_error))
-        .with_label(
-            Label::new((file_path, verbose_error.span.clone()))
-                .with_message(format_reason_short(verbose_error))
-                .with_color(Color::Red),
-        )
-        .finish();
+        let error_span = match verbose_error.found {
+            None => {
+                let file_len = fs::metadata(file_path).expect("REASON").len();
+                Range {
+                    start: file_len as usize,
+                    end: file_len as usize,
+                }
+            }
+            Some(_) => verbose_error.span.clone(),
+        };
+        let report =
+            Report::build(ReportKind::Error, (file_path, error_span.clone()))
+                .with_code("P1")
+                .with_config(
+                    ariadne::Config::new()
+                        .with_index_type(ariadne::IndexType::Byte),
+                )
+                .with_message(format_reason(verbose_error))
+                .with_label(
+                    Label::new((file_path, error_span))
+                        .with_message(format_reason_short(verbose_error))
+                        .with_color(Color::Red),
+                )
+                .finish();
         reports.push(report);
     }
     reports

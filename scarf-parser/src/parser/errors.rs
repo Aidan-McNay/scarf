@@ -36,16 +36,27 @@ impl<'s> ParserError<Tokens<'s>> for VerboseError<'s> {
         Ok(self)
     }
     fn or(mut self, mut other: Self) -> Self {
-        // Prefer the one with a later span (a.k.a. got farther)
-        //  - Only compare start, since they'd belong to the
-        //    same token if the same
-        if self.span.start > other.span.start {
-            self
-        } else if self.span.start < other.span.start {
-            other
-        } else {
-            self.expected.append(&mut other.expected);
-            self
+        // Prefer errors that got to the end of the input
+        match (self.found, other.found) {
+            (None, Some(_)) => self,
+            (Some(_), None) => other,
+            (None, None) => {
+                self.expected.append(&mut other.expected);
+                self
+            }
+            (Some(_), Some(_)) => {
+                // Prefer the one with a later span (a.k.a. got farther)
+                //  - Only compare start, since they'd belong to the
+                //    same token if the same
+                if self.span.start > other.span.start {
+                    self
+                } else if self.span.start < other.span.start {
+                    other
+                } else {
+                    self.expected.append(&mut other.expected);
+                    self
+                }
+            }
         }
     }
 }
