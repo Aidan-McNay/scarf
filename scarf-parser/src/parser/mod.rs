@@ -5,14 +5,18 @@
 
 mod declarations;
 mod errors;
+mod expressions;
 mod primitive_instances;
+mod source_text;
 mod spanned_token;
 mod utils;
 use crate::*;
 use core::ops::Range;
 pub use declarations::*;
 pub use errors::*;
+pub use expressions::*;
 pub use primitive_instances::*;
+pub use source_text::*;
 pub use spanned_token::*;
 use std::fs;
 pub use utils::*;
@@ -77,15 +81,14 @@ pub fn report_parse_errors<'s, 'b>(
         Vec::new();
     if let &Err(ref parse_error) = result {
         let verbose_error = parse_error.inner();
-        let error_span = match verbose_error.found {
-            None => {
-                let file_len = fs::metadata(file_path).expect("REASON").len();
-                Range {
-                    start: file_len as usize,
-                    end: file_len as usize,
-                }
+        let error_span = if verbose_error.is_eoi() {
+            let file_len = fs::metadata(file_path).expect("REASON").len();
+            Range {
+                start: file_len as usize,
+                end: file_len as usize,
             }
-            Some(_) => verbose_error.span.clone(),
+        } else {
+            verbose_error.span.clone()
         };
         let report =
             Report::build(ReportKind::Error, (file_path, error_span.clone()))

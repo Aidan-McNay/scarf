@@ -89,17 +89,19 @@ pub fn strength1_parser<'s>(
     .parse_next(input)
 }
 
-// pub fn charge_strength_parser<'a>()
-// -> impl Parser<'a, ParserInput<'a>, ChargeStrength<'a>, ParserError<'a>> + Clone
-// {
-//     let charge_strength_size_parser = choice((
-//         token(Token::Small).map(|a| ChargeStrengthSize::Small(a)),
-//         token(Token::Medium).map(|a| ChargeStrengthSize::Medium(a)),
-//         token(Token::Large).map(|a| ChargeStrengthSize::Large(a)),
-//     ));
-//     token(Token::Paren)
-//         .then(charge_strength_size_parser)
-//         .then(token(Token::EParen))
-//         .map(|((a, b), c)| ChargeStrength(a, b, c))
-//         .boxed()
-// }
+pub fn charge_strength_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<ChargeStrength<'s>, VerboseError<'s>> {
+    let charge_strength_size_parser = alt((
+        token(Token::Small).map(|a| ChargeStrengthSize::Small(a)),
+        token(Token::Medium).map(|a| ChargeStrengthSize::Medium(a)),
+        token(Token::Large).map(|a| ChargeStrengthSize::Large(a)),
+    ));
+    (
+        token(Token::Paren),
+        charge_strength_size_parser,
+        token(Token::EParen),
+    )
+        .map(|(a, b, c)| ChargeStrength(a, b, c))
+        .parse_next(input)
+}

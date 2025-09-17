@@ -16,6 +16,11 @@ pub struct VerboseError<'s> {
     pub found: Option<Token<'s>>,
     pub expected: Vec<Expectation<'s>>,
 }
+impl<'s> VerboseError<'s> {
+    pub fn is_eoi(&self) -> bool {
+        self.found.is_none()
+    }
+}
 impl<'s> ParserError<Tokens<'s>> for VerboseError<'s> {
     type Inner = Self;
     fn from_input(input: &Tokens<'s>) -> Self {
