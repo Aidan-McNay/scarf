@@ -9,6 +9,7 @@ mod expressions;
 mod primitive_instances;
 mod source_text;
 mod spanned_token;
+mod udp_declaration_and_instantiation;
 mod utils;
 use crate::*;
 use core::ops::Range;
@@ -19,6 +20,7 @@ pub use primitive_instances::*;
 pub use source_text::*;
 pub use spanned_token::*;
 use std::fs;
+pub use udp_declaration_and_instantiation::*;
 pub use utils::*;
 
 pub fn parse<'s>(

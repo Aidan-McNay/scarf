@@ -1,9 +1,7 @@
 // =======================================================================
 // mod.rs
 // =======================================================================
-// Parsing for 1800-2023 A.2.2
+// Parsing for 1800-2023 A.5
 
-pub mod net_and_variable_types;
-pub mod strengths;
-pub use net_and_variable_types::*;
-pub use strengths::*;
+pub mod udp_declaration;
+pub use udp_declaration::*;

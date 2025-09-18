@@ -1,0 +1,100 @@
+// =======================================================================
+// declaration_lists.rs
+// =======================================================================
+// Parsing for 1800-2023 A.2.3
+
+use crate::*;
+use scarf_syntax::*;
+use winnow::ModalResult;
+use winnow::Parser;
+use winnow::combinator::repeat;
+
+pub fn list_of_interface_identifiers_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<ListOfInterfaceIdentifiers<'s>, VerboseError<'s>> {
+    (
+        interface_identifier_parser,
+        repeat(0.., unpacked_dimension_parser),
+        repeat(
+            0..,
+            (
+                token(Token::Comma),
+                interface_identifier_parser,
+                repeat(0.., unpacked_dimension_parser),
+            ),
+        ),
+    )
+        .map(|(a, b, c)| ListOfInterfaceIdentifiers(a, b, c))
+        .parse_next(input)
+}
+
+pub fn list_of_param_assignments_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<ListOfParamAssignments<'s>, VerboseError<'s>> {
+    (
+        param_assignment_parser,
+        repeat(0.., (token(Token::Comma), param_assignment_parser)),
+    )
+        .map(|(a, b)| ListOfParamAssignments(a, b))
+        .parse_next(input)
+}
+
+pub fn list_of_port_identifiers_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<ListOfPortIdentifiers<'s>, VerboseError<'s>> {
+    (
+        port_identifier_parser,
+        repeat(0.., unpacked_dimension_parser),
+        repeat(
+            0..,
+            (
+                token(Token::Comma),
+                port_identifier_parser,
+                repeat(0.., unpacked_dimension_parser),
+            ),
+        ),
+    )
+        .map(|(a, b, c)| ListOfPortIdentifiers(a, b, c))
+        .parse_next(input)
+}
+
+pub fn list_of_specparam_assignments_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<ListOfSpecparamAssignments<'s>, VerboseError<'s>> {
+    (
+        specparam_assignment_parser,
+        repeat(0.., (token(Token::Comma), specparam_assignment_parser)),
+    )
+        .map(|(a, b)| ListOfSpecparamAssignments(a, b))
+        .parse_next(input)
+}
+
+pub fn list_of_type_assignments_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<ListOfTypeAssignments<'s>, VerboseError<'s>> {
+    (
+        type_assignment_parser,
+        repeat(0.., (token(Token::Comma), type_assignment_parser)),
+    )
+        .map(|(a, b)| ListOfTypeAssignments(a, b))
+        .parse_next(input)
+}
+
+pub fn list_of_variable_identifiers_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<ListOfVariableIdentifiers<'s>, VerboseError<'s>> {
+    (
+        variable_identifier_parser,
+        repeat(0.., variable_dimension_parser),
+        repeat(
+            0..,
+            (
+                token(Token::Comma),
+                variable_identifier_parser,
+                repeat(0.., variable_dimension_parser),
+            ),
+        ),
+    )
+        .map(|(a, b, c)| ListOfVariableIdentifiers(a, b, c))
+        .parse_next(input)
+}
