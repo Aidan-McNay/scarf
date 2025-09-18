@@ -14,19 +14,20 @@ use winnow::token::any;
 pub fn constant_primary_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<ConstantPrimary<'s>, VerboseError<'s>> {
-    let _range_slice_parser = (
-        token(Token::Bracket),
-        constant_range_expression_parser,
-        token(Token::EBracket),
-    );
     let _primary_literal_parser = primary_literal_parser
         .map(|a| ConstantPrimary::PrimaryLiteral(Box::new(a)));
     let _ps_parameter_parser =
         (ps_parameter_identifier_parser, constant_select_parser)
             .map(|(a, b)| ConstantPrimary::PsParameter(Box::new((a, b))));
-    let _specparam_parser =
-        (specparam_identifier_parser, opt(_range_slice_parser))
-            .map(|(a, b)| ConstantPrimary::Specparam(Box::new((a, b))));
+    let _specparam_parser = (
+        specparam_identifier_parser,
+        opt((
+            token(Token::Bracket),
+            constant_range_expression_parser,
+            token(Token::EBracket),
+        )),
+    )
+        .map(|(a, b)| ConstantPrimary::Specparam(Box::new((a, b))));
     let _genvar_parser =
         genvar_identifier_parser.map(|a| ConstantPrimary::Genvar(Box::new(a)));
     let _enum_parser =
@@ -36,17 +37,33 @@ pub fn constant_primary_parser<'s>(
         empty_unpacked_array_concatenation_parser.map(|a| {
             ConstantPrimary::EmptyUnpackedArrayConcatenation(Box::new(a))
         });
-    let _concatenation_parser =
-        (constant_concatenation_parser, opt(_range_slice_parser))
-            .map(|(a, b)| ConstantPrimary::Concatenation(Box::new((a, b))));
+    let _concatenation_parser = (
+        constant_concatenation_parser,
+        opt((
+            token(Token::Bracket),
+            constant_range_expression_parser,
+            token(Token::EBracket),
+        )),
+    )
+        .map(|(a, b)| ConstantPrimary::Concatenation(Box::new((a, b))));
     let _multiple_concatenation_parser = (
         constant_multiple_concatenation_parser,
-        opt(_range_slice_parser),
+        opt((
+            token(Token::Bracket),
+            constant_range_expression_parser,
+            token(Token::EBracket),
+        )),
     )
         .map(|(a, b)| ConstantPrimary::MultipleConcatenation(Box::new((a, b))));
-    let _function_call_parser =
-        (constant_function_call_parser, opt(_range_slice_parser))
-            .map(|(a, b)| ConstantPrimary::FunctionCall(Box::new((a, b))));
+    let _function_call_parser = (
+        constant_function_call_parser,
+        opt((
+            token(Token::Bracket),
+            constant_range_expression_parser,
+            token(Token::EBracket),
+        )),
+    )
+        .map(|(a, b)| ConstantPrimary::FunctionCall(Box::new((a, b))));
     let _let_expression_parser = constant_let_expression_parser
         .map(|a| ConstantPrimary::LetExpression(Box::new(a)));
     let _mintypmax_parser = (
@@ -113,11 +130,6 @@ pub fn module_path_primary_parser<'s>(
 pub fn primary_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<Primary<'s>, VerboseError<'s>> {
-    let _range_slice_parser = (
-        token(Token::Bracket),
-        range_expression_parser,
-        token(Token::EBracket),
-    );
     let _primary_literal_parser =
         primary_literal_parser.map(|a| Primary::PrimaryLiteral(Box::new(a)));
     let _hierarchical_identifier_parser = (
@@ -129,15 +141,33 @@ pub fn primary_parser<'s>(
     let _empty_unpacked_array_concatenation_parser =
         empty_unpacked_array_concatenation_parser
             .map(|a| Primary::EmptyUnpackedArrayConcatenation(Box::new(a)));
-    let _concatenation_parser =
-        (concatenation_parser, opt(_range_slice_parser))
-            .map(|(a, b)| Primary::Concatenation(Box::new((a, b))));
-    let _multiple_concatenation_parser =
-        (multiple_concatenation_parser, opt(_range_slice_parser))
-            .map(|(a, b)| Primary::MultipleConcatenation(Box::new((a, b))));
-    let _function_subroutine_call_parser =
-        (function_subroutine_call_parser, opt(_range_slice_parser))
-            .map(|(a, b)| Primary::FunctionSubroutineCall(Box::new((a, b))));
+    let _concatenation_parser = (
+        concatenation_parser,
+        opt((
+            token(Token::Bracket),
+            range_expression_parser,
+            token(Token::EBracket),
+        )),
+    )
+        .map(|(a, b)| Primary::Concatenation(Box::new((a, b))));
+    let _multiple_concatenation_parser = (
+        multiple_concatenation_parser,
+        opt((
+            token(Token::Bracket),
+            range_expression_parser,
+            token(Token::EBracket),
+        )),
+    )
+        .map(|(a, b)| Primary::MultipleConcatenation(Box::new((a, b))));
+    let _function_subroutine_call_parser = (
+        function_subroutine_call_parser,
+        opt((
+            token(Token::Bracket),
+            range_expression_parser,
+            token(Token::EBracket),
+        )),
+    )
+        .map(|(a, b)| Primary::FunctionSubroutineCall(Box::new((a, b))));
     let _let_expression_parser =
         let_expression_parser.map(|a| Primary::LetExpression(Box::new(a)));
     let _mintypmax_parser = (
@@ -209,7 +239,7 @@ pub fn class_qualifier_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<ClassQualifier<'s>, VerboseError<'s>> {
     (
-        (opt(token(Token::Local), token(Token::ColonColon))),
+        opt((token(Token::Local), token(Token::ColonColon))),
         opt(implicit_class_handle_or_class_scope_parser),
     )
         .map(|(a, b)| ClassQualifier(a, b))

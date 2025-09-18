@@ -12,7 +12,7 @@ use winnow::combinator::{alt, opt, repeat};
 pub(crate) fn attribute_instance_vec_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<Vec<AttributeInstance<'s>>, VerboseError<'s>> {
-    repeat(0.., attribute_instance_parser)
+    repeat(0.., attribute_instance_parser).parse_next(input)
 }
 
 pub fn source_text_parser<'s>(
@@ -490,8 +490,8 @@ pub fn class_declaration_parser<'s>(
                 token(Token::Default).map(|metadata| {
                     ClassDeclarationExtensionArguments::Default(metadata)
                 }),
-            ))
-            .then(token(Token::EParen)),
+            )),
+            token(Token::EParen),
         )),
     );
     let class_declaration_implementation_parser = (

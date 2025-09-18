@@ -84,37 +84,46 @@ pub fn let_expression_parser<'s>(
             token(Token::EParen),
         )),
     )
-        .map(|((a, b), c)| LetExpression(a, b, c))
+        .map(|(a, b, c)| LetExpression(a, b, c))
+        .parse_next(input)
 }
 
 pub fn let_list_of_arguments_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<LetListOfArguments<'s>, VerboseError<'s>> {
-    let _optional_let_actual_arg_parser = opt(let_actual_arg_parser);
-    let _identifier_vec_parser = repeat(
-        0..,
-        (
-            token(Token::Comma),
-            token(Token::Period),
-            identifier_parser,
-            token(Token::Paren),
-            _optional_let_actual_arg_parser,
-            token(Token::EParen),
-        ),
-    );
     let _partial_identifier_parser = (
-        _optional_let_actual_arg_parser,
-        repeat(0.., (token(Token::Comma), _optional_let_actual_arg_parser)),
-        _identifier_vec_parser,
+        opt(let_actual_arg_parser),
+        repeat(0.., (token(Token::Comma), opt(let_actual_arg_parser))),
+        repeat(
+            0..,
+            (
+                token(Token::Comma),
+                token(Token::Period),
+                identifier_parser,
+                token(Token::Paren),
+                opt(let_actual_arg_parser),
+                token(Token::EParen),
+            ),
+        ),
     )
         .map(|(a, b, c)| LetListOfPartialIdentifierArguments(a, b, c));
     let _identifier_parser = (
         token(Token::Period),
         identifier_parser,
         token(Token::Paren),
-        _optional_let_actual_arg_parser,
+        opt(let_actual_arg_parser),
         token(Token::EParen),
-        _identifier_vec_parser,
+        repeat(
+            0..,
+            (
+                token(Token::Comma),
+                token(Token::Period),
+                identifier_parser,
+                token(Token::Paren),
+                opt(let_actual_arg_parser),
+                token(Token::EParen),
+            ),
+        ),
     )
         .map(|(a, b, c, d, e, f)| {
             LetListOfIdentifierArguments(a, b, c, d, e, f)
@@ -130,5 +139,5 @@ pub fn let_list_of_arguments_parser<'s>(
 pub fn let_actual_arg_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<LetActualArg<'s>, VerboseError<'s>> {
-    expression_parser.map(|a| LetActualArg(a))
+    expression_parser.map(|a| LetActualArg(a)).parse_next(input)
 }

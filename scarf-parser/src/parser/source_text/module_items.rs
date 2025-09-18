@@ -7,7 +7,6 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::todo;
 use winnow::combinator::{alt, opt};
 use winnow::token::any;
 
@@ -57,7 +56,7 @@ pub fn error_system_severity_task_parser<'s>(
         token(Token::SColon),
     )
         .map(|(a, b, c)| ErrorSystemSeverityTask(a, b, c))
-        .parse_input(input)
+        .parse_next(input)
 }
 
 pub fn warning_system_severity_task_parser<'s>(
@@ -73,7 +72,7 @@ pub fn warning_system_severity_task_parser<'s>(
         token(Token::SColon),
     )
         .map(|(a, b, c)| WarningSystemSeverityTask(a, b, c))
-        .parse_input(input)
+        .parse_next(input)
 }
 
 pub fn info_system_severity_task_parser<'s>(
@@ -88,8 +87,8 @@ pub fn info_system_severity_task_parser<'s>(
         )),
         token(Token::SColon),
     )
-        .map(|(a, b, c)| ErrorSystemSeverityTask(a, b, c))
-        .parse_input(input)
+        .map(|(a, b, c)| InfoSystemSeverityTask(a, b, c))
+        .parse_next(input)
 }
 
 pub fn finish_number_parser<'s>(
@@ -138,17 +137,17 @@ pub fn elaboration_system_severity_task_parser<'s>(
 pub fn bind_directive_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<BindDirective, VerboseError<'s>> {
-    todo(input)
+    token(Token::Error).value(()).parse_next(input)
 }
 
 pub fn module_item_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<ModuleItem, VerboseError<'s>> {
-    todo(input)
+    token(Token::Error).value(()).parse_next(input)
 }
 
 pub fn non_port_module_item_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<NonPortModuleItem, VerboseError<'s>> {
-    todo(input)
+    token(Token::Error).value(()).parse_next(input)
 }

@@ -10,8 +10,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, opt, repeat, todo};
-use winnow::token::any;
+use winnow::combinator::{alt, opt, todo};
 
 pub fn inc_or_dec_expression_parser<'s>(
     input: &mut Tokens<'s>,
@@ -57,8 +56,8 @@ pub fn constant_expression_parser<'s>(
         constant_primary_parser,
     )
         .map(|(a, b, c)| ConstantExpression::Unary(Box::new((a, b, c))));
-    let _binary_parser = todo
-        .map(|(a, b, c, d)| ConstantExpression::Binary(Box::new((a, b, c, d))));
+    // let _binary_parser = todo
+    //     .map(|(a, b, c, d)| ConstantExpression::Binary(Box::new((a, b, c, d))));
     let _ternary_parser = (
         constant_expression_parser,
         token(Token::Quest),
@@ -73,7 +72,7 @@ pub fn constant_expression_parser<'s>(
     alt((
         _primary_parser,
         _unary_parser,
-        _binary_parser,
+        // _binary_parser,
         _ternary_parser,
     ))
     .parse_next(input)
@@ -182,8 +181,8 @@ pub fn expression_parser<'s>(
         token(Token::EParen),
     )
         .map(|(a, b, c)| Expression::OperatorAssignment(Box::new((a, b, c))));
-    let _binary_parser =
-        todo.map(|(a, b, c, d)| Expression::Binary(Box::new((a, b, c, d))));
+    // let _binary_parser =
+    //     todo.map(|(a, b, c, d)| Expression::Binary(Box::new((a, b, c, d))));
     let _conditional_expression_parser = conditional_expression_parser
         .map(|a| Expression::ConditionalExpression(Box::new(a)));
     let _inside_expression_parser = inside_expression_parser
@@ -195,7 +194,7 @@ pub fn expression_parser<'s>(
         _unary_parser,
         _inc_or_dec_expression_parser,
         _operator_assignment_parser,
-        _binary_parser,
+        // _binary_parser,
         _conditional_expression_parser,
         _inside_expression_parser,
         _tagged_union_expression_parser,
@@ -276,15 +275,15 @@ pub fn module_path_expression_parser<'s>(
         module_path_primary_parser,
     )
         .map(|(a, b, c)| ModulePathExpression::Unary(Box::new((a, b, c))));
-    let _binary_parser = todo.map(|(a, b, c, d)| {
-        ModulePathExpression::Binary(Box::new((a, b, c, d)))
-    });
+    // let _binary_parser = todo.map(|(a, b, c, d)| {
+    //     ModulePathExpression::Binary(Box::new((a, b, c, d)))
+    // });
     let _conditional_parser = module_path_conditional_expression_parser
         .map(|a| ModulePathExpression::Conditional(Box::new(a)));
     alt((
         _primary_parser,
         _unary_parser,
-        _binary_parser,
+        // _binary_parser,
         _conditional_parser,
     ))
     .parse_next(input)

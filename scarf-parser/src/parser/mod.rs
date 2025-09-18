@@ -3,20 +3,25 @@
 // =======================================================================
 // The top-level interface for the parser
 
-mod declarations;
-mod errors;
-mod expressions;
-mod primitive_instances;
-mod source_text;
-mod spanned_token;
-mod udp_declaration_and_instantiation;
-mod utils;
+pub mod behavioral_statements;
+pub mod declarations;
+pub mod errors;
+pub mod expressions;
+pub mod general;
+pub mod primitive_instances;
+pub mod source_text;
+pub mod spanned_token;
+pub mod udp_declaration_and_instantiation;
+pub mod utils;
 use crate::*;
+pub use behavioral_statements::*;
 use core::ops::Range;
 pub use declarations::*;
 pub use errors::*;
 pub use expressions::*;
+pub use general::*;
 pub use primitive_instances::*;
+use scarf_syntax::SourceText;
 pub use source_text::*;
 pub use spanned_token::*;
 use std::fs;
@@ -26,10 +31,10 @@ pub use utils::*;
 pub fn parse<'s>(
     input: &'s [SpannedToken<'s>],
 ) -> Result<
-    DriveStrength<'s>,
+    SourceText<'s>,
     ParseError<TokenSlice<'s, SpannedToken<'s>>, VerboseError<'s>>,
 > {
-    drive_strength_parser.parse(TokenSlice::new(input))
+    source_text_parser.parse(TokenSlice::new(input))
 }
 
 fn format_expectation<'s>(pattern: &Expectation<'s>) -> String {
@@ -74,7 +79,7 @@ fn format_reason_short<'s>(error: &VerboseError<'s>) -> String {
 
 pub fn report_parse_errors<'s, 'b>(
     result: &Result<
-        DriveStrength<'s>,
+        SourceText<'s>,
         ParseError<TokenSlice<'s, SpannedToken<'s>>, VerboseError<'s>>,
     >,
     file_path: &'b str,

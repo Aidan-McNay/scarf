@@ -5,12 +5,11 @@
 
 use crate::*;
 use winnow::ModalResult;
-use winnow::combinator::todo;
 
 use scarf_syntax::*;
 
 pub fn package_item_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<PackageItem, VerboseError<'s>> {
-    todo(input)
+    token(Token::Error).value(()).parse_next(input)
 }

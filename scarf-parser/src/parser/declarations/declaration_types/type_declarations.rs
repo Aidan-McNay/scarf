@@ -7,12 +7,12 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, todo};
+use winnow::combinator::alt;
 
 pub fn package_import_declaration_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<PackageImportDeclaration, VerboseError<'s>> {
-    todo(input)
+    token(Token::Error).value(()).parse_next(input)
 }
 
 pub fn forward_type_parser<'s>(
