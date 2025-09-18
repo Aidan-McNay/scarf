@@ -114,18 +114,15 @@ pub fn finish_number_parser<'s>(
         extra_node_parser,
     )
         .map(|(finish_number, extra_nodes)| match finish_number {
-            FinishNumber::Zero(metadata) => FinishNumber::Zero(Metadata {
-                span: metadata.span,
-                extra_nodes: extra_nodes,
-            }),
-            FinishNumber::One(metadata) => FinishNumber::One(Metadata {
-                span: metadata.span,
-                extra_nodes: extra_nodes,
-            }),
-            FinishNumber::Two(metadata) => FinishNumber::Two(Metadata {
-                span: metadata.span,
-                extra_nodes: extra_nodes,
-            }),
+            FinishNumber::Zero(metadata) => {
+                FinishNumber::Zero(replace_nodes(metadata, extra_nodes))
+            }
+            FinishNumber::One(metadata) => {
+                FinishNumber::One(replace_nodes(metadata, extra_nodes))
+            }
+            FinishNumber::Two(metadata) => {
+                FinishNumber::Two(replace_nodes(metadata, extra_nodes))
+            }
         })
         .parse_next(input)
 }

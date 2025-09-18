@@ -32,6 +32,17 @@ pub fn extra_node_parser<'s>(
     repeat(0.., alt((comment_parser, newline_parser))).parse_next(input)
 }
 
+// A mapping function for replacing extra nodes in metadata
+pub fn replace_nodes<'a>(
+    old_metadata: Metadata<'a>,
+    new_nodes: Vec<(ExtraNode<'a>, Span)>,
+) -> Metadata<'a> {
+    Metadata {
+        span: old_metadata.span,
+        extra_nodes: new_nodes,
+    }
+}
+
 // A parser for matching a token and extra nodes, producing metadata
 pub fn token<'s>(
     token_to_match: Token<'s>,
