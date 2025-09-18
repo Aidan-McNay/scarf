@@ -4,47 +4,37 @@
 // Parsing for 1800-2023 A.9.1
 
 use crate::*;
-use chumsky::prelude::*;
 use scarf_syntax::*;
+use winnow::ModalResult;
+use winnow::Parser;
+use winnow::combinator::{opt, repeat};
 
-pub fn attribute_instance_parser<'a>(
-    constant_expression_parser: impl Parser<
-        'a,
-        ParserInput<'a>,
-        ConstantExpression<'a>,
-        ParserError<'a>,
-    > + Clone
-    + 'a,
-) -> impl Parser<'a, ParserInput<'a>, AttributeInstance<'a>, ParserError<'a>> + Clone {
-    token(Token::ParenStar)
-        .then(attr_spec_parser(constant_expression_parser.clone()))
-        .then(
-            token(Token::Comma)
-                .then(attr_spec_parser(constant_expression_parser))
-                .repeated()
-                .collect::<Vec<(Metadata<'a>, AttrSpec<'a>)>>(),
-        )
-        .then(token(Token::StarEparen))
-        .map(|(((a, b), c), d)| AttributeInstance(a, b, c, d))
-        .boxed()
+pub fn attribute_instance_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<AttributeInstance<'s>, VerboseError<'s>> {
+    (
+        token(Token::ParenStar),
+        attr_spec_parser,
+        repeat(0.., (token(Token::Comma), attr_spec_parser)),
+        token(Token::StarEparen),
+    )
+        .map(|(a, b, c, d)| AttributeInstance(a, b, c, d))
+        .parse_next(input)
 }
 
-pub fn attr_spec_parser<'a>(
-    constant_expression_parser: impl Parser<
-        'a,
-        ParserInput<'a>,
-        ConstantExpression<'a>,
-        ParserError<'a>,
-    > + Clone
-    + 'a,
-) -> impl Parser<'a, ParserInput<'a>, AttrSpec<'a>, ParserError<'a>> + Clone {
-    attr_name_parser()
-        .then(token(Token::Eq).then(constant_expression_parser).or_not())
+pub fn attr_spec_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<AttrSpec<'s>, VerboseError<'s>> {
+    (
+        attr_name_parser,
+        opt((token(Token::Eq), constant_expression_parser)),
+    )
         .map(|(a, b)| AttrSpec(a, b))
-        .boxed()
+        .parse_next(input)
 }
 
-pub fn attr_name_parser<'a>()
--> impl Parser<'a, ParserInput<'a>, AttrName<'a>, ParserError<'a>> + Clone {
-    identifier_parser().map(|a| AttrName(a)).boxed()
+pub fn attr_name_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<AttrName<'s>, VerboseError<'s>> {
+    identifier_parser.map(|a| AttrName(a)).parse_next(input)
 }

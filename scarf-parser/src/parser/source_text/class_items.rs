@@ -4,15 +4,18 @@
 // Parsing for 1800-2023 A.1.9
 
 use crate::*;
-use chumsky::prelude::*;
 use scarf_syntax::*;
+use winnow::ModalResult;
+use winnow::combinator::fail;
 
-pub fn class_item_parser<'a>()
--> impl Parser<'a, ParserInput<'a>, ClassItem, ParserError<'a>> + Clone {
-    todo_parser()
+pub fn class_item_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<ClassItem, VerboseError<'s>> {
+    fail.parse_next(input)
 }
 
-pub fn interface_class_item_parser<'a>()
--> impl Parser<'a, ParserInput<'a>, InterfaceClassItem, ParserError<'a>> + Clone {
-    todo_parser()
+pub fn interface_class_item_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<InterfaceClassItem, VerboseError<'s>> {
+    fail.parse_next(input)
 }

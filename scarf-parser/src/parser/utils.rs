@@ -4,36 +4,32 @@
 // Helper functions for implementing parsers
 
 use crate::*;
-use chumsky::prelude::*;
-use scarf_syntax::Span;
+use lexer::Span;
 use scarf_syntax::*;
-
-// Fold parsed text into a vector
-pub fn foldl_vector<T>(mut a: Vec<T>, b: T) -> Vec<T> {
-    a.push(b);
-    a
-}
-
-// Span conversion
-pub fn convert_span(simple_span: ParserSpan) -> Span {
-    simple_span.into()
-}
+use winnow::Parser;
+use winnow::combinator::alt;
+use winnow::combinator::repeat;
+use winnow::error::ModalResult;
+use winnow::token::any;
 
 // A parser for matching extra nodes
-pub fn extra_node_parser<'a>()
--> impl Parser<'a, ParserInput<'a>, Vec<(ExtraNode<'a>, Span)>, ParserError<'a>> + Clone {
-    let _comment_parser = select! {
-        Token::OnelineComment(text) = e => (ExtraNode::OnelineComment(text), convert_span(e.span())),
-        Token::BlockComment(text) = e => (ExtraNode::BlockComment(text), convert_span(e.span()))
-    }
-    .labelled("a comment");
-    let _whitespace_parser = select! {
-        Token::Newline = e => (ExtraNode::Newline, convert_span(e.span()))
-    }
-    .labelled("whitespace");
-    choice((_comment_parser, _whitespace_parser))
-        .repeated()
-        .collect::<Vec<(ExtraNode<'a>, Span)>>()
+pub fn extra_node_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<Vec<(ExtraNode<'s>, Span)>, VerboseError<'s>> {
+    let comment_parser = any.verify_map(|s: &'s SpannedToken<'s>| match s.0 {
+        Token::OnelineComment(text) => {
+            Some((ExtraNode::OnelineComment(text), s.1.clone()))
+        }
+        Token::BlockComment(text) => {
+            Some((ExtraNode::BlockComment(text), s.1.clone()))
+        }
+        _ => None,
+    });
+    let newline_parser = any.verify_map(|s: &'s SpannedToken<'s>| match s.0 {
+        Token::Newline => Some((ExtraNode::Newline, s.1.clone())),
+        _ => None,
+    });
+    repeat(0.., alt((comment_parser, newline_parser))).parse_next(input)
 }
 
 // A mapping function for replacing extra nodes in metadata
@@ -48,19 +44,17 @@ pub fn replace_nodes<'a>(
 }
 
 // A parser for matching a token and extra nodes, producing metadata
-pub fn token<'a>(
-    token_to_match: Token<'a>,
-) -> impl Parser<'a, ParserInput<'a>, Metadata<'a>, ParserError<'a>> + Clone {
-    just(token_to_match)
-        .map_with(|_, e| Metadata {
-            span: convert_span(e.span()),
-            extra_nodes: Vec::default(),
-        })
-        .then(extra_node_parser())
-        .map(|(a, b)| replace_nodes(a, b))
-}
-
-pub fn todo_parser<'a>() -> impl Parser<'a, ParserInput<'a>, (), ParserError<'a>> + Clone {
-    // Match against nothing
-    just(Token::Error).to(())
+pub fn token<'s>(
+    token_to_match: Token<'s>,
+) -> impl FnMut(&mut Tokens<'s>) -> ModalResult<Metadata<'s>, VerboseError<'s>>
+{
+    move |input: &mut Tokens<'s>| {
+        (token_to_match, extra_node_parser)
+            .context(token_to_match)
+            .parse_next(input)
+            .map(|(spanned_token, extra_nodes)| Metadata {
+                span: spanned_token.1.clone(),
+                extra_nodes: extra_nodes,
+            })
+    }
 }

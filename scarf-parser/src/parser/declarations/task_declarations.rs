@@ -4,13 +4,14 @@
 // Parsing for 1800-2023 A.2.7
 
 use crate::*;
-use chumsky::prelude::*;
 use scarf_syntax::*;
+use winnow::Parser;
+use winnow::error::ModalResult;
 
-pub fn final_specifier_parser<'a>()
--> impl Parser<'a, ParserInput<'a>, FinalSpecifier<'a>, ParserError<'a>> + Clone {
-    token(Token::Colon)
-        .then(token(Token::Final))
+pub fn final_specifier_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<FinalSpecifier<'s>, VerboseError<'s>> {
+    (token(Token::Colon), token(Token::Final))
         .map(|(a, b)| FinalSpecifier(a, b))
-        .boxed()
+        .parse_next(input)
 }

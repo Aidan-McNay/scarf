@@ -4,10 +4,12 @@
 // Parsing for 1800-2023 A.5.1
 
 use crate::*;
-use chumsky::prelude::*;
 use scarf_syntax::*;
+use winnow::ModalResult;
+use winnow::combinator::fail;
 
-pub fn udp_declaration_parser<'a>()
--> impl Parser<'a, ParserInput<'a>, UdpDeclaration, ParserError<'a>> + Clone {
-    todo_parser()
+pub fn udp_declaration_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<UdpDeclaration, VerboseError<'s>> {
+    fail.parse_next(input)
 }

@@ -4,41 +4,36 @@
 // Parsing for 1800-2023 A.2.4
 
 use crate::*;
-use chumsky::prelude::*;
 use scarf_syntax::*;
+use winnow::ModalResult;
+use winnow::Parser;
+use winnow::combinator::{fail, opt, repeat};
 
-pub fn param_assignment_parser<'a>()
--> impl Parser<'a, ParserInput<'a>, ParamAssignment<'a>, ParserError<'a>> + Clone {
-    parameter_identifier_parser()
-        .then(
-            variable_dimension_parser()
-                .repeated()
-                .collect::<Vec<VariableDimension<'a>>>(),
-        )
-        .then(
-            token(Token::Eq)
-                .then(constant_param_expression_parser(
-                    constant_expression_parser(expression_parser()),
-                ))
-                .or_not(),
-        )
-        .map(|((a, b), c)| ParamAssignment(a, b, c))
-        .boxed()
+pub fn param_assignment_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<ParamAssignment<'s>, VerboseError<'s>> {
+    (
+        parameter_identifier_parser,
+        repeat(0.., variable_dimension_parser),
+        opt((token(Token::Eq), constant_param_expression_parser)),
+    )
+        .map(|(a, b, c)| ParamAssignment(a, b, c))
+        .parse_next(input)
 }
 
-pub fn specparam_assignment_parser<'a>()
--> impl Parser<'a, ParserInput<'a>, SpecparamAssignment<'a>, ParserError<'a>> + Clone {
-    todo_parser()
+pub fn specparam_assignment_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<SpecparamAssignment<'s>, VerboseError<'s>> {
+    fail.parse_next(input)
 }
 
-pub fn type_assignment_parser<'a>()
--> impl Parser<'a, ParserInput<'a>, TypeAssignment<'a>, ParserError<'a>> + Clone {
-    type_identifier_parser()
-        .then(
-            token(Token::Eq)
-                .then(data_type_or_implicit_parser())
-                .or_not(),
-        )
+pub fn type_assignment_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<TypeAssignment<'s>, VerboseError<'s>> {
+    (
+        type_identifier_parser,
+        opt((token(Token::Eq), data_type_or_implicit_parser)),
+    )
         .map(|(a, b)| TypeAssignment(a, b))
-        .boxed()
+        .parse_next(input)
 }

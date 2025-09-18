@@ -4,43 +4,41 @@
 // Parsing for 1800-2023 A.6.6
 
 use crate::*;
-use chumsky::prelude::*;
 use scarf_syntax::*;
+use winnow::ModalResult;
+use winnow::Parser;
+use winnow::combinator::{alt, repeat};
 
-pub fn cond_predicate_parser<'a>(
-    expression_parser: impl Parser<'a, ParserInput<'a>, Expression<'a>, ParserError<'a>> + Clone + 'a,
-) -> impl Parser<'a, ParserInput<'a>, CondPredicate<'a>, ParserError<'a>> + Clone {
-    expression_or_cond_pattern_parser(expression_parser.clone())
-        .then(
-            token(Token::AmpAmpAmp)
-                .then(expression_or_cond_pattern_parser(expression_parser))
-                .repeated()
-                .collect::<Vec<(Metadata<'a>, ExpressionOrCondPattern<'a>)>>(),
-        )
+pub fn cond_predicate_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<CondPredicate<'s>, VerboseError<'s>> {
+    (
+        expression_or_cond_pattern_parser,
+        repeat(
+            0..,
+            (token(Token::AmpAmpAmp), expression_or_cond_pattern_parser),
+        ),
+    )
         .map(|(a, b)| CondPredicate(a, b))
-        .boxed()
+        .parse_next(input)
 }
 
-pub fn expression_or_cond_pattern_parser<'a>(
-    expression_parser: impl Parser<'a, ParserInput<'a>, Expression<'a>, ParserError<'a>> + Clone + 'a,
-) -> impl Parser<'a, ParserInput<'a>, ExpressionOrCondPattern<'a>, ParserError<'a>> + Clone {
-    choice((
+pub fn expression_or_cond_pattern_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<ExpressionOrCondPattern<'s>, VerboseError<'s>> {
+    alt((
         expression_parser
-            .clone()
             .map(|a| ExpressionOrCondPattern::Expression(Box::new(a))),
-        cond_pattern_parser(expression_parser)
+        cond_pattern_parser
             .map(|a| ExpressionOrCondPattern::CondPattern(Box::new(a))),
     ))
-    .boxed()
+    .parse_next(input)
 }
 
-pub fn cond_pattern_parser<'a>(
-    expression_parser: impl Parser<'a, ParserInput<'a>, Expression<'a>, ParserError<'a>> + Clone + 'a,
-) -> impl Parser<'a, ParserInput<'a>, CondPattern<'a>, ParserError<'a>> + Clone {
-    expression_parser
-        .clone()
-        .then(token(Token::Matches))
-        .then(pattern_parser(expression_parser))
-        .map(|((a, b), c)| CondPattern(a, b, c))
-        .boxed()
+pub fn cond_pattern_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<CondPattern<'s>, VerboseError<'s>> {
+    (expression_parser, token(Token::Matches), pattern_parser)
+        .map(|(a, b, c)| CondPattern(a, b, c))
+        .parse_next(input)
 }

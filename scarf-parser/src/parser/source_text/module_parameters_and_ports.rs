@@ -4,276 +4,277 @@
 // Parsing for 1800-2023 A.1.3
 
 use crate::*;
-use chumsky::prelude::*;
 use scarf_syntax::*;
+use winnow::ModalResult;
+use winnow::Parser;
+use winnow::combinator::{alt, opt, repeat};
 
-pub fn parameter_port_list_parser<'a>()
--> impl Parser<'a, ParserInput<'a>, ParameterPortList<'a>, ParserError<'a>> + Clone {
-    let defaults_parser = token(Token::Pound)
-        .then(token(Token::Paren))
-        .then(list_of_param_assignments_parser())
-        .then(
-            token(Token::Comma)
-                .then(parameter_port_declaration_parser())
-                .repeated()
-                .collect::<Vec<(Metadata<'a>, ParameterPortDeclaration<'a>)>>(),
-        )
-        .then(token(Token::EParen))
-        .map(|((((a, b), c), d), e)| ParameterPortList::Defaults(a, b, c, d, e));
-    let no_defaults_parser = token(Token::Pound)
-        .then(token(Token::Paren))
-        .then(parameter_port_declaration_parser())
-        .then(
-            token(Token::Comma)
-                .then(parameter_port_declaration_parser())
-                .repeated()
-                .collect::<Vec<(Metadata<'a>, ParameterPortDeclaration<'a>)>>(),
-        )
-        .then(token(Token::EParen))
-        .map(|((((a, b), c), d), e)| ParameterPortList::NoDefaults(a, b, c, d, e));
-    let empty_parser = token(Token::Pound)
-        .then(token(Token::Paren))
-        .then(token(Token::EParen))
-        .map(|((a, b), c)| ParameterPortList::Empty(a, b, c));
-    choice((defaults_parser, no_defaults_parser, empty_parser)).boxed()
+pub fn parameter_port_list_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<ParameterPortList<'s>, VerboseError<'s>> {
+    let defaults_parser = (
+        token(Token::Pound),
+        token(Token::Paren),
+        list_of_param_assignments_parser,
+        repeat(
+            0..,
+            (token(Token::Comma), parameter_port_declaration_parser),
+        ),
+        token(Token::EParen),
+    )
+        .map(|(a, b, c, d, e)| ParameterPortList::Defaults(a, b, c, d, e));
+    let no_defaults_parser = (
+        token(Token::Pound),
+        token(Token::Paren),
+        parameter_port_declaration_parser,
+        repeat(
+            0..,
+            (token(Token::Comma), parameter_port_declaration_parser),
+        ),
+        token(Token::EParen),
+    )
+        .map(|(a, b, c, d, e)| ParameterPortList::NoDefaults(a, b, c, d, e));
+    let empty_parser = (
+        token(Token::Pound),
+        token(Token::Paren),
+        token(Token::EParen),
+    )
+        .map(|(a, b, c)| ParameterPortList::Empty(a, b, c));
+    alt((defaults_parser, no_defaults_parser, empty_parser)).parse_next(input)
 }
 
-pub fn parameter_port_declaration_parser<'a>()
--> impl Parser<'a, ParserInput<'a>, ParameterPortDeclaration<'a>, ParserError<'a>> + Clone {
-    choice((
-        parameter_declaration_parser()
-            .map(|a| ParameterPortDeclaration::ParameterDeclaration(Box::new(a))),
-        local_parameter_declaration_parser()
-            .map(|a| ParameterPortDeclaration::LocalParameterDeclaration(Box::new(a))),
-        data_type_parser()
-            .then(list_of_param_assignments_parser())
-            .map(|(a, b)| ParameterPortDeclaration::DataAssignments(Box::new((a, b)))),
-        type_parameter_declaration_parser()
-            .map(|a| ParameterPortDeclaration::TypeParameterDeclaration(Box::new(a))),
+pub fn parameter_port_declaration_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<ParameterPortDeclaration<'s>, VerboseError<'s>> {
+    alt((
+        parameter_declaration_parser.map(|a| {
+            ParameterPortDeclaration::ParameterDeclaration(Box::new(a))
+        }),
+        local_parameter_declaration_parser.map(|a| {
+            ParameterPortDeclaration::LocalParameterDeclaration(Box::new(a))
+        }),
+        (data_type_parser, list_of_param_assignments_parser).map(|(a, b)| {
+            ParameterPortDeclaration::DataAssignments(Box::new((a, b)))
+        }),
+        type_parameter_declaration_parser.map(|a| {
+            ParameterPortDeclaration::TypeParameterDeclaration(Box::new(a))
+        }),
     ))
-    .boxed()
+    .parse_next(input)
 }
 
-pub fn list_of_ports_parser<'a>()
--> impl Parser<'a, ParserInput<'a>, ListOfPorts<'a>, ParserError<'a>> + Clone {
-    token(Token::Paren)
-        .then(port_parser())
-        .then(
-            token(Token::Comma)
-                .then(port_parser())
-                .repeated()
-                .collect::<Vec<(Metadata<'a>, Port<'a>)>>(),
-        )
-        .then(token(Token::EParen))
-        .map(|(((a, b), c), d)| ListOfPorts(a, b, c, d))
-        .boxed()
+pub fn list_of_ports_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<ListOfPorts<'s>, VerboseError<'s>> {
+    (
+        token(Token::Paren),
+        port_parser,
+        repeat(0.., (token(Token::Comma), port_parser)),
+        token(Token::EParen),
+    )
+        .map(|(a, b, c, d)| ListOfPorts(a, b, c, d))
+        .parse_next(input)
 }
 
-pub fn list_of_port_declarations_parser<'a>()
--> impl Parser<'a, ParserInput<'a>, ListOfPortDeclarations<'a>, ParserError<'a>> + Clone {
-    token(Token::Paren)
-        .then(
-            attribute_instance_vec_parser()
-                .then(ansi_port_declaration_parser())
-                .then(
-                    token(Token::Comma)
-                        .then(attribute_instance_vec_parser())
-                        .then(ansi_port_declaration_parser())
-                        .map(|((a, b), c)| (a, b, c))
-                        .repeated()
-                        .collect::<Vec<(
-                            Metadata<'a>, // ,
-                            Vec<AttributeInstance<'a>>,
-                            AnsiPortDeclaration<'a>,
-                        )>>(),
-                )
-                .map(|((a, b), c)| (a, b, c))
-                .or_not(),
-        )
-        .then(token(Token::EParen))
-        .map(|((a, b), c)| ListOfPortDeclarations(a, b, c))
-        .boxed()
+pub fn list_of_port_declarations_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<ListOfPortDeclarations<'s>, VerboseError<'s>> {
+    (
+        token(Token::Paren),
+        opt((
+            attribute_instance_vec_parser,
+            ansi_port_declaration_parser,
+            repeat(
+                0..,
+                (
+                    token(Token::Comma),
+                    attribute_instance_vec_parser,
+                    ansi_port_declaration_parser,
+                ),
+            ),
+        )),
+        token(Token::EParen),
+    )
+        .map(|(a, b, c)| ListOfPortDeclarations(a, b, c))
+        .parse_next(input)
 }
 
-pub fn port_declaration_parser<'a>()
--> impl Parser<'a, ParserInput<'a>, PortDeclaration<'a>, ParserError<'a>> + Clone {
-    let _inout_declaration_parser = attribute_instance_vec_parser()
-        .then(inout_declaration_parser())
-        .map(|(a, b)| PortDeclaration::InoutDeclaration(Box::new((a, b))));
-    let _input_declaration_parser = attribute_instance_vec_parser()
-        .then(input_declaration_parser())
-        .map(|(a, b)| PortDeclaration::InputDeclaration(Box::new((a, b))));
-    let _output_declaration_parser = attribute_instance_vec_parser()
-        .then(output_declaration_parser())
-        .map(|(a, b)| PortDeclaration::OutputDeclaration(Box::new((a, b))));
-    let _ref_declaration_parser = attribute_instance_vec_parser()
-        .then(ref_declaration_parser())
-        .map(|(a, b)| PortDeclaration::RefDeclaration(Box::new((a, b))));
-    let _interface_port_declaration_parser = attribute_instance_vec_parser()
-        .then(interface_port_declaration_parser())
-        .map(|(a, b)| PortDeclaration::InterfacePortDeclaration(Box::new((a, b))));
-    choice((
+pub fn port_declaration_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<PortDeclaration<'s>, VerboseError<'s>> {
+    let _inout_declaration_parser =
+        (attribute_instance_vec_parser, inout_declaration_parser)
+            .map(|(a, b)| PortDeclaration::InoutDeclaration(Box::new((a, b))));
+    let _input_declaration_parser =
+        (attribute_instance_vec_parser, input_declaration_parser)
+            .map(|(a, b)| PortDeclaration::InputDeclaration(Box::new((a, b))));
+    let _output_declaration_parser =
+        (attribute_instance_vec_parser, output_declaration_parser)
+            .map(|(a, b)| PortDeclaration::OutputDeclaration(Box::new((a, b))));
+    let _ref_declaration_parser =
+        (attribute_instance_vec_parser, ref_declaration_parser)
+            .map(|(a, b)| PortDeclaration::RefDeclaration(Box::new((a, b))));
+    let _interface_port_declaration_parser = (
+        attribute_instance_vec_parser,
+        interface_port_declaration_parser,
+    )
+        .map(|(a, b)| {
+            PortDeclaration::InterfacePortDeclaration(Box::new((a, b)))
+        });
+    alt((
         _inout_declaration_parser,
         _input_declaration_parser,
         _output_declaration_parser,
         _ref_declaration_parser,
         _interface_port_declaration_parser,
     ))
-    .boxed()
+    .parse_next(input)
 }
 
-pub fn port_parser<'a>() -> impl Parser<'a, ParserInput<'a>, Port<'a>, ParserError<'a>> + Clone {
-    let _port_expression_parser = port_expression_parser()
-        .or_not()
-        .map(|a| Port::PortExpression(Box::new(a)));
-    let _port_identifier_parser = token(Token::Period)
-        .then(port_identifier_parser())
-        .then(token(Token::Paren))
-        .then(port_expression_parser().or_not())
-        .then(token(Token::EParen))
-        .map(|((((a, b), c), d), e)| Port::PortIdentifier(Box::new((a, b, c, d, e))));
-    choice((_port_expression_parser, _port_identifier_parser)).boxed()
+pub fn port_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<Port<'s>, VerboseError<'s>> {
+    let _port_expression_parser =
+        opt(port_expression_parser).map(|a| Port::PortExpression(Box::new(a)));
+    let _port_identifier_parser = (
+        token(Token::Period),
+        port_identifier_parser,
+        token(Token::Paren),
+        opt(port_expression_parser),
+        token(Token::EParen),
+    )
+        .map(|(a, b, c, d, e)| Port::PortIdentifier(Box::new((a, b, c, d, e))));
+    alt((_port_expression_parser, _port_identifier_parser)).parse_next(input)
 }
 
-pub fn port_expression_parser<'a>()
--> impl Parser<'a, ParserInput<'a>, PortExpression<'a>, ParserError<'a>> + Clone {
-    let single_port_reference_parser =
-        port_reference_parser().map(|a| PortExpression::SinglePortReference(Box::new(a)));
-    let multi_port_reference_parser = token(Token::Brace)
-        .then(port_reference_parser())
-        .then(
-            token(Token::Comma)
-                .then(port_reference_parser())
-                .repeated()
-                .collect::<Vec<(Metadata<'a>, PortReference<'a>)>>(),
-        )
-        .then(token(Token::EBrace))
-        .map(|(((a, b), c), d)| PortExpression::MultiPortReference(Box::new((a, b, c, d))));
-    choice((single_port_reference_parser, multi_port_reference_parser)).boxed()
+pub fn port_expression_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<PortExpression<'s>, VerboseError<'s>> {
+    let single_port_reference_parser = port_reference_parser
+        .map(|a| PortExpression::SinglePortReference(Box::new(a)));
+    let multi_port_reference_parser = (
+        token(Token::Brace),
+        port_reference_parser,
+        repeat(0.., (token(Token::Comma), port_reference_parser)),
+        token(Token::EBrace),
+    )
+        .map(|(a, b, c, d)| {
+            PortExpression::MultiPortReference(Box::new((a, b, c, d)))
+        });
+    alt((single_port_reference_parser, multi_port_reference_parser))
+        .parse_next(input)
 }
 
-pub fn port_reference_parser<'a>()
--> impl Parser<'a, ParserInput<'a>, PortReference<'a>, ParserError<'a>> + Clone {
-    port_identifier_parser()
-        .then(constant_select_parser(constant_expression_parser(
-            expression_parser(),
-        )))
+pub fn port_reference_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<PortReference<'s>, VerboseError<'s>> {
+    (port_identifier_parser, constant_select_parser)
         .map(|(a, b)| PortReference(a, b))
-        .boxed()
+        .parse_next(input)
 }
 
-pub fn port_direction_parser<'a>()
--> impl Parser<'a, ParserInput<'a>, PortDirection<'a>, ParserError<'a>> + Clone {
-    choice((
+pub fn port_direction_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<PortDirection<'s>, VerboseError<'s>> {
+    alt((
         token(Token::Input).map(|a| PortDirection::Input(a)),
         token(Token::Output).map(|a| PortDirection::Output(a)),
         token(Token::Inout).map(|a| PortDirection::Inout(a)),
         token(Token::Ref).map(|a| PortDirection::Ref(a)),
     ))
-    .boxed()
+    .parse_next(input)
 }
 
-pub fn net_port_header_parser<'a>()
--> impl Parser<'a, ParserInput<'a>, NetPortHeader<'a>, ParserError<'a>> + Clone {
-    port_direction_parser()
-        .or_not()
-        .then(net_port_type_parser())
+pub fn net_port_header_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<NetPortHeader<'s>, VerboseError<'s>> {
+    (opt(port_direction_parser), net_port_type_parser)
         .map(|(a, b)| NetPortHeader(a, b))
-        .boxed()
+        .parse_next(input)
 }
 
-pub fn variable_port_header_parser<'a>()
--> impl Parser<'a, ParserInput<'a>, VariablePortHeader<'a>, ParserError<'a>> + Clone {
-    port_direction_parser()
-        .or_not()
-        .then(variable_port_type_parser())
+pub fn variable_port_header_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<VariablePortHeader<'s>, VerboseError<'s>> {
+    (opt(port_direction_parser), variable_port_type_parser)
         .map(|(a, b)| VariablePortHeader(a, b))
-        .boxed()
+        .parse_next(input)
 }
 
-pub fn interface_port_header_parser<'a>()
--> impl Parser<'a, ParserInput<'a>, InterfacePortHeader<'a>, ParserError<'a>> + Clone {
-    let _interface_identifier_parser = interface_identifier_parser()
-        .then(
-            token(Token::Period)
-                .then(modport_identifier_parser())
-                .or_not(),
-        )
+pub fn interface_port_header_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<InterfacePortHeader<'s>, VerboseError<'s>> {
+    let _interface_identifier_parser = (
+        interface_identifier_parser,
+        opt((token(Token::Period), modport_identifier_parser)),
+    )
         .map(|(a, b)| InterfacePortHeader::InterfaceIdentifier((a, b)));
-    let _interface_parser = token(Token::Interface)
-        .then(
-            token(Token::Period)
-                .then(modport_identifier_parser())
-                .or_not(),
-        )
+    let _interface_parser = (
+        token(Token::Interface),
+        opt((token(Token::Period), modport_identifier_parser)),
+    )
         .map(|(a, b)| InterfacePortHeader::Interface((a, b)));
-    choice((_interface_identifier_parser, _interface_parser)).boxed()
+    alt((_interface_identifier_parser, _interface_parser)).parse_next(input)
 }
 
-pub fn ansi_port_declaration_parser<'a>()
--> impl Parser<'a, ParserInput<'a>, AnsiPortDeclaration<'a>, ParserError<'a>> + Clone {
-    choice((
-        ansi_net_port_declaration_parser().map(|a| AnsiPortDeclaration::NetPort(Box::new(a))),
-        ansi_variable_port_declaration_parser()
+pub fn ansi_port_declaration_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<AnsiPortDeclaration<'s>, VerboseError<'s>> {
+    alt((
+        ansi_net_port_declaration_parser
+            .map(|a| AnsiPortDeclaration::NetPort(Box::new(a))),
+        ansi_variable_port_declaration_parser
             .map(|a| AnsiPortDeclaration::VariablePort(Box::new(a))),
-        ansi_constant_port_declaration_parser()
+        ansi_constant_port_declaration_parser
             .map(|a| AnsiPortDeclaration::ConstantPort(Box::new(a))),
     ))
-    .boxed()
+    .parse_next(input)
 }
 
-pub fn ansi_net_port_declaration_parser<'a>()
--> impl Parser<'a, ParserInput<'a>, AnsiNetPortDeclaration<'a>, ParserError<'a>> + Clone {
-    let net_or_interface_port_header_parser = choice((
-        net_port_header_parser().map(|a| NetOrInterfacePortHeader::NetPortHeader(Box::new(a))),
-        interface_port_header_parser()
-            .map(|a| NetOrInterfacePortHeader::InterfacePortHeader(Box::new(a))),
+pub fn ansi_net_port_declaration_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<AnsiNetPortDeclaration<'s>, VerboseError<'s>> {
+    let net_or_interface_port_header_parser = alt((
+        net_port_header_parser
+            .map(|a| NetOrInterfacePortHeader::NetPortHeader(Box::new(a))),
+        interface_port_header_parser.map(|a| {
+            NetOrInterfacePortHeader::InterfacePortHeader(Box::new(a))
+        }),
     ));
-    net_or_interface_port_header_parser
-        .or_not()
-        .then(port_identifier_parser())
-        .then(
-            unpacked_dimension_parser()
-                .repeated()
-                .collect::<Vec<UnpackedDimension<'a>>>(),
-        )
-        .then(
-            token(Token::Eq)
-                .then(constant_expression_parser(expression_parser()))
-                .or_not(),
-        )
-        .map(|(((a, b), c), d)| AnsiNetPortDeclaration(a, b, c, d))
-        .boxed()
+    (
+        opt(net_or_interface_port_header_parser),
+        port_identifier_parser,
+        repeat(0.., unpacked_dimension_parser),
+        opt((token(Token::Eq), constant_expression_parser)),
+    )
+        .map(|(a, b, c, d)| AnsiNetPortDeclaration(a, b, c, d))
+        .parse_next(input)
 }
 
-pub fn ansi_variable_port_declaration_parser<'a>()
--> impl Parser<'a, ParserInput<'a>, AnsiVariablePortDeclaration<'a>, ParserError<'a>> + Clone {
-    variable_port_header_parser()
-        .or_not()
-        .then(port_identifier_parser())
-        .then(
-            variable_dimension_parser()
-                .repeated()
-                .collect::<Vec<VariableDimension<'a>>>(),
-        )
-        .then(
-            token(Token::Eq)
-                .then(constant_expression_parser(expression_parser()))
-                .or_not(),
-        )
-        .map(|(((a, b), c), d)| AnsiVariablePortDeclaration(a, b, c, d))
-        .boxed()
+pub fn ansi_variable_port_declaration_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<AnsiVariablePortDeclaration<'s>, VerboseError<'s>> {
+    (
+        opt(variable_port_header_parser),
+        port_identifier_parser,
+        repeat(0.., variable_dimension_parser),
+        opt((token(Token::Eq), constant_expression_parser)),
+    )
+        .map(|(a, b, c, d)| AnsiVariablePortDeclaration(a, b, c, d))
+        .parse_next(input)
 }
 
-pub fn ansi_constant_port_declaration_parser<'a>()
--> impl Parser<'a, ParserInput<'a>, AnsiConstantPortDeclaration<'a>, ParserError<'a>> + Clone {
-    port_direction_parser()
-        .or_not()
-        .then(token(Token::Period))
-        .then(port_identifier_parser())
-        .then(token(Token::Paren))
-        .then(expression_parser().or_not())
-        .then(token(Token::EParen))
-        .map(|(((((a, b), c), d), e), f)| AnsiConstantPortDeclaration(a, b, c, d, e, f))
-        .boxed()
+pub fn ansi_constant_port_declaration_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<AnsiConstantPortDeclaration<'s>, VerboseError<'s>> {
+    (
+        opt(port_direction_parser),
+        token(Token::Period),
+        port_identifier_parser,
+        token(Token::Paren),
+        opt(expression_parser),
+        token(Token::EParen),
+    )
+        .map(|(a, b, c, d, e, f)| AnsiConstantPortDeclaration(a, b, c, d, e, f))
+        .parse_next(input)
 }

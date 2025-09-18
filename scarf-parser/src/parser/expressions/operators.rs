@@ -4,12 +4,15 @@
 // Parsing for 1800-2023 A.8.6
 
 use crate::*;
-use chumsky::prelude::*;
 use scarf_syntax::*;
+use winnow::ModalResult;
+use winnow::Parser;
+use winnow::combinator::alt;
 
-pub fn unary_operator_parser<'a>()
--> impl Parser<'a, ParserInput<'a>, UnaryOperator<'a>, ParserError<'a>> + Clone {
-    choice((
+pub fn unary_operator_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<UnaryOperator<'s>, VerboseError<'s>> {
+    alt((
         token(Token::Plus).map(|a| UnaryOperator::Plus(a)),
         token(Token::Minus).map(|a| UnaryOperator::Minus(a)),
         token(Token::Exclamation).map(|a| UnaryOperator::Exclamation(a)),
@@ -22,14 +25,15 @@ pub fn unary_operator_parser<'a>()
         token(Token::TildeCaret).map(|a| UnaryOperator::TildeCaret(a)),
         token(Token::CaretTilde).map(|a| UnaryOperator::CaretTilde(a)),
     ))
-    .boxed()
+    .parse_next(input)
 }
 
-pub fn binary_operator_parser<'a>()
--> impl Parser<'a, ParserInput<'a>, BinaryOperator<'a>, ParserError<'a>> + Clone {
+pub fn binary_operator_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<BinaryOperator<'s>, VerboseError<'s>> {
     // Note: Got errors when combining these into one `choice`, seemingly because Rust used
     // alphabetic identifiers for each parser type, and didn't like more than 26...
-    let temp1 = choice((
+    let temp1 = alt((
         token(Token::Plus).map(|a| BinaryOperator::Plus(a)),
         token(Token::Minus).map(|a| BinaryOperator::Minus(a)),
         token(Token::Star).map(|a| BinaryOperator::Star(a)),
@@ -45,7 +49,7 @@ pub fn binary_operator_parser<'a>()
         token(Token::PipePipe).map(|a| BinaryOperator::PipePipe(a)),
         token(Token::StarStar).map(|a| BinaryOperator::StarStar(a)),
     ));
-    let temp2 = choice((
+    let temp2 = alt((
         token(Token::Lt).map(|a| BinaryOperator::Lt(a)),
         token(Token::LtEq).map(|a| BinaryOperator::LtEq(a)),
         token(Token::Gt).map(|a| BinaryOperator::Gt(a)),
@@ -62,37 +66,43 @@ pub fn binary_operator_parser<'a>()
         token(Token::MinusGt).map(|a| BinaryOperator::MinusGt(a)),
         token(Token::LtMinusGt).map(|a| BinaryOperator::LtMinusGt(a)),
     ));
-    choice((temp1, temp2)).boxed()
+    alt((temp1, temp2)).parse_next(input)
 }
 
-pub fn inc_or_dec_operator_parser<'a>()
--> impl Parser<'a, ParserInput<'a>, IncOrDecOperator<'a>, ParserError<'a>> + Clone {
-    choice((
+pub fn inc_or_dec_operator_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<IncOrDecOperator<'s>, VerboseError<'s>> {
+    alt((
         token(Token::PlusPlus).map(|a| IncOrDecOperator::PlusPlus(a)),
         token(Token::MinusMinus).map(|a| IncOrDecOperator::MinusMinus(a)),
     ))
-    .boxed()
+    .parse_next(input)
 }
 
-pub fn unary_module_path_operator_parser<'a>()
--> impl Parser<'a, ParserInput<'a>, UnaryModulePathOperator<'a>, ParserError<'a>> + Clone {
-    choice((
-        token(Token::Exclamation).map(|a| UnaryModulePathOperator::Exclamation(a)),
+pub fn unary_module_path_operator_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<UnaryModulePathOperator<'s>, VerboseError<'s>> {
+    alt((
+        token(Token::Exclamation)
+            .map(|a| UnaryModulePathOperator::Exclamation(a)),
         token(Token::Tilde).map(|a| UnaryModulePathOperator::Tilde(a)),
         token(Token::Amp).map(|a| UnaryModulePathOperator::Amp(a)),
         token(Token::TildeAmp).map(|a| UnaryModulePathOperator::TildeAmp(a)),
         token(Token::Pipe).map(|a| UnaryModulePathOperator::Pipe(a)),
         token(Token::TildePipe).map(|a| UnaryModulePathOperator::TildePipe(a)),
         token(Token::Caret).map(|a| UnaryModulePathOperator::Caret(a)),
-        token(Token::TildeCaret).map(|a| UnaryModulePathOperator::TildeCaret(a)),
-        token(Token::CaretTilde).map(|a| UnaryModulePathOperator::CaretTilde(a)),
+        token(Token::TildeCaret)
+            .map(|a| UnaryModulePathOperator::TildeCaret(a)),
+        token(Token::CaretTilde)
+            .map(|a| UnaryModulePathOperator::CaretTilde(a)),
     ))
-    .boxed()
+    .parse_next(input)
 }
 
-pub fn binary_module_path_operator_parser<'a>()
--> impl Parser<'a, ParserInput<'a>, BinaryModulePathOperator<'a>, ParserError<'a>> + Clone {
-    choice((
+pub fn binary_module_path_operator_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<BinaryModulePathOperator<'s>, VerboseError<'s>> {
+    alt((
         token(Token::EqEq).map(|a| BinaryModulePathOperator::EqEq(a)),
         token(Token::ExclEq).map(|a| BinaryModulePathOperator::ExclEq(a)),
         token(Token::AmpAmp).map(|a| BinaryModulePathOperator::AmpAmp(a)),
@@ -100,8 +110,10 @@ pub fn binary_module_path_operator_parser<'a>()
         token(Token::Amp).map(|a| BinaryModulePathOperator::Amp(a)),
         token(Token::Pipe).map(|a| BinaryModulePathOperator::Pipe(a)),
         token(Token::Caret).map(|a| BinaryModulePathOperator::Caret(a)),
-        token(Token::CaretTilde).map(|a| BinaryModulePathOperator::CaretTilde(a)),
-        token(Token::TildeCaret).map(|a| BinaryModulePathOperator::TildeCaret(a)),
+        token(Token::CaretTilde)
+            .map(|a| BinaryModulePathOperator::CaretTilde(a)),
+        token(Token::TildeCaret)
+            .map(|a| BinaryModulePathOperator::TildeCaret(a)),
     ))
-    .boxed()
+    .parse_next(input)
 }

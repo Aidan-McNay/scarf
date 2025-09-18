@@ -8,7 +8,7 @@ use core::ops::Range;
 
 pub type Span = Range<usize>;
 
-#[derive(Clone, Debug, PartialEq, Default)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Metadata<'a> {
     pub span: Span,
     pub extra_nodes: Vec<(ExtraNode<'a>, Span)>,

@@ -4,35 +4,55 @@
 // Parsing for 1800-2023 A.3.3
 
 use crate::*;
-use chumsky::prelude::*;
 use scarf_syntax::*;
+use winnow::ModalResult;
+use winnow::Parser;
+use winnow::combinator::alt;
 
-pub fn enable_terminal_parser<'a>()
--> impl Parser<'a, ParserInput<'a>, EnableTerminal<'a>, ParserError<'a>> + Clone {
-    expression_parser().map(|a| EnableTerminal(a))
+pub fn enable_terminal_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<EnableTerminal<'s>, VerboseError<'s>> {
+    expression_parser
+        .map(|a| EnableTerminal(a))
+        .parse_next(input)
 }
 
-pub fn inout_terminal_parser<'a>()
--> impl Parser<'a, ParserInput<'a>, InoutTerminal<'a>, ParserError<'a>> + Clone {
-    net_lvalue_parser().map(|a| InoutTerminal(a))
+pub fn inout_terminal_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<InoutTerminal<'s>, VerboseError<'s>> {
+    net_lvalue_parser
+        .map(|a| InoutTerminal(a))
+        .parse_next(input)
 }
 
-pub fn input_terminal_parser<'a>()
--> impl Parser<'a, ParserInput<'a>, InputTerminal<'a>, ParserError<'a>> + Clone {
-    expression_parser().map(|a| InputTerminal(a))
+pub fn input_terminal_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<InputTerminal<'s>, VerboseError<'s>> {
+    expression_parser
+        .map(|a| InputTerminal(a))
+        .parse_next(input)
 }
 
-pub fn ncontrol_terminal_parser<'a>()
--> impl Parser<'a, ParserInput<'a>, NcontrolTerminal<'a>, ParserError<'a>> + Clone {
-    expression_parser().map(|a| NcontrolTerminal(a))
+pub fn ncontrol_terminal_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<NcontrolTerminal<'s>, VerboseError<'s>> {
+    expression_parser
+        .map(|a| NcontrolTerminal(a))
+        .parse_next(input)
 }
 
-pub fn output_terminal_parser<'a>()
--> impl Parser<'a, ParserInput<'a>, OutputTerminal<'a>, ParserError<'a>> + Clone {
-    net_lvalue_parser().map(|a| OutputTerminal(a))
+pub fn output_terminal_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<OutputTerminal<'s>, VerboseError<'s>> {
+    net_lvalue_parser
+        .map(|a| OutputTerminal(a))
+        .parse_next(input)
 }
 
-pub fn pcontrol_terminal_parser<'a>()
--> impl Parser<'a, ParserInput<'a>, PcontrolTerminal<'a>, ParserError<'a>> + Clone {
-    expression_parser().map(|a| PcontrolTerminal(a))
+pub fn pcontrol_terminal_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<PcontrolTerminal<'s>, VerboseError<'s>> {
+    expression_parser
+        .map(|a| PcontrolTerminal(a))
+        .parse_next(input)
 }

@@ -5,7 +5,7 @@
 
 pub mod primitive_gate_and_switch_types;
 pub mod primitive_strengths;
-pub mod primitive_terminals;
+// pub mod primitive_terminals;
 pub use primitive_gate_and_switch_types::*;
 pub use primitive_strengths::*;
-pub use primitive_terminals::*;
+// pub use primitive_terminals::*;

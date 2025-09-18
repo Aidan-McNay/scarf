@@ -4,148 +4,234 @@
 // Parsing for 1800-2023 A.8.7
 
 use crate::*;
-use chumsky::prelude::*;
 use scarf_syntax::*;
+use winnow::ModalResult;
+use winnow::Parser;
+use winnow::combinator::alt;
+use winnow::token::any;
 
-pub fn number_parser<'a>() -> impl Parser<'a, ParserInput<'a>, Number<'a>, ParserError<'a>> + Clone
-{
-    choice((
-        integral_number_parser().map(|a| Number::Integral(Box::new(a))),
-        real_number_parser().map(|a| Number::Real(Box::new(a))),
+pub fn number_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<Number<'s>, VerboseError<'s>> {
+    alt((
+        integral_number_parser.map(|a| Number::Integral(Box::new(a))),
+        real_number_parser.map(|a| Number::Real(Box::new(a))),
     ))
-    .labelled("a number")
-    .boxed()
+    .context("a number")
+    .parse_next(input)
 }
 
-pub fn integral_number_parser<'a>()
--> impl Parser<'a, ParserInput<'a>, IntegralNumber<'a>, ParserError<'a>> + Clone {
-    choice((
-        decimal_number_parser().map(|a| IntegralNumber::Decimal(Box::new(a))),
-        octal_number_parser().map(|a| IntegralNumber::Octal(Box::new(a))),
-        binary_number_parser().map(|a| IntegralNumber::Binary(Box::new(a))),
-        hex_number_parser().map(|a| IntegralNumber::Hex(Box::new(a))),
+pub fn integral_number_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<IntegralNumber<'s>, VerboseError<'s>> {
+    alt((
+        decimal_number_parser.map(|a| IntegralNumber::Decimal(Box::new(a))),
+        octal_number_parser.map(|a| IntegralNumber::Octal(Box::new(a))),
+        binary_number_parser.map(|a| IntegralNumber::Binary(Box::new(a))),
+        hex_number_parser.map(|a| IntegralNumber::Hex(Box::new(a))),
     ))
-    .labelled("an integral number")
-    .boxed()
+    .context("an integral number")
+    .parse_next(input)
 }
 
-pub fn decimal_number_parser<'a>()
--> impl Parser<'a, ParserInput<'a>, DecimalNumber<'a>, ParserError<'a>> + Clone {
-    let _sized_parser = select! {
-        Token::DecimalNumber(text) = e => (text, Metadata{
-            span: convert_span(e.span()),
-            extra_nodes: Vec::new()
-        })
-    }
-    .then(extra_node_parser())
-    .map(|((text, metadata), b)| {
-        DecimalNumber::Sized(Box::new((text, replace_nodes(metadata, b))))
-    });
-    choice((
+pub fn decimal_number_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<DecimalNumber<'s>, VerboseError<'s>> {
+    let _sized_parser = (
+        any.verify_map(|s: &'s SpannedToken<'s>| match s.0 {
+            Token::DecimalNumber(num) => Some((
+                num,
+                Metadata {
+                    span: s.1.clone(),
+                    extra_nodes: vec![],
+                },
+            )),
+            _ => None,
+        }),
+        extra_node_parser,
+    )
+        .map(|((num, metadata), extra_nodes)| {
+            DecimalNumber::Sized(Box::new((
+                num,
+                replace_nodes(metadata, extra_nodes),
+            )))
+        });
+    alt((
         _sized_parser,
-        unsigned_number_parser().map(|a| DecimalNumber::Unsized(Box::new(a))),
+        unsigned_number_parser.map(|a| DecimalNumber::Unsized(Box::new(a))),
     ))
-    .labelled("a decimal number")
+    .context("a decimal number")
+    .parse_next(input)
 }
 
-pub fn binary_number_parser<'a>()
--> impl Parser<'a, ParserInput<'a>, BinaryNumber<'a>, ParserError<'a>> + Clone {
-    select! {
-        Token::BinaryNumber(text) = e => (text, Metadata{
-            span: convert_span(e.span()),
-            extra_nodes: Vec::new()
+pub fn binary_number_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<BinaryNumber<'s>, VerboseError<'s>> {
+    (
+        any.verify_map(|s: &'s SpannedToken<'s>| match s.0 {
+            Token::BinaryNumber(num) => Some((
+                num,
+                Metadata {
+                    span: s.1.clone(),
+                    extra_nodes: vec![],
+                },
+            )),
+            _ => None,
+        }),
+        extra_node_parser,
+    )
+        .map(|((num, metadata), extra_nodes)| {
+            BinaryNumber(num, replace_nodes(metadata, extra_nodes))
         })
-    }
-    .labelled("a binary number")
-    .then(extra_node_parser())
-    .map(|((text, metadata), b)| BinaryNumber(text, replace_nodes(metadata, b)))
+        .context("a binary number")
+        .parse_next(input)
 }
 
-pub fn octal_number_parser<'a>()
--> impl Parser<'a, ParserInput<'a>, OctalNumber<'a>, ParserError<'a>> + Clone {
-    select! {
-        Token::OctalNumber(text) = e => (text, Metadata{
-            span: convert_span(e.span()),
-            extra_nodes: Vec::new()
+pub fn octal_number_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<OctalNumber<'s>, VerboseError<'s>> {
+    (
+        any.verify_map(|s: &'s SpannedToken<'s>| match s.0 {
+            Token::OctalNumber(num) => Some((
+                num,
+                Metadata {
+                    span: s.1.clone(),
+                    extra_nodes: vec![],
+                },
+            )),
+            _ => None,
+        }),
+        extra_node_parser,
+    )
+        .map(|((num, metadata), extra_nodes)| {
+            OctalNumber(num, replace_nodes(metadata, extra_nodes))
         })
-    }
-    .labelled("an octal number")
-    .then(extra_node_parser())
-    .map(|((text, metadata), b)| OctalNumber(text, replace_nodes(metadata, b)))
+        .context("an octal number")
+        .parse_next(input)
 }
 
-pub fn hex_number_parser<'a>()
--> impl Parser<'a, ParserInput<'a>, HexNumber<'a>, ParserError<'a>> + Clone {
-    select! {
-        Token::HexNumber(text) = e => (text, Metadata{
-            span: convert_span(e.span()),
-            extra_nodes: Vec::new()
+pub fn hex_number_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<HexNumber<'s>, VerboseError<'s>> {
+    (
+        any.verify_map(|s: &'s SpannedToken<'s>| match s.0 {
+            Token::HexNumber(num) => Some((
+                num,
+                Metadata {
+                    span: s.1.clone(),
+                    extra_nodes: vec![],
+                },
+            )),
+            _ => None,
+        }),
+        extra_node_parser,
+    )
+        .map(|((num, metadata), extra_nodes)| {
+            HexNumber(num, replace_nodes(metadata, extra_nodes))
         })
-    }
-    .labelled("a hex number")
-    .then(extra_node_parser())
-    .map(|((text, metadata), b)| HexNumber(text, replace_nodes(metadata, b)))
+        .context("a hex number")
+        .parse_next(input)
 }
 
-pub fn real_number_parser<'a>()
--> impl Parser<'a, ParserInput<'a>, RealNumber<'a>, ParserError<'a>> + Clone {
-    choice((
-        fixed_point_number_parser().map(|a| RealNumber::FixedPoint(Box::new(a))),
-        scientific_number_parser().map(|a| RealNumber::Scientific(Box::new(a))),
+pub fn real_number_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<RealNumber<'s>, VerboseError<'s>> {
+    alt((
+        fixed_point_number_parser.map(|a| RealNumber::FixedPoint(Box::new(a))),
+        scientific_number_parser.map(|a| RealNumber::Scientific(Box::new(a))),
     ))
-    .labelled("a real number")
-    .boxed()
+    .context("a real number")
+    .parse_next(input)
 }
 
-pub fn fixed_point_number_parser<'a>()
--> impl Parser<'a, ParserInput<'a>, FixedPointNumber<'a>, ParserError<'a>> + Clone {
-    select! {
-        Token::FixedPointNumber(text) = e => (text, Metadata{
-            span: convert_span(e.span()),
-            extra_nodes: Vec::new()
+pub fn fixed_point_number_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<FixedPointNumber<'s>, VerboseError<'s>> {
+    (
+        any.verify_map(|s: &'s SpannedToken<'s>| match s.0 {
+            Token::FixedPointNumber(num) => Some((
+                num,
+                Metadata {
+                    span: s.1.clone(),
+                    extra_nodes: vec![],
+                },
+            )),
+            _ => None,
+        }),
+        extra_node_parser,
+    )
+        .map(|((num, metadata), extra_nodes)| {
+            FixedPointNumber(num, replace_nodes(metadata, extra_nodes))
         })
-    }
-    .labelled("a fixed-point number")
-    .then(extra_node_parser())
-    .map(|((text, metadata), b)| FixedPointNumber(text, replace_nodes(metadata, b)))
+        .context("a fixed-point number")
+        .parse_next(input)
 }
 
-pub fn scientific_number_parser<'a>()
--> impl Parser<'a, ParserInput<'a>, ScientificNumber<'a>, ParserError<'a>> + Clone {
-    select! {
-        Token::ScientificNumber(text) = e => (text, Metadata{
-            span: convert_span(e.span()),
-            extra_nodes: Vec::new()
+pub fn scientific_number_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<ScientificNumber<'s>, VerboseError<'s>> {
+    (
+        any.verify_map(|s: &'s SpannedToken<'s>| match s.0 {
+            Token::ScientificNumber(num) => Some((
+                num,
+                Metadata {
+                    span: s.1.clone(),
+                    extra_nodes: vec![],
+                },
+            )),
+            _ => None,
+        }),
+        extra_node_parser,
+    )
+        .map(|((num, metadata), extra_nodes)| {
+            ScientificNumber(num, replace_nodes(metadata, extra_nodes))
         })
-    }
-    .labelled("a scientific-notation number")
-    .then(extra_node_parser())
-    .map(|((text, metadata), b)| ScientificNumber(text, replace_nodes(metadata, b)))
+        .context("a scientific-notation number")
+        .parse_next(input)
 }
 
-pub fn unsigned_number_parser<'a>()
--> impl Parser<'a, ParserInput<'a>, UnsignedNumber<'a>, ParserError<'a>> + Clone {
-    select! {
-        Token::UnsignedNumber(text) = e => (text, Metadata{
-            span: convert_span(e.span()),
-            extra_nodes: Vec::new()
+pub fn unsigned_number_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<UnsignedNumber<'s>, VerboseError<'s>> {
+    (
+        any.verify_map(|s: &'s SpannedToken<'s>| match s.0 {
+            Token::UnsignedNumber(num) => Some((
+                num,
+                Metadata {
+                    span: s.1.clone(),
+                    extra_nodes: vec![],
+                },
+            )),
+            _ => None,
+        }),
+        extra_node_parser,
+    )
+        .map(|((num, metadata), extra_nodes)| {
+            UnsignedNumber(num, replace_nodes(metadata, extra_nodes))
         })
-    }
-    .labelled("an unsigned number")
-    .then(extra_node_parser())
-    .map(|((text, metadata), b)| UnsignedNumber(text, replace_nodes(metadata, b)))
-    .boxed()
+        .context("an unsigned number")
+        .parse_next(input)
 }
 
-pub fn unbased_unsized_literal_parser<'a>()
--> impl Parser<'a, ParserInput<'a>, UnbasedUnsizedLiteral<'a>, ParserError<'a>> + Clone {
-    select! {
-        Token::UnbasedUnsizedLiteral(text) = e => (text, Metadata{
-            span: convert_span(e.span()),
-            extra_nodes: Vec::new()
+pub fn unbased_unsized_literal_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<UnbasedUnsizedLiteral<'s>, VerboseError<'s>> {
+    (
+        any.verify_map(|s: &'s SpannedToken<'s>| match s.0 {
+            Token::UnbasedUnsizedLiteral(num) => Some((
+                num,
+                Metadata {
+                    span: s.1.clone(),
+                    extra_nodes: vec![],
+                },
+            )),
+            _ => None,
+        }),
+        extra_node_parser,
+    )
+        .map(|((num, metadata), extra_nodes)| {
+            UnbasedUnsizedLiteral(num, replace_nodes(metadata, extra_nodes))
         })
-    }
-    .labelled("an unsized literal")
-    .then(extra_node_parser())
-    .map(|((text, metadata), b)| UnbasedUnsizedLiteral(text, replace_nodes(metadata, b)))
+        .context("an unsized literal")
+        .parse_next(input)
 }

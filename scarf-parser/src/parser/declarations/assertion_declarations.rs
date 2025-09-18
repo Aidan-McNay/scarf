@@ -4,11 +4,12 @@
 // Parsing for 1800-2023 A.2.10
 
 use crate::*;
-use chumsky::prelude::*;
 use scarf_syntax::*;
+use winnow::ModalResult;
+use winnow::combinator::fail;
 
-pub fn sequence_method_call_parser<'a>(
-    _expression_parser: impl Parser<'a, ParserInput<'a>, Expression<'a>, ParserError<'a>> + Clone + 'a,
-) -> impl Parser<'a, ParserInput<'a>, SequenceMethodCall<'a>, ParserError<'a>> + Clone {
-    token(Token::Error)
+pub fn sequence_method_call_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<SequenceMethodCall<'s>, VerboseError<'s>> {
+    fail.parse_next(input)
 }
