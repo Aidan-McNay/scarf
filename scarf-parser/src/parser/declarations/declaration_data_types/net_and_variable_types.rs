@@ -7,7 +7,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, opt, todo};
+use winnow::combinator::{alt, fail, opt};
 
 pub fn casting_type_parser<'s>(
     input: &mut Tokens<'s>,
@@ -26,13 +26,13 @@ pub fn casting_type_parser<'s>(
 pub fn data_type_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<DataType<'s>, VerboseError<'s>> {
-    todo(input)
+    fail.parse_next(input)
 }
 
 pub fn data_type_or_implicit_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<DataTypeOrImplicit<'s>, VerboseError<'s>> {
-    todo(input)
+    fail.parse_next(input)
 }
 
 pub fn class_scope_parser<'s>(
@@ -46,13 +46,13 @@ pub fn class_scope_parser<'s>(
 pub fn class_type_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<ClassType<'s>, VerboseError<'s>> {
-    todo(input)
+    fail.parse_next(input)
 }
 
 pub fn interface_class_type_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<InterfaceClassType, VerboseError<'s>> {
-    todo(input)
+    fail.parse_next(input)
 }
 
 pub fn integer_type_parser<'s>(
@@ -124,13 +124,13 @@ pub fn net_type_parser<'s>(
 pub fn net_port_type_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<NetPortType<'s>, VerboseError<'s>> {
-    todo(input)
+    fail.parse_next(input)
 }
 
 pub fn variable_port_type_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<VariablePortType<'s>, VerboseError<'s>> {
-    todo(input)
+    fail.parse_next(input)
 }
 
 pub fn signing_parser<'s>(
@@ -202,5 +202,5 @@ pub fn type_reference_parser<'s>(
 pub fn data_type_or_incomplete_class_scoped_type_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<DataTypeOrIncompleteClassScopedType<'s>, VerboseError<'s>> {
-    todo(input)
+    fail.parse_next(input)
 }

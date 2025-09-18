@@ -6,16 +6,16 @@
 use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
-use winnow::combinator::todo;
+use winnow::combinator::fail;
 
 pub fn class_item_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<ClassItem, VerboseError<'s>> {
-    todo(input)
+    fail.parse_next(input)
 }
 
 pub fn interface_class_item_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<InterfaceClassItem, VerboseError<'s>> {
-    todo(input)
+    fail.parse_next(input)
 }

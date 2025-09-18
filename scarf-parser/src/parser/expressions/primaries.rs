@@ -8,7 +8,7 @@ use lexer::Span;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, opt, repeat, todo};
+use winnow::combinator::{alt, fail, opt, repeat};
 use winnow::token::any;
 
 pub fn constant_primary_parser<'s>(
@@ -368,13 +368,13 @@ fn time_unit_parser<'s>(
 pub fn select_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<Select<'s>, VerboseError<'s>> {
-    todo(input)
+    fail.parse_next(input)
 }
 
 pub fn nonrange_select_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<NonrangeSelect<'s>, VerboseError<'s>> {
-    todo(input)
+    fail.parse_next(input)
 }
 
 pub fn implicit_class_handle_parser<'s>(
@@ -466,5 +466,5 @@ pub fn constant_cast_parser<'s>(
 pub fn constant_let_expression_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<ConstantLetExpression<'s>, VerboseError<'s>> {
-    todo(input)
+    fail.parse_next(input)
 }

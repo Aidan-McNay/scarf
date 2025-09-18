@@ -7,7 +7,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, repeat, todo};
+use winnow::combinator::{alt, fail, repeat};
 
 pub fn concatenation_parser<'s>(
     input: &mut Tokens<'s>,
@@ -90,7 +90,7 @@ pub fn multiple_concatenation_parser<'s>(
 pub fn streaming_concatenation_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<StreamingConcatenation<'s>, VerboseError<'s>> {
-    todo(input)
+    fail.parse_next(input)
 }
 
 pub fn stream_operator_parser<'s>(

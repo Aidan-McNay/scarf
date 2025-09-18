@@ -6,10 +6,10 @@
 use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
-use winnow::combinator::todo;
+use winnow::combinator::fail;
 
 pub fn config_declaration_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<ConfigDeclaration, VerboseError<'s>> {
-    todo(input)
+    fail.parse_next(input)
 }

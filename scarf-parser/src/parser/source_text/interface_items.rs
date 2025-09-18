@@ -6,16 +6,16 @@
 use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
-use winnow::combinator::todo;
+use winnow::combinator::fail;
 
 pub fn interface_item_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<InterfaceItem, VerboseError<'s>> {
-    todo(input)
+    fail.parse_next(input)
 }
 
 pub fn non_port_interface_item_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<NonPortInterfaceItem, VerboseError<'s>> {
-    todo(input)
+    fail.parse_next(input)
 }

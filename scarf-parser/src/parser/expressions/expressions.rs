@@ -10,7 +10,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, opt, todo};
+use winnow::combinator::{alt, fail, opt};
 
 pub fn inc_or_dec_expression_parser<'s>(
     input: &mut Tokens<'s>,
@@ -103,7 +103,7 @@ pub fn constant_mintypmax_expression_parser<'s>(
 pub fn constant_param_expression_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<ConstantParamExpression<'s>, VerboseError<'s>> {
-    todo(input)
+    fail.parse_next(input)
 }
 
 pub fn constant_range_expression_parser<'s>(

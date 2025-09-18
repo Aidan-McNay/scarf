@@ -7,7 +7,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{opt, repeat, todo};
+use winnow::combinator::{fail, opt, repeat};
 
 pub fn param_assignment_parser<'s>(
     input: &mut Tokens<'s>,
@@ -24,7 +24,7 @@ pub fn param_assignment_parser<'s>(
 pub fn specparam_assignment_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<SpecparamAssignment<'s>, VerboseError<'s>> {
-    todo(input)
+    fail.parse_next(input)
 }
 
 pub fn type_assignment_parser<'s>(

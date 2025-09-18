@@ -6,16 +6,16 @@
 use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
-use winnow::combinator::todo;
+use winnow::combinator::fail;
 
 pub fn checker_port_list_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<CheckerPortList, VerboseError<'s>> {
-    todo(input)
+    fail.parse_next(input)
 }
 
 pub fn checker_or_generate_item_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<CheckerOrGenerateItem, VerboseError<'s>> {
-    todo(input)
+    fail.parse_next(input)
 }

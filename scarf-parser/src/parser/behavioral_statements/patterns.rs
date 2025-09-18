@@ -7,7 +7,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, opt, repeat, todo};
+use winnow::combinator::{alt, fail, opt, repeat};
 
 pub fn pattern_parser<'s>(
     input: &mut Tokens<'s>,
@@ -73,19 +73,19 @@ pub fn pattern_parser<'s>(
 pub fn assignment_pattern_expression_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<AssignmentPatternExpression<'s>, VerboseError<'s>> {
-    todo(input)
+    fail.parse_next(input)
 }
 
 pub fn assignment_pattern_expression_type_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<AssignmentPatternExpressionType<'s>, VerboseError<'s>> {
-    todo(input)
+    fail.parse_next(input)
 }
 
 pub fn constant_assignment_pattern_expression_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<ConstantAssignmentPatternExpression<'s>, VerboseError<'s>> {
-    todo(input)
+    fail.parse_next(input)
 }
 
 pub fn assignment_pattern_net_lvalue_parser<'s>(

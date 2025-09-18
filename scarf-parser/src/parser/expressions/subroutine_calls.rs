@@ -6,22 +6,22 @@
 use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
-use winnow::combinator::todo;
+use winnow::combinator::fail;
 
 pub fn constant_function_call_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<ConstantFunctionCall<'s>, VerboseError<'s>> {
-    todo(input)
+    fail.parse_next(input)
 }
 
 pub fn function_subroutine_call_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<FunctionSubroutineCall<'s>, VerboseError<'s>> {
-    todo(input)
+    fail.parse_next(input)
 }
 
 pub fn list_of_arguments_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<ListOfArguments<'s>, VerboseError<'s>> {
-    todo(input)
+    fail.parse_next(input)
 }
