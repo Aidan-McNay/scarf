@@ -10,7 +10,6 @@ use std::fmt;
 #[derive(Logos, Debug, Clone, PartialEq, Eq, Copy)]
 #[logos(skip r"[ \r\t\f]+")]
 #[logos(error = String)]
-#[logos(extras = usize)] // Used for time unit disambiguation
 pub enum Token<'a> {
     Error,
     EOI,
