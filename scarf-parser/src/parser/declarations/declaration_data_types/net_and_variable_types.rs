@@ -7,7 +7,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, fail, opt};
+use winnow::combinator::{alt, fail, opt, repeat};
 
 pub fn casting_type_parser<'s>(
     input: &mut Tokens<'s>,
@@ -32,7 +32,20 @@ pub fn data_type_parser<'s>(
 pub fn data_type_or_implicit_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<DataTypeOrImplicit<'s>, VerboseError<'s>> {
-    fail.parse_next(input)
+    alt((
+        data_type_parser.map(|a| DataTypeOrImplicit::DataType(a)),
+        implicit_data_type_parser
+            .map(|a| DataTypeOrImplicit::ImplicitDataType(a)),
+    ))
+    .parse_next(input)
+}
+
+pub fn implicit_data_type_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<ImplicitDataType<'s>, VerboseError<'s>> {
+    (opt(signing_parser), repeat(0.., packed_dimension_parser))
+        .map(|(a, b)| ImplicitDataType(a, b))
+        .parse_next(input)
 }
 
 pub fn class_scope_parser<'s>(

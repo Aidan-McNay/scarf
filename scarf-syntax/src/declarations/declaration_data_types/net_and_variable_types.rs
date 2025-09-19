@@ -15,7 +15,18 @@ pub enum CastingType<'a> {
 }
 
 pub type DataType<'a> = ();
-pub type DataTypeOrImplicit<'a> = ();
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum DataTypeOrImplicit<'a> {
+    DataType(DataType<'a>),
+    ImplicitDataType(ImplicitDataType<'a>),
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct ImplicitDataType<'a>(
+    pub Option<Signing<'a>>,
+    pub Vec<PackedDimension<'a>>,
+);
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct ClassScope<'a>(

@@ -735,6 +735,8 @@ pub enum Token<'a> {
     TypeOption,
     #[token("sample")]
     Sample,
+    #[token("1step")]
+    OneStep,
     #[token("$setup")]
     DollarSetup,
     #[token("$hold")]
@@ -1176,6 +1178,7 @@ impl<'a> Token<'a> {
             Token::Option => "option",
             Token::TypeOption => "type_option",
             Token::Sample => "sample",
+            Token::OneStep => "1step",
             Token::DollarSetup => "$setup",
             Token::DollarHold => "$hold",
             Token::DollarSetuphold => "$setuphold",

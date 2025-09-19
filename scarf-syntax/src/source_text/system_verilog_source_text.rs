@@ -25,10 +25,16 @@ pub enum Description<'a> {
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct DescriptionPackageItem<'a>(pub Vec<AttributeInstance<'a>>, pub PackageItem);
+pub struct DescriptionPackageItem<'a>(
+    pub Vec<AttributeInstance<'a>>,
+    pub PackageItem,
+);
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct DescriptionBindDirective<'a>(pub Vec<AttributeInstance<'a>>, pub BindDirective);
+pub struct DescriptionBindDirective<'a>(
+    pub Vec<AttributeInstance<'a>>,
+    pub BindDirective,
+);
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct ModuleNonansiHeader<'a>(
@@ -36,7 +42,7 @@ pub struct ModuleNonansiHeader<'a>(
     pub ModuleKeyword<'a>,
     pub Option<Lifetime<'a>>,
     pub ModuleIdentifier<'a>,
-    pub Vec<PackageImportDeclaration>,
+    pub Vec<PackageImportDeclaration<'a>>,
     pub Option<ParameterPortList<'a>>,
     pub ListOfPorts<'a>,
     pub Metadata<'a>, // ;
@@ -48,7 +54,7 @@ pub struct ModuleAnsiHeader<'a>(
     pub ModuleKeyword<'a>,
     pub Option<Lifetime<'a>>,
     pub ModuleIdentifier<'a>,
-    pub Vec<PackageImportDeclaration>,
+    pub Vec<PackageImportDeclaration<'a>>,
     pub Option<ParameterPortList<'a>>,
     pub Option<ListOfPortDeclarations<'a>>,
     pub Metadata<'a>, // ;
@@ -98,10 +104,16 @@ pub struct ModuleDeclarationWildcard<'a>(
 );
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct ModuleDeclarationExternNonansi<'a>(pub Metadata<'a>, pub ModuleNonansiHeader<'a>);
+pub struct ModuleDeclarationExternNonansi<'a>(
+    pub Metadata<'a>,
+    pub ModuleNonansiHeader<'a>,
+);
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct ModuleDeclarationExternAnsi<'a>(pub Metadata<'a>, pub ModuleAnsiHeader<'a>);
+pub struct ModuleDeclarationExternAnsi<'a>(
+    pub Metadata<'a>,
+    pub ModuleAnsiHeader<'a>,
+);
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum ModuleKeyword<'a> {
@@ -114,7 +126,9 @@ pub enum InterfaceDeclaration<'a> {
     InterfaceDeclarationNonansi(Box<InterfaceDeclarationNonansi<'a>>),
     InterfaceDeclarationAnsi(Box<InterfaceDeclarationAnsi<'a>>),
     InterfaceDeclarationWildcard(Box<InterfaceDeclarationWildcard<'a>>),
-    InterfaceDeclarationExternNonansi(Box<InterfaceDeclarationExternNonansi<'a>>),
+    InterfaceDeclarationExternNonansi(
+        Box<InterfaceDeclarationExternNonansi<'a>>,
+    ),
     InterfaceDeclarationExternAnsi(Box<InterfaceDeclarationExternAnsi<'a>>),
 }
 
@@ -152,10 +166,16 @@ pub struct InterfaceDeclarationWildcard<'a>(
 );
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct InterfaceDeclarationExternNonansi<'a>(pub Metadata<'a>, pub InterfaceNonansiHeader<'a>);
+pub struct InterfaceDeclarationExternNonansi<'a>(
+    pub Metadata<'a>,
+    pub InterfaceNonansiHeader<'a>,
+);
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct InterfaceDeclarationExternAnsi<'a>(pub Metadata<'a>, pub InterfaceAnsiHeader<'a>);
+pub struct InterfaceDeclarationExternAnsi<'a>(
+    pub Metadata<'a>,
+    pub InterfaceAnsiHeader<'a>,
+);
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct InterfaceNonansiHeader<'a>(
@@ -163,7 +183,7 @@ pub struct InterfaceNonansiHeader<'a>(
     pub Metadata<'a>, // interface
     pub Option<Lifetime<'a>>,
     pub InterfaceIdentifier<'a>,
-    pub Vec<PackageImportDeclaration>,
+    pub Vec<PackageImportDeclaration<'a>>,
     pub Option<ParameterPortList<'a>>,
     pub ListOfPorts<'a>,
     pub Metadata<'a>, // ;
@@ -175,7 +195,7 @@ pub struct InterfaceAnsiHeader<'a>(
     pub Metadata<'a>, // interface
     pub Option<Lifetime<'a>>,
     pub InterfaceIdentifier<'a>,
-    pub Vec<PackageImportDeclaration>,
+    pub Vec<PackageImportDeclaration<'a>>,
     pub Option<ParameterPortList<'a>>,
     pub Option<ListOfPortDeclarations<'a>>,
     pub Metadata<'a>, // ;
@@ -224,10 +244,16 @@ pub struct ProgramDeclarationWildcard<'a>(
 );
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct ProgramDeclarationExternNonansi<'a>(pub Metadata<'a>, pub ProgramNonansiHeader<'a>);
+pub struct ProgramDeclarationExternNonansi<'a>(
+    pub Metadata<'a>,
+    pub ProgramNonansiHeader<'a>,
+);
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct ProgramDeclarationExternAnsi<'a>(pub Metadata<'a>, pub ProgramAnsiHeader<'a>);
+pub struct ProgramDeclarationExternAnsi<'a>(
+    pub Metadata<'a>,
+    pub ProgramAnsiHeader<'a>,
+);
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct ProgramNonansiHeader<'a>(
@@ -235,7 +261,7 @@ pub struct ProgramNonansiHeader<'a>(
     pub Metadata<'a>, // program
     pub Option<Lifetime<'a>>,
     pub ProgramIdentifier<'a>,
-    pub Vec<PackageImportDeclaration>,
+    pub Vec<PackageImportDeclaration<'a>>,
     pub Option<ParameterPortList<'a>>,
     pub ListOfPorts<'a>,
     pub Metadata<'a>, // ;
@@ -247,7 +273,7 @@ pub struct ProgramAnsiHeader<'a>(
     pub Metadata<'a>, // program
     pub Option<Lifetime<'a>>,
     pub ProgramIdentifier<'a>,
-    pub Vec<PackageImportDeclaration>,
+    pub Vec<PackageImportDeclaration<'a>>,
     pub Option<ParameterPortList<'a>>,
     pub Option<ListOfPortDeclarations<'a>>,
     pub Metadata<'a>, // ;

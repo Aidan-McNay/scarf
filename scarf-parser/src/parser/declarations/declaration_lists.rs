@@ -9,6 +9,17 @@ use winnow::ModalResult;
 use winnow::Parser;
 use winnow::combinator::repeat;
 
+pub fn list_of_genvar_identifiers_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<ListOfGenvarIdentifiers<'s>, VerboseError<'s>> {
+    (
+        genvar_identifier_parser,
+        repeat(0.., (token(Token::Comma), genvar_identifier_parser)),
+    )
+        .map(|(a, b)| ListOfGenvarIdentifiers(a, b))
+        .parse_next(input)
+}
+
 pub fn list_of_interface_identifiers_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<ListOfInterfaceIdentifiers<'s>, VerboseError<'s>> {
@@ -25,6 +36,17 @@ pub fn list_of_interface_identifiers_parser<'s>(
         ),
     )
         .map(|(a, b, c)| ListOfInterfaceIdentifiers(a, b, c))
+        .parse_next(input)
+}
+
+pub fn list_of_net_decl_assignments_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<ListOfNetDeclAssignments<'s>, VerboseError<'s>> {
+    (
+        net_decl_assignment_parser,
+        repeat(0.., (token(Token::Comma), net_decl_assignment_parser)),
+    )
+        .map(|(a, b)| ListOfNetDeclAssignments(a, b))
         .parse_next(input)
 }
 
@@ -77,6 +99,17 @@ pub fn list_of_type_assignments_parser<'s>(
         repeat(0.., (token(Token::Comma), type_assignment_parser)),
     )
         .map(|(a, b)| ListOfTypeAssignments(a, b))
+        .parse_next(input)
+}
+
+pub fn list_of_variable_decl_assignments_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<ListOfVariableDeclAssignments<'s>, VerboseError<'s>> {
+    (
+        variable_decl_assignment_parser,
+        repeat(0.., (token(Token::Comma), variable_decl_assignment_parser)),
+    )
+        .map(|(a, b)| ListOfVariableDeclAssignments(a, b))
         .parse_next(input)
 }
 

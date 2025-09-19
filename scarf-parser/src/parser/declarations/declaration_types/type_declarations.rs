@@ -7,12 +7,206 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::alt;
+use winnow::combinator::{alt, opt, repeat};
+
+pub fn data_declaration_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<DataDeclaration<'s>, VerboseError<'s>> {
+    let _variable_data_declaration_parser = (
+        opt(token(Token::Const)),
+        opt(token(Token::Var)),
+        opt(lifetime_parser),
+        data_type_or_implicit_parser,
+        list_of_variable_decl_assignments_parser,
+        token(Token::SColon),
+    )
+        .map(|(a, b, c, d, e, f)| {
+            DataDeclaration::Variable(Box::new((a, b, c, d, e, f)))
+        });
+    alt((
+        _variable_data_declaration_parser,
+        type_declaration_parser.map(|a| DataDeclaration::Type(Box::new(a))),
+        package_import_declaration_parser
+            .map(|a| DataDeclaration::PackageImport(Box::new(a))),
+        nettype_declaration_parser
+            .map(|a| DataDeclaration::Nettype(Box::new(a))),
+    ))
+    .parse_next(input)
+}
 
 pub fn package_import_declaration_parser<'s>(
     input: &mut Tokens<'s>,
-) -> ModalResult<PackageImportDeclaration, VerboseError<'s>> {
-    token(Token::Error).value(()).parse_next(input)
+) -> ModalResult<PackageImportDeclaration<'s>, VerboseError<'s>> {
+    (
+        token(Token::Import),
+        package_import_item_parser,
+        repeat(0.., (token(Token::Comma), package_import_item_parser)),
+        token(Token::SColon),
+    )
+        .map(|(a, b, c, d)| PackageImportDeclaration(a, b, c, d))
+        .parse_next(input)
+}
+
+pub fn package_export_declaration_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<PackageExportDeclaration<'s>, VerboseError<'s>> {
+    let _import_parser = (
+        token(Token::Import),
+        package_import_item_parser,
+        repeat(0.., (token(Token::Comma), package_import_item_parser)),
+        token(Token::SColon),
+    )
+        .map(|(a, b, c, d)| {
+            PackageExportDeclaration::Import(Box::new((a, b, c, d)))
+        });
+    alt((
+        _import_parser,
+        (
+            token(Token::Export),
+            token(Token::Star),
+            token(Token::ColonColon),
+            token(Token::Star),
+            token(Token::SColon),
+        )
+            .map(|(a, b, c, d, e)| {
+                PackageExportDeclaration::Wildcard(Box::new((a, b, c, d, e)))
+            }),
+    ))
+    .parse_next(input)
+}
+
+pub fn package_import_item_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<PackageImportItem<'s>, VerboseError<'s>> {
+    alt((
+        (
+            package_identifier_parser,
+            token(Token::ColonColon),
+            identifier_parser,
+        )
+            .map(|(a, b, c)| {
+                PackageImportItem::Identifier(Box::new((a, b, c)))
+            }),
+        (
+            package_identifier_parser,
+            token(Token::ColonColon),
+            token(Token::Star),
+        )
+            .map(|(a, b, c)| PackageImportItem::Wildcard(Box::new((a, b, c)))),
+    ))
+    .parse_next(input)
+}
+
+pub fn genvar_declaration_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<GenvarDeclaration<'s>, VerboseError<'s>> {
+    (
+        token(Token::Genvar),
+        list_of_genvar_identifiers_parser,
+        token(Token::SColon),
+    )
+        .map(|(a, b, c)| GenvarDeclaration(a, b, c))
+        .parse_next(input)
+}
+
+pub fn net_declaration_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<NetDeclaration<'s>, VerboseError<'s>> {
+    let _drive_or_charge_strength_parser = alt((
+        drive_strength_parser.map(|a| DriveOrChargeStrength::DriveStrength(a)),
+        charge_strength_parser
+            .map(|a| DriveOrChargeStrength::ChargeStrength(a)),
+    ));
+    let _vectored_or_scalared_parser = alt((
+        token(Token::Vectored).map(|a| VectoredOrScalared::Vectored(a)),
+        token(Token::Scalared).map(|a| VectoredOrScalared::Scalared(a)),
+    ));
+    let _net_type_parser = (
+        net_type_parser,
+        opt(_drive_or_charge_strength_parser),
+        opt(_vectored_or_scalared_parser),
+        data_type_or_implicit_parser,
+        opt(delay3_parser),
+        list_of_net_decl_assignments_parser,
+        token(Token::SColon),
+    )
+        .map(|(a, b, c, d, e, f, g)| {
+            NetDeclaration::NetType(Box::new((a, b, c, d, e, f, g)))
+        });
+    let _nettype_identifier_parser = (
+        nettype_identifier_parser,
+        opt(delay_control_parser),
+        list_of_net_decl_assignments_parser,
+        token(Token::SColon),
+    )
+        .map(|(a, b, c, d)| {
+            NetDeclaration::NettypeIdentifier(Box::new((a, b, c, d)))
+        });
+    let _interconnect_parser = (
+        token(Token::Interconnect),
+        implicit_data_type_parser,
+        opt((token(Token::Pound), delay_value_parser)),
+        net_identifier_parser,
+        repeat(0.., unpacked_dimension_parser),
+        opt((
+            token(Token::Comma),
+            net_identifier_parser,
+            repeat(0.., unpacked_dimension_parser),
+        )),
+    )
+        .map(|(a, b, c, d, e, f)| {
+            NetDeclaration::Interconnect(Box::new((a, b, c, d, e, f)))
+        });
+    alt((
+        _net_type_parser,
+        _nettype_identifier_parser,
+        _interconnect_parser,
+    ))
+    .parse_next(input)
+}
+
+pub fn type_declaration_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<TypeDeclaration<'s>, VerboseError<'s>> {
+    let _data_type_or_incomplete_class_scoped_parser = (
+        token(Token::Typedef),
+        data_type_or_incomplete_class_scoped_type_parser,
+        type_identifier_parser,
+        repeat(0.., variable_dimension_parser),
+        token(Token::SColon),
+    )
+        .map(|(a, b, c, d, e)| {
+            TypeDeclaration::DataTypeOrIncompleteClassScoped(Box::new((
+                a, b, c, d, e,
+            )))
+        });
+    let _interface_port_parser = (
+        token(Token::Typedef),
+        interface_port_identifier_parser,
+        constant_bit_select_parser,
+        token(Token::Period),
+        type_identifier_parser,
+        type_identifier_parser,
+        token(Token::SColon),
+    )
+        .map(|(a, b, c, d, e, f, g)| {
+            TypeDeclaration::InterfacePort(Box::new((a, b, c, d, e, f, g)))
+        });
+    let _forward_type_parser = (
+        token(Token::Typedef),
+        opt(forward_type_parser),
+        type_identifier_parser,
+        token(Token::SColon),
+    )
+        .map(|(a, b, c, d)| {
+            TypeDeclaration::ForwardType(Box::new((a, b, c, d)))
+        });
+    alt((
+        _data_type_or_incomplete_class_scoped_parser,
+        _interface_port_parser,
+        _forward_type_parser,
+    ))
+    .parse_next(input)
 }
 
 pub fn forward_type_parser<'s>(
@@ -27,6 +221,36 @@ pub fn forward_type_parser<'s>(
             .map(|(a, b)| ForwardType::InterfaceClass(a, b)),
     ))
     .parse_next(input)
+}
+
+pub fn nettype_declaration_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<NettypeDeclaration<'s>, VerboseError<'s>> {
+    let _with_scope_parser = (
+        token(Token::Nettype),
+        data_type_parser,
+        nettype_identifier_parser,
+        opt((
+            token(Token::With),
+            opt(package_or_class_scope_parser),
+            tf_identifier_parser,
+        )),
+        token(Token::SColon),
+    )
+        .map(|(a, b, c, d, e)| {
+            NettypeDeclaration::WithScope(Box::new((a, b, c, d, e)))
+        });
+    let _scoped_parser = (
+        token(Token::Nettype),
+        opt(package_or_class_scope_parser),
+        nettype_identifier_parser,
+        nettype_identifier_parser,
+        token(Token::SColon),
+    )
+        .map(|(a, b, c, d, e)| {
+            NettypeDeclaration::Scoped(Box::new((a, b, c, d, e)))
+        });
+    alt((_with_scope_parser, _scoped_parser)).parse_next(input)
 }
 
 pub fn lifetime_parser<'s>(

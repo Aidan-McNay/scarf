@@ -6,6 +6,12 @@
 use crate::*;
 
 #[derive(Clone, Debug, PartialEq)]
+pub struct ListOfGenvarIdentifiers<'a>(
+    pub GenvarIdentifier<'a>,
+    pub Vec<(Metadata<'a>, GenvarIdentifier<'a>)>,
+);
+
+#[derive(Clone, Debug, PartialEq)]
 pub struct ListOfInterfaceIdentifiers<'a>(
     pub InterfaceIdentifier<'a>,
     pub Vec<UnpackedDimension<'a>>,
@@ -14,6 +20,12 @@ pub struct ListOfInterfaceIdentifiers<'a>(
         InterfaceIdentifier<'a>,
         Vec<UnpackedDimension<'a>>,
     )>,
+);
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct ListOfNetDeclAssignments<'a>(
+    pub NetDeclAssignment<'a>,
+    pub Vec<(Metadata<'a>, NetDeclAssignment<'a>)>,
 );
 
 #[derive(Clone, Debug, PartialEq)]
@@ -43,6 +55,12 @@ pub struct ListOfSpecparamAssignments<'a>(
 pub struct ListOfTypeAssignments<'a>(
     pub TypeAssignment<'a>,
     pub Vec<(Metadata<'a>, TypeAssignment<'a>)>,
+);
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct ListOfVariableDeclAssignments<'a>(
+    pub VariableDeclAssignment<'a>,
+    pub Vec<(Metadata<'a>, VariableDeclAssignment<'a>)>,
 );
 
 #[derive(Clone, Debug, PartialEq)]
