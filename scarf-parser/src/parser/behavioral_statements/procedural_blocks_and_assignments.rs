@@ -41,3 +41,11 @@ pub fn assignment_operator_parser<'s>(
     ))
     .parse_next(input)
 }
+
+pub fn variable_assignment_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<VariableAssignment<'s>, VerboseError<'s>> {
+    (variable_lvalue_parser, token(Token::Eq), expression_parser)
+        .map(|(a, b, c)| VariableAssignment(a, b, c))
+        .parse_next(input)
+}

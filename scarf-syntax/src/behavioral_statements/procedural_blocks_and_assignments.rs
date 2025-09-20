@@ -28,3 +28,10 @@ pub enum AssignmentOperator<'a> {
     LtLtLtEq(Metadata<'a>),
     GtGtGtEq(Metadata<'a>),
 }
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct VariableAssignment<'a>(
+    pub VariableLvalue<'a>,
+    pub Metadata<'a>, // =
+    pub Expression<'a>,
+);
