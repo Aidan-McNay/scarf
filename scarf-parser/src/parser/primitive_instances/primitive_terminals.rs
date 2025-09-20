@@ -7,7 +7,6 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::alt;
 
 pub fn enable_terminal_parser<'s>(
     input: &mut Tokens<'s>,
