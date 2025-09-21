@@ -6,3 +6,4 @@
 use crate::*;
 
 pub type SequenceMethodCall<'a> = Metadata<'a>;
+pub type SequenceInstance<'a> = ();

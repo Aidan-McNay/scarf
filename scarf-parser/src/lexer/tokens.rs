@@ -653,6 +653,8 @@ pub enum Token<'a> {
     LtLtLtEq,
     #[token("->")]
     MinusGt,
+    #[token("->>")]
+    MinusGtGt,
     #[token("<->")]
     LtMinusGt,
     #[token("++")]
@@ -1138,6 +1140,7 @@ impl<'a> Token<'a> {
             Token::GtGtGtEq => ">>>=",
             Token::LtLtLtEq => "<<<=",
             Token::MinusGt => "->",
+            Token::MinusGtGt => "->>",
             Token::LtMinusGt => "<->",
             Token::PlusPlus => "++",
             Token::MinusMinus => "--",

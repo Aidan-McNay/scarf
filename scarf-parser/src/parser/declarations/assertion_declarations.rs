@@ -13,3 +13,9 @@ pub fn sequence_method_call_parser<'s>(
 ) -> ModalResult<SequenceMethodCall<'s>, VerboseError<'s>> {
     fail.parse_next(input)
 }
+
+pub fn sequence_instance_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<SequenceInstance<'s>, VerboseError<'s>> {
+    fail.parse_next(input)
+}

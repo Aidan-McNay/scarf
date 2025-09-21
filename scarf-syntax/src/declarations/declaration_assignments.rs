@@ -34,3 +34,16 @@ pub struct TypeAssignment<'a>(
 );
 
 pub type VariableDeclAssignment<'a> = ();
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct DynamicArrayNew<'a>(
+    pub Metadata<'a>, // new
+    pub Metadata<'a>, // [
+    pub Expression<'a>,
+    pub Metadata<'a>, // ]
+    pub  Option<(
+        Metadata<'a>, // (
+        Expression<'a>,
+        Metadata<'a>, // )
+    )>,
+);

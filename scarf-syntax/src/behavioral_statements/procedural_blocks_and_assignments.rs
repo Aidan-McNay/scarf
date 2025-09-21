@@ -6,6 +6,41 @@
 use crate::*;
 
 #[derive(Clone, Debug, PartialEq)]
+pub struct InitialConstruct<'a>(
+    pub Metadata<'a>, // initial
+    pub StatementOrNull<'a>,
+);
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct AlwaysConstruct<'a>(pub AlwaysKeyword<'a>, pub Statement<'a>);
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum AlwaysKeyword<'a> {
+    Always(Metadata<'a>),
+    AlwaysComb(Metadata<'a>),
+    AlwaysLatch(Metadata<'a>),
+    AlwaysFf(Metadata<'a>),
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct FinalConstruct<'a>(
+    pub Metadata<'a>, // final
+    pub FunctionStatement<'a>,
+);
+
+// #[derive(Clone, Debug, PartialEq)]
+// pub enum BlockingAssignment<'a> {
+//     Variable(
+//         Box<(
+//             VariableLvalue<'a>,
+//             Metadata<'a>, // =
+//             DelayOrEventControl<'a>,
+//             Expression<'a>,
+//         )>,
+//     ),
+// }
+
+#[derive(Clone, Debug, PartialEq)]
 pub struct OperatorAssignment<'a>(
     pub VariableLvalue<'a>,
     pub AssignmentOperator<'a>,
