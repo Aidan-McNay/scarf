@@ -100,8 +100,20 @@ pub struct ConstantRange<'a>(
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum ConstantIndexedRange<'a> {
-    Plus(Box<(ConstantExpression<'a>, Metadata<'a>, ConstantExpression<'a>)>),
-    Minus(Box<(ConstantExpression<'a>, Metadata<'a>, ConstantExpression<'a>)>),
+    Plus(
+        Box<(
+            ConstantExpression<'a>,
+            Metadata<'a>, // +:
+            ConstantExpression<'a>,
+        )>,
+    ),
+    Minus(
+        Box<(
+            ConstantExpression<'a>,
+            Metadata<'a>, // -:
+            ConstantExpression<'a>,
+        )>,
+    ),
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -109,7 +121,9 @@ pub enum Expression<'a> {
     Primary(Box<Primary<'a>>),
     Unary(Box<(UnaryOperator<'a>, Vec<AttributeInstance<'a>>, Primary<'a>)>),
     IncOrDecExpression(Box<IncOrDecExpression<'a>>),
-    OperatorAssignment(Box<(Metadata<'a>, OperatorAssignment<'a>, Metadata<'a>)>),
+    OperatorAssignment(
+        Box<(Metadata<'a>, OperatorAssignment<'a>, Metadata<'a>)>,
+    ),
     Binary(
         Box<(
             Expression<'a>,

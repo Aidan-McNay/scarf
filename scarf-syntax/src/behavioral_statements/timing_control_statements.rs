@@ -221,14 +221,14 @@ pub enum DisableStatement<'a> {
         Box<(
             Metadata<'a>, // disable
             HierarchicalTaskIdentifier<'a>,
-            Metadata<'a>,
+            Metadata<'a>, // ;
         )>,
     ),
     Block(
         Box<(
             Metadata<'a>, // disable
             HierarchicalBlockIdentifier<'a>,
-            Metadata<'a>,
+            Metadata<'a>, // ;
         )>,
     ),
     Fork(
