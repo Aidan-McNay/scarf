@@ -10,7 +10,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, fail, opt};
+use winnow::combinator::{alt, opt};
 
 pub fn inc_or_dec_expression_parser<'s>(
     input: &mut Tokens<'s>,
@@ -103,7 +103,25 @@ pub fn constant_mintypmax_expression_parser<'s>(
 pub fn constant_param_expression_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<ConstantParamExpression<'s>, VerboseError<'s>> {
-    fail.parse_next(input)
+    let _mintypmax_parser = constant_mintypmax_expression_parser
+        .map(|a| ConstantParamExpression::Mintypmax(Box::new(a)));
+    let _data_parser =
+        data_type_parser.map(|a| ConstantParamExpression::Data(Box::new(a)));
+    let _dollar_parser = token(Token::Dollar)
+        .map(|a| ConstantParamExpression::Dollar(Box::new(a)));
+    alt((_mintypmax_parser, _data_parser, _dollar_parser)).parse_next(input)
+}
+
+pub fn param_expression_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<ParamExpression<'s>, VerboseError<'s>> {
+    let _mintypmax_parser = mintypmax_expression_parser
+        .map(|a| ParamExpression::Mintypmax(Box::new(a)));
+    let _data_parser =
+        data_type_parser.map(|a| ParamExpression::Data(Box::new(a)));
+    let _dollar_parser =
+        token(Token::Dollar).map(|a| ParamExpression::Dollar(Box::new(a)));
+    alt((_mintypmax_parser, _data_parser, _dollar_parser)).parse_next(input)
 }
 
 pub fn constant_range_expression_parser<'s>(

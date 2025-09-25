@@ -77,7 +77,19 @@ pub enum ConstantMintypmaxExpression<'a> {
     ),
 }
 
-pub type ConstantParamExpression<'a> = ();
+#[derive(Clone, Debug, PartialEq)]
+pub enum ConstantParamExpression<'a> {
+    Mintypmax(Box<ConstantMintypmaxExpression<'a>>),
+    Data(Box<DataType<'a>>),
+    Dollar(Box<Metadata<'a>>),
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum ParamExpression<'a> {
+    Mintypmax(Box<MintypmaxExpression<'a>>),
+    Data(Box<DataType<'a>>),
+    Dollar(Box<Metadata<'a>>),
+}
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum ConstantRangeExpression<'a> {
