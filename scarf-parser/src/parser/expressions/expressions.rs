@@ -3,8 +3,7 @@
 // =======================================================================
 // Parsing for 1800-2023 A.8.3
 //
-// Unlike other parsers, we cache the expression parsers due to their
-// heavy use
+// Pratt parsing adapted from https://matklad.github.io/2020/04/13/simple-but-powerful-pratt-parsing.html
 
 use crate::*;
 use scarf_syntax::*;
@@ -45,37 +44,119 @@ pub fn conditional_expression_parser<'s>(
         .parse_next(input)
 }
 
+enum BinaryOrTernaryOp<'a> {
+    Binary(BinaryOperator<'a>),
+    Ternary(Metadata<'a>),
+}
+
+#[inline(always)]
+fn left_assoc(bp: u8) -> (u8, u8) {
+    let scaled_bp = bp * 2;
+    (scaled_bp - 1, scaled_bp)
+}
+
+#[inline(always)]
+fn right_assoc(bp: u8) -> (u8, u8) {
+    let scaled_bp = bp * 2;
+    (scaled_bp, scaled_bp - 1)
+}
+
+#[inline]
+fn binary_operator_binding_power<'s>(binop: &BinaryOperator<'s>) -> (u8, u8) {
+    match binop {
+        BinaryOperator::StarStar(_) => left_assoc(13),
+        BinaryOperator::Star(_) => left_assoc(12),
+        BinaryOperator::Slash(_) => left_assoc(12),
+        BinaryOperator::Percent(_) => left_assoc(12),
+        BinaryOperator::Plus(_) => left_assoc(11),
+        BinaryOperator::Minus(_) => left_assoc(11),
+        BinaryOperator::GtGt(_) => left_assoc(10),
+        BinaryOperator::LtLt(_) => left_assoc(10),
+        BinaryOperator::GtGtGt(_) => left_assoc(10),
+        BinaryOperator::LtLtLt(_) => left_assoc(10),
+        BinaryOperator::Lt(_) => left_assoc(9),
+        BinaryOperator::LtEq(_) => left_assoc(9),
+        BinaryOperator::Gt(_) => left_assoc(9),
+        BinaryOperator::GtEq(_) => left_assoc(9),
+        BinaryOperator::EqEq(_) => left_assoc(8),
+        BinaryOperator::ExclEq(_) => left_assoc(8),
+        BinaryOperator::EqEqEq(_) => left_assoc(8),
+        BinaryOperator::ExclEqEq(_) => left_assoc(8),
+        BinaryOperator::EqEqQuest(_) => left_assoc(8),
+        BinaryOperator::ExclEqQuest(_) => left_assoc(8),
+        BinaryOperator::Amp(_) => left_assoc(7),
+        BinaryOperator::Caret(_) => left_assoc(6),
+        BinaryOperator::CaretTilde(_) => left_assoc(6),
+        BinaryOperator::TildeCaret(_) => left_assoc(6),
+        BinaryOperator::Pipe(_) => left_assoc(5),
+        BinaryOperator::AmpAmp(_) => left_assoc(4),
+        BinaryOperator::PipePipe(_) => left_assoc(3),
+        BinaryOperator::MinusGt(_) => right_assoc(1),
+        BinaryOperator::LtMinusGt(_) => right_assoc(1),
+    }
+}
+
+#[inline(always)]
+fn ternary_operator_binding_power<'s>() -> (u8, u8) {
+    right_assoc(2)
+}
+
+fn constant_expression_bp_parser<'s>(
+    input: &mut Tokens<'s>,
+    min_bp: u8,
+) -> ModalResult<ConstantExpression<'s>, VerboseError<'s>> {
+    let mut lhs = alt((
+        constant_primary_parser
+            .map(|a| ConstantExpression::Primary(Box::new(a))),
+        (
+            unary_operator_parser,
+            attribute_instance_vec_parser,
+            constant_primary_parser,
+        )
+            .map(|(a, b, c)| ConstantExpression::Unary(Box::new((a, b, c)))),
+    ))
+    .parse_next(input)?;
+    loop {
+        let (op, r_bp) = alt((
+            binary_operator_parser.verify_map(|a| {
+                let (l_bp, r_bp) = binary_operator_binding_power(&a);
+                if l_bp < min_bp {
+                    return None;
+                }
+                Some((BinaryOrTernaryOp::Binary(a), r_bp))
+            }),
+            token(Token::Quest).verify_map(|a| {
+                let (l_bp, r_bp) = ternary_operator_binding_power();
+                if l_bp < min_bp {
+                    return None;
+                }
+                Some((BinaryOrTernaryOp::Ternary(a), r_bp))
+            }),
+        ))
+        .parse_next(input)?;
+        lhs = match op {
+            BinaryOrTernaryOp::Binary(binop) => {
+                let attrs = attribute_instance_vec_parser(input)?;
+                let rhs = constant_expression_bp_parser(input, r_bp)?;
+                ConstantExpression::Binary(Box::new((lhs, binop, attrs, rhs)))
+            }
+            BinaryOrTernaryOp::Ternary(quest) => {
+                let attrs = attribute_instance_vec_parser(input)?;
+                let mhs = constant_expression_bp_parser(input, 0)?;
+                let colon = token(Token::Colon)(input)?;
+                let rhs = constant_expression_bp_parser(input, r_bp)?;
+                ConstantExpression::Ternary(Box::new((
+                    lhs, quest, attrs, mhs, colon, rhs,
+                )))
+            }
+        }
+    }
+}
+
 pub fn constant_expression_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<ConstantExpression<'s>, VerboseError<'s>> {
-    let _primary_parser = constant_primary_parser
-        .map(|a| ConstantExpression::Primary(Box::new(a)));
-    let _unary_parser = (
-        unary_operator_parser,
-        attribute_instance_vec_parser,
-        constant_primary_parser,
-    )
-        .map(|(a, b, c)| ConstantExpression::Unary(Box::new((a, b, c))));
-    // let _binary_parser = todo
-    //     .map(|(a, b, c, d)| ConstantExpression::Binary(Box::new((a, b, c, d))));
-    let _ternary_parser = (
-        constant_expression_parser,
-        token(Token::Quest),
-        attribute_instance_vec_parser,
-        constant_expression_parser,
-        token(Token::Colon),
-        constant_expression_parser,
-    )
-        .map(|(a, b, c, d, e, f)| {
-            ConstantExpression::Ternary(Box::new((a, b, c, d, e, f)))
-        });
-    alt((
-        _primary_parser,
-        _unary_parser,
-        // _binary_parser,
-        _ternary_parser,
-    ))
-    .parse_next(input)
+    constant_expression_bp_parser(input, 0)
 }
 
 pub fn constant_mintypmax_expression_parser<'s>(

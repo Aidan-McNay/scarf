@@ -14,7 +14,7 @@ pub struct ModuleInstantiation<'a>(
         Metadata<'a>, // ,
         HierarchicalInstance<'a>,
     )>,
-    pub Metadata<'a>,
+    pub Metadata<'a>, // ;
 );
 
 #[derive(Clone, Debug, PartialEq)]
