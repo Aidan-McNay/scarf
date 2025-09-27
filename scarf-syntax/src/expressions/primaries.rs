@@ -38,7 +38,9 @@ pub enum ConstantPrimary<'a> {
         )>,
     ),
     LetExpression(Box<ConstantLetExpression<'a>>),
-    MintypmaxExpression(Box<(Metadata<'a>, ConstantMintypmaxExpression<'a>, Metadata<'a>)>),
+    MintypmaxExpression(
+        Box<(Metadata<'a>, ConstantMintypmaxExpression<'a>, Metadata<'a>)>,
+    ),
     Cast(Box<ConstantCast<'a>>),
     AssignmentPatternExpression(Box<ConstantAssignmentPatternExpression<'a>>),
     TypeReference(Box<TypeReference<'a>>),
@@ -97,7 +99,9 @@ pub enum Primary<'a> {
         )>,
     ),
     LetExpression(Box<LetExpression<'a>>),
-    MintypmaxExpression(Box<(Metadata<'a>, MintypmaxExpression<'a>, Metadata<'a>)>),
+    MintypmaxExpression(
+        Box<(Metadata<'a>, MintypmaxExpression<'a>, Metadata<'a>)>,
+    ),
     Cast(Box<Cast<'a>>),
     AssignmentPatternExpression(Box<AssignmentPatternExpression<'a>>),
     StreamingConcatenation(Box<StreamingConcatenation<'a>>),
@@ -159,8 +163,47 @@ pub enum ImplicitClassHandle<'a> {
     ThisSuper(Metadata<'a>, Metadata<'a>, Metadata<'a>),
 }
 
-pub type Select<'a> = ();
-pub type NonrangeSelect<'a> = ();
+#[derive(Clone, Debug, PartialEq)]
+pub struct BitSelect<'a>(
+    pub  Vec<(
+        Metadata<'a>, // [
+        Expression<'a>,
+        Metadata<'a>, // ]
+    )>,
+);
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct Select<'a>(
+    pub  Option<(
+        Vec<(
+            Metadata<'a>, // .
+            MemberIdentifier<'a>,
+            BitSelect<'a>,
+        )>,
+        Metadata<'a>, // .
+        MemberIdentifier<'a>,
+    )>,
+    pub BitSelect<'a>,
+    pub  Option<(
+        Metadata<'a>, // [
+        PartSelectRange<'a>,
+        Metadata<'a>, // ]
+    )>,
+);
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct NonrangeSelect<'a>(
+    pub  Option<(
+        Vec<(
+            Metadata<'a>, // .
+            MemberIdentifier<'a>,
+            BitSelect<'a>,
+        )>,
+        Metadata<'a>, // .
+        MemberIdentifier<'a>,
+    )>,
+    pub BitSelect<'a>,
+);
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct ConstantBitSelect<'a>(
@@ -208,4 +251,5 @@ pub struct ConstantCast<'a>(
     pub Metadata<'a>, // )
 );
 
-pub type ConstantLetExpression<'a> = ();
+#[derive(Clone, Debug, PartialEq)]
+pub struct ConstantLetExpression<'a>(pub LetExpression<'a>);
