@@ -247,3 +247,6 @@ pub enum IndexedRange<'a> {
         )>,
     ),
 }
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct GenvarExpression<'a>(pub ConstantExpression<'a>);

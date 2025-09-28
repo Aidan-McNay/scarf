@@ -7,7 +7,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, fail, repeat};
+use winnow::combinator::{alt, opt, repeat};
 
 pub fn concatenation_parser<'s>(
     input: &mut Tokens<'s>,
@@ -90,7 +90,15 @@ pub fn multiple_concatenation_parser<'s>(
 pub fn streaming_concatenation_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<StreamingConcatenation<'s>, VerboseError<'s>> {
-    fail.parse_next(input)
+    (
+        token(Token::Brace),
+        stream_operator_parser,
+        opt(slice_size_parser),
+        stream_concatenation_parser,
+        token(Token::EBrace),
+    )
+        .map(|(a, b, c, d, e)| StreamingConcatenation(a, b, c, d, e))
+        .parse_next(input)
 }
 
 pub fn stream_operator_parser<'s>(
@@ -101,6 +109,90 @@ pub fn stream_operator_parser<'s>(
         token(Token::LtLt).map(|a| StreamOperator::Left(a)),
     ))
     .parse_next(input)
+}
+
+pub fn slice_size_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<SliceSize<'s>, VerboseError<'s>> {
+    alt((
+        simple_type_parser.map(|a| SliceSize::Simple(Box::new(a))),
+        constant_expression_parser.map(|a| SliceSize::ConstExpr(Box::new(a))),
+    ))
+    .parse_next(input)
+}
+
+pub fn stream_concatenation_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<StreamConcatenation<'s>, VerboseError<'s>> {
+    (
+        token(Token::Brace),
+        stream_expression_parser,
+        repeat(0.., (token(Token::Comma), stream_expression_parser)),
+        token(Token::EBrace),
+    )
+        .map(|(a, b, c, d)| StreamConcatenation(a, b, c, d))
+        .parse_next(input)
+}
+
+pub fn stream_expression_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<StreamExpression<'s>, VerboseError<'s>> {
+    (
+        expression_parser,
+        opt((
+            token(Token::With),
+            token(Token::Bracket),
+            array_range_expression_parser,
+            token(Token::EBracket),
+        )),
+    )
+        .map(|(a, b)| StreamExpression(a, b))
+        .parse_next(input)
+}
+
+enum ArrayExtraRange<'s> {
+    Range((Metadata<'s>, Expression<'s>)),
+    PlusRange((Metadata<'s>, Expression<'s>)),
+    MinusRange((Metadata<'s>, Expression<'s>)),
+}
+
+pub fn array_range_expression_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<ArrayRangeExpression<'s>, VerboseError<'s>> {
+    let _extra_range_parser = alt((
+        (token(Token::Colon), expression_parser)
+            .map(|(a, b)| ArrayExtraRange::Range((a, b))),
+        (token(Token::PlusColon), expression_parser)
+            .map(|(a, b)| ArrayExtraRange::PlusRange((a, b))),
+        (token(Token::MinusColon), expression_parser)
+            .map(|(a, b)| ArrayExtraRange::MinusRange((a, b))),
+    ));
+    (expression_parser, opt(_extra_range_parser))
+        .map(|(start_range, b)| match b {
+            Some(ArrayExtraRange::Range((op, end_range))) => {
+                ArrayRangeExpression::Range(Box::new((
+                    start_range,
+                    op,
+                    end_range,
+                )))
+            }
+            Some(ArrayExtraRange::PlusRange((op, end_range))) => {
+                ArrayRangeExpression::PlusRange(Box::new((
+                    start_range,
+                    op,
+                    end_range,
+                )))
+            }
+            Some(ArrayExtraRange::MinusRange((op, end_range))) => {
+                ArrayRangeExpression::MinusRange(Box::new((
+                    start_range,
+                    op,
+                    end_range,
+                )))
+            }
+            None => ArrayRangeExpression::Select(Box::new(start_range)),
+        })
+        .parse_next(input)
 }
 
 pub fn empty_unpacked_array_concatenation_parser<'s>(

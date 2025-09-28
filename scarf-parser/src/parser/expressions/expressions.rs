@@ -807,3 +807,11 @@ pub fn indexed_range_parser<'s>(
     ))
     .parse_next(input)
 }
+
+pub fn genvar_expression_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<GenvarExpression<'s>, VerboseError<'s>> {
+    constant_expression_parser
+        .map(|a| GenvarExpression(a))
+        .parse_next(input)
+}

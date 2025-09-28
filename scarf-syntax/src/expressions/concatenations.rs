@@ -53,12 +53,73 @@ pub struct MultipleConcatenation<'a>(
     pub Metadata<'a>, // }
 );
 
-pub type StreamingConcatenation<'a> = ();
+#[derive(Clone, Debug, PartialEq)]
+pub struct StreamingConcatenation<'a>(
+    pub Metadata<'a>, // {
+    pub StreamOperator<'a>,
+    pub Option<SliceSize<'a>>,
+    pub StreamConcatenation<'a>,
+    pub Metadata<'a>, // }
+);
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum StreamOperator<'a> {
     Right(Metadata<'a>),
     Left(Metadata<'a>),
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum SliceSize<'a> {
+    Simple(Box<SimpleType<'a>>),
+    ConstExpr(Box<ConstantExpression<'a>>),
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct StreamConcatenation<'a>(
+    pub Metadata<'a>, // {
+    pub StreamExpression<'a>,
+    pub  Vec<(
+        Metadata<'a>, // ,
+        StreamExpression<'a>,
+    )>,
+    pub Metadata<'a>, // }
+);
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct StreamExpression<'a>(
+    pub Expression<'a>,
+    pub  Option<(
+        Metadata<'a>, // with
+        Metadata<'a>, // [
+        ArrayRangeExpression<'a>,
+        Metadata<'a>, // ]
+    )>,
+);
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum ArrayRangeExpression<'a> {
+    Select(Box<Expression<'a>>),
+    Range(
+        Box<(
+            Expression<'a>,
+            Metadata<'a>, // :
+            Expression<'a>,
+        )>,
+    ),
+    PlusRange(
+        Box<(
+            Expression<'a>,
+            Metadata<'a>, // +:
+            Expression<'a>,
+        )>,
+    ),
+    MinusRange(
+        Box<(
+            Expression<'a>,
+            Metadata<'a>, // -:
+            Expression<'a>,
+        )>,
+    ),
 }
 
 #[derive(Clone, Debug, PartialEq)]
