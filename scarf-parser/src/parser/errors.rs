@@ -88,7 +88,7 @@ impl<'s> AddContext<Tokens<'s>, &'s str> for VerboseError<'s> {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Expectation<'s> {
     Token(Token<'s>),
     Label(&'s str),

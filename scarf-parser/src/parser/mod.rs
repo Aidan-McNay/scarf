@@ -31,14 +31,19 @@ pub use specify_section::*;
 use std::fs;
 pub use udp_declaration_and_instantiation::*;
 pub use utils::*;
+use winnow::error::ErrMode;
 
 pub fn parse<'s>(
     input: &'s [SpannedToken<'s>],
-) -> Result<
-    SourceText<'s>,
-    ParseError<TokenSlice<'s, SpannedToken<'s>>, VerboseError<'s>>,
-> {
-    source_text_parser.parse(TokenSlice::new(input))
+) -> Result<SourceText<'s>, VerboseError<'s>> {
+    match source_text_parser.parse_next(&mut TokenSlice::new(input)) {
+        Ok(source_text) => Ok(source_text),
+        Err(ErrMode::Backtrack(err)) => Err(err),
+        Err(ErrMode::Cut(err)) => Err(err),
+        Err(ErrMode::Incomplete(_)) => {
+            panic!("Produced 'incomplete', an unsupported error")
+        }
+    }
 }
 
 fn format_expectation<'s>(pattern: &Expectation<'s>) -> String {
@@ -54,19 +59,21 @@ fn format_reason<'s>(error: &VerboseError<'s>) -> String {
         Some(tok) => tok.to_string(),
         None => "end of input".to_owned(),
     };
-    let expected_str = match &error.expected[..] {
+    let mut dedup_expected = error.expected.clone();
+    dedup_expected.dedup();
+    let expected_str = match &dedup_expected[..] {
         [] => "something else".to_owned(),
         [expected] => format_expectation(expected),
         _ => {
             let mut temp_expected_str = String::new();
-            for expected in &error.expected[..error.expected.len() - 1] {
+            for expected in &dedup_expected[..dedup_expected.len() - 1] {
                 temp_expected_str
                     .push_str(format_expectation(expected).as_str());
                 temp_expected_str.push_str(", ");
             }
             temp_expected_str.push_str("or ");
             temp_expected_str.push_str(
-                format_expectation(error.expected.last().unwrap()).as_str(),
+                format_expectation(dedup_expected.last().unwrap()).as_str(),
             );
             temp_expected_str
         }
@@ -82,16 +89,12 @@ fn format_reason_short<'s>(error: &VerboseError<'s>) -> String {
 }
 
 pub fn report_parse_errors<'s, 'b>(
-    result: &Result<
-        SourceText<'s>,
-        ParseError<TokenSlice<'s, SpannedToken<'s>>, VerboseError<'s>>,
-    >,
+    result: &Result<SourceText<'s>, VerboseError<'s>>,
     file_path: &'b str,
 ) -> Vec<Report<'s, (&'b str, std::ops::Range<usize>)>> {
     let mut reports: Vec<Report<'s, (&'b str, std::ops::Range<usize>)>> =
         Vec::new();
-    if let &Err(ref parse_error) = result {
-        let verbose_error = parse_error.inner();
+    if let &Err(ref verbose_error) = result {
         let error_span = if verbose_error.is_eoi() {
             let file_len = fs::metadata(file_path).expect("REASON").len();
             Range {

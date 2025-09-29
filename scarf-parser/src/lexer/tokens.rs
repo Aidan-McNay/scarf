@@ -7,7 +7,7 @@ use crate::*;
 use logos::Logos;
 use std::fmt;
 
-#[derive(Logos, Debug, Clone, PartialEq, Eq, Copy)]
+#[derive(Logos, Debug, Clone, PartialEq, Eq, Copy, Hash)]
 #[logos(skip r"[ \r\t\f]+")]
 #[logos(error = String)]
 pub enum Token<'a> {

@@ -10,8 +10,8 @@ use lexer::*;
 pub use lexer::{Span, Token, lex, report_lex_errors};
 use parser::*;
 pub use parser::{parse, report_parse_errors};
+use winnow::Parser;
 use winnow::stream::TokenSlice;
-use winnow::{Parser, error::ParseError};
 
 pub fn lex_to_parse_stream<'s>(
     input: Vec<(Result<Token<'s>, String>, Span)>,

@@ -18,13 +18,18 @@ pub(crate) fn attribute_instance_vec_parser<'s>(
 pub fn source_text_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<SourceText<'s>, VerboseError<'s>> {
-    (
-        extra_node_parser,
-        opt(timeunits_declaration_parser),
-        repeat(0.., description_parser),
-    )
-        .map(|(a, b, c)| SourceText(a, b, c))
-        .parse_next(input)
+    let extra_nodes = extra_node_parser(input)?;
+    let timeunits_declaration =
+        opt(timeunits_declaration_parser).parse_next(input)?;
+    let mut descriptions: Vec<Description<'s>> = vec![];
+    loop {
+        if input.is_empty() {
+            break;
+        }
+        let new_description = description_parser(input)?;
+        descriptions.push(new_description);
+    }
+    Ok(SourceText(extra_nodes, timeunits_declaration, descriptions))
 }
 
 pub fn description_parser<'s>(

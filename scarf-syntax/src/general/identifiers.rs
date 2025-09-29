@@ -186,13 +186,22 @@ pub struct ProgramIdentifier<'a>(pub Identifier<'a>);
 pub struct PropertyIdentifier<'a>(pub Identifier<'a>);
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct PsClassIdentifier<'a>(pub Option<PackageScope<'a>>, pub ClassIdentifier<'a>);
+pub struct PsClassIdentifier<'a>(
+    pub Option<PackageScope<'a>>,
+    pub ClassIdentifier<'a>,
+);
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct PsCovergroupIdentifier<'a>(pub Option<PackageScope<'a>>, pub CovergroupIdentifier<'a>);
+pub struct PsCovergroupIdentifier<'a>(
+    pub Option<PackageScope<'a>>,
+    pub CovergroupIdentifier<'a>,
+);
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct PsCheckerIdentifier<'a>(pub Option<PackageScope<'a>>, pub CheckerIdentifier<'a>);
+pub struct PsCheckerIdentifier<'a>(
+    pub Option<PackageScope<'a>>,
+    pub CheckerIdentifier<'a>,
+);
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct PsIdentifier<'a>(pub Option<PackageScope<'a>>, pub Identifier<'a>);
