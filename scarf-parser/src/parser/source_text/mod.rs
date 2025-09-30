@@ -6,6 +6,7 @@
 pub mod checker_items;
 pub mod class_items;
 pub mod configuration_source_text;
+pub mod constraints;
 pub mod interface_items;
 pub mod module_items;
 pub mod module_parameters_and_ports;
@@ -15,6 +16,7 @@ pub mod system_verilog_source_text;
 pub use checker_items::*;
 pub use class_items::*;
 pub use configuration_source_text::*;
+pub use constraints::*;
 pub use interface_items::*;
 pub use module_items::*;
 pub use module_parameters_and_ports::*;

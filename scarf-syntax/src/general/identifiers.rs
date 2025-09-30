@@ -289,7 +289,8 @@ pub type SimpleIdentifier<'a> = (&'a str, Metadata<'a>);
 #[derive(Clone, Debug, PartialEq)]
 pub struct SpecparamIdentifier<'a>(pub Identifier<'a>);
 
-pub type SystemTfIdentifier<'a> = (&'a str, Metadata<'a>);
+#[derive(Clone, Debug, PartialEq)]
+pub struct SystemTfIdentifier<'a>(pub &'a str, pub Metadata<'a>);
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct TaskIdentifier<'a>(pub Identifier<'a>);

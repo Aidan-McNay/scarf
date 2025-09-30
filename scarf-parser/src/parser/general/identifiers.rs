@@ -708,6 +708,32 @@ pub fn specparam_identifier_parser<'s>(
         .parse_next(input)
 }
 
+pub fn system_tf_identifier_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<SystemTfIdentifier<'s>, VerboseError<'s>> {
+    (
+        any.verify_map(|s: &'s SpannedToken<'s>| match s.0 {
+            Token::SystemTfIdentifier(text) => Some(SystemTfIdentifier(
+                text,
+                Metadata {
+                    span: s.1.clone(),
+                    extra_nodes: vec![],
+                },
+            )),
+            _ => None,
+        }),
+        extra_node_parser,
+    )
+        .map(|(identifier, extra_nodes)| {
+            SystemTfIdentifier(
+                identifier.0,
+                replace_nodes(identifier.1, extra_nodes),
+            )
+        })
+        .context("a system tf identifier")
+        .parse_next(input)
+}
+
 pub fn task_identifier_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<TaskIdentifier<'s>, VerboseError<'s>> {

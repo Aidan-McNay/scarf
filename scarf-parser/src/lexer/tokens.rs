@@ -735,6 +735,8 @@ pub enum Token<'a> {
     Option,
     #[token("type_option")]
     TypeOption,
+    #[token("randomize")]
+    Randomize,
     #[token("sample")]
     Sample,
     #[token("1step")]
@@ -803,7 +805,7 @@ pub enum Token<'a> {
     UnbasedUnsizedLiteral(&'a str),
     // Literals
     #[regex(r"\$[a-zA-Z0-9_\$]+", |lex| lex.slice())]
-    SystemIdentifier(&'a str),
+    SystemTfIdentifier(&'a str),
     #[regex(r"[a-zA-Z_][a-zA-Z0-9_\$]*", |lex| lex.slice())]
     SimpleIdentifier(&'a str),
     #[regex(r"\\[!-~]+", |lex| lex.slice())]
@@ -1180,6 +1182,7 @@ impl<'a> Token<'a> {
             Token::PathpulseDollar => "PATHPULSE$",
             Token::Option => "option",
             Token::TypeOption => "type_option",
+            Token::Randomize => "randomize",
             Token::Sample => "sample",
             Token::OneStep => "1step",
             Token::DollarSetup => "$setup",
@@ -1212,7 +1215,7 @@ impl<'a> Token<'a> {
             Token::HexNumber(_text) => "<hex number>",
             Token::ScientificNumber(_text) => "<scientific number>",
             Token::UnbasedUnsizedLiteral(_text) => "<unsized literal>",
-            Token::SystemIdentifier(_text) => "<system identifier>",
+            Token::SystemTfIdentifier(_text) => "<system tf identifier>",
             Token::SimpleIdentifier(_text) => "<simple identifier>",
             Token::EscapedIdentifier(_text) => "<escaped identifier>",
             Token::TimeUnit(_text) => "<time unit>",
@@ -1272,7 +1275,7 @@ impl<'a> fmt::Display for Token<'a> {
                 temp_str = format!("unsized literal '{}' ", text);
                 temp_str.as_str()
             }
-            Token::SystemIdentifier(text) => {
+            Token::SystemTfIdentifier(text) => {
                 temp_str = format!("{}", text);
                 temp_str.as_str()
             }

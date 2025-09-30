@@ -44,6 +44,7 @@ fn format(args: &FormatArgs) {
         }
         let parser_stream = lex_to_parse_stream(lexed_src);
         let parsed_src = parse(&parser_stream[..]);
+        println!("{:?}", parsed_src);
         let parse_errors = report_parse_errors(&parsed_src, path);
         if !parse_errors.is_empty() {
             for report in parse_errors {
