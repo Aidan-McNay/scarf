@@ -59,8 +59,12 @@ fn format_reason<'s>(error: &VerboseError<'s>) -> String {
         Some(tok) => tok.to_string(),
         None => "end of input".to_owned(),
     };
-    let mut dedup_expected = error.expected.clone();
-    dedup_expected.dedup();
+    let mut dedup_expected: Vec<Expectation<'s>> = vec![];
+    for expected in error.expected.iter() {
+        if !dedup_expected.contains(expected) {
+            dedup_expected.push(expected.clone());
+        }
+    }
     let expected_str = match &dedup_expected[..] {
         [] => "something else".to_owned(),
         [expected] => format_expectation(expected),

@@ -7,7 +7,7 @@ use crate::*;
 use logos::Logos;
 use std::fmt;
 
-#[derive(Logos, Debug, Clone, PartialEq, Eq, Copy, Hash)]
+#[derive(Logos, Debug, Clone, PartialEq, Eq, Copy)]
 #[logos(skip r"[ \r\t\f]+")]
 #[logos(error = String)]
 pub enum Token<'a> {
@@ -716,6 +716,8 @@ pub enum Token<'a> {
     PoundEqPound,
     #[token("=>")]
     EqGt,
+    #[token("*>")]
+    StarGt,
     #[token(r#"""#)]
     Quote,
     #[token(r#"""""#)]
@@ -1173,6 +1175,7 @@ impl<'a> Token<'a> {
             Token::PoundMinusPound => "#-#",
             Token::PoundEqPound => "#=#",
             Token::EqGt => "=>",
+            Token::StarGt => "*>",
             Token::Quote => r#"""#,
             Token::QuoteQuoteQuote => r#"""""#,
             Token::Bslash => r"\",
