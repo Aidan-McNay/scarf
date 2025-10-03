@@ -16,3 +16,42 @@ pub enum ActionBlock<'a> {
         )>,
     ),
 }
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct SeqBlock<'a>(
+    pub Metadata<'a>, // begin
+    pub  Option<(
+        Metadata<'a>, // :
+        BlockIdentifier<'a>,
+    )>,
+    pub Vec<BlockItemDeclaration<'a>>,
+    pub Vec<StatementOrNull<'a>>,
+    pub Metadata<'a>, // end
+    pub  Option<(
+        Metadata<'a>, // :
+        BlockIdentifier<'a>,
+    )>,
+);
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct ParBlock<'a>(
+    pub Metadata<'a>, // fork
+    pub  Option<(
+        Metadata<'a>, // :
+        BlockIdentifier<'a>,
+    )>,
+    pub Vec<BlockItemDeclaration<'a>>,
+    pub Vec<StatementOrNull<'a>>,
+    pub JoinKeyword<'a>,
+    pub  Option<(
+        Metadata<'a>, // :
+        BlockIdentifier<'a>,
+    )>,
+);
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum JoinKeyword<'a> {
+    Join(Metadata<'a>),
+    JoinAny(Metadata<'a>),
+    JoinNone(Metadata<'a>),
+}

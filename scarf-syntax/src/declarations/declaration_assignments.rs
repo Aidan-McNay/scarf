@@ -36,6 +36,27 @@ pub struct TypeAssignment<'a>(
 pub type VariableDeclAssignment<'a> = ();
 
 #[derive(Clone, Debug, PartialEq)]
+pub enum ClassNew<'a> {
+    Args(
+        Box<(
+            Option<ClassScope<'a>>,
+            Metadata<'a>, // new
+            Option<(
+                Metadata<'a>, // (
+                ListOfArguments<'a>,
+                Metadata<'a>, // )
+            )>,
+        )>,
+    ),
+    Expression(
+        Box<(
+            Metadata<'a>, // new
+            Expression<'a>,
+        )>,
+    ),
+}
+
+#[derive(Clone, Debug, PartialEq)]
 pub struct DynamicArrayNew<'a>(
     pub Metadata<'a>, // new
     pub Metadata<'a>, // [

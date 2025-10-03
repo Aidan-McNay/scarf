@@ -7,7 +7,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{fail, opt, repeat};
+use winnow::combinator::{alt, fail, opt, repeat};
 
 pub fn net_decl_assignment_parser<'s>(
     input: &mut Tokens<'s>,
@@ -57,4 +57,36 @@ pub fn variable_decl_assignment_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<VariableDeclAssignment<'s>, VerboseError<'s>> {
     fail.parse_next(input)
+}
+
+pub fn class_new_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<ClassNew<'s>, VerboseError<'s>> {
+    let _args_parser = (
+        opt(class_scope_parser),
+        token(Token::New),
+        opt((
+            token(Token::Paren),
+            list_of_arguments_parser,
+            token(Token::EParen),
+        )),
+    )
+        .map(|(a, b, c)| ClassNew::Args(Box::new((a, b, c))));
+    let _expression_parser = (token(Token::New), expression_parser)
+        .map(|(a, b)| ClassNew::Expression(Box::new((a, b))));
+    alt((_args_parser, _expression_parser)).parse_next(input)
+}
+
+pub fn dynamic_array_new_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<DynamicArrayNew<'s>, VerboseError<'s>> {
+    (
+        token(Token::New),
+        token(Token::Bracket),
+        expression_parser,
+        token(Token::EBracket),
+        opt((token(Token::Paren), expression_parser, token(Token::EParen))),
+    )
+        .map(|(a, b, c, d, e)| DynamicArrayNew(a, b, c, d, e))
+        .parse_next(input)
 }

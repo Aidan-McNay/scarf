@@ -7,7 +7,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, opt};
+use winnow::combinator::{alt, opt, repeat};
 
 pub fn action_block_parser<'s>(
     input: &mut Tokens<'s>,
@@ -20,6 +20,47 @@ pub fn action_block_parser<'s>(
             statement_or_null_parser,
         )
             .map(|(a, b, c)| ActionBlock::Conditional(Box::new((a, b, c)))),
+    ))
+    .parse_next(input)
+}
+
+pub fn seq_block_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<SeqBlock<'s>, VerboseError<'s>> {
+    (
+        token(Token::Begin),
+        opt((token(Token::Colon), block_identifier_parser)),
+        repeat(0.., block_item_declaration_parser),
+        repeat(0.., statement_or_null_parser),
+        token(Token::End),
+        opt((token(Token::Colon), block_identifier_parser)),
+    )
+        .map(|(a, b, c, d, e, f)| SeqBlock(a, b, c, d, e, f))
+        .parse_next(input)
+}
+
+pub fn par_block_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<ParBlock<'s>, VerboseError<'s>> {
+    (
+        token(Token::Fork),
+        opt((token(Token::Colon), block_identifier_parser)),
+        repeat(0.., block_item_declaration_parser),
+        repeat(0.., statement_or_null_parser),
+        join_keyword_parser,
+        opt((token(Token::Colon), block_identifier_parser)),
+    )
+        .map(|(a, b, c, d, e, f)| ParBlock(a, b, c, d, e, f))
+        .parse_next(input)
+}
+
+pub fn join_keyword_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<JoinKeyword<'s>, VerboseError<'s>> {
+    alt((
+        token(Token::Join).map(|a| JoinKeyword::Join(a)),
+        token(Token::JoinAny).map(|a| JoinKeyword::JoinAny(a)),
+        token(Token::JoinNone).map(|a| JoinKeyword::JoinNone(a)),
     ))
     .parse_next(input)
 }

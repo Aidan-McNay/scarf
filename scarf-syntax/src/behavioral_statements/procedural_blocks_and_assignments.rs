@@ -28,17 +28,47 @@ pub struct FinalConstruct<'a>(
     pub FunctionStatement<'a>,
 );
 
-// #[derive(Clone, Debug, PartialEq)]
-// pub enum BlockingAssignment<'a> {
-//     Variable(
-//         Box<(
-//             VariableLvalue<'a>,
-//             Metadata<'a>, // =
-//             DelayOrEventControl<'a>,
-//             Expression<'a>,
-//         )>,
-//     ),
-// }
+#[derive(Clone, Debug, PartialEq)]
+pub enum ImplicitClassHandleOrClassScopeOrPackageScope<'a> {
+    ImplicitClassHandle(
+        Box<(
+            ImplicitClassHandle<'a>,
+            Metadata<'a>, // .
+        )>,
+    ),
+    Class(Box<ClassScope<'a>>),
+    Package(Box<PackageScope<'a>>),
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum BlockingAssignment<'a> {
+    Variable(
+        Box<(
+            VariableLvalue<'a>,
+            Metadata<'a>, // =
+            DelayOrEventControl<'a>,
+            Expression<'a>,
+        )>,
+    ),
+    Dynamic(
+        Box<(
+            NonrangeVariableLvalue<'a>,
+            Metadata<'a>, // =
+            DynamicArrayNew<'a>,
+        )>,
+    ),
+    Class(
+        Box<(
+            ImplicitClassHandleOrClassScopeOrPackageScope<'a>,
+            HierarchicalVariableIdentifier<'a>,
+            Select<'a>,
+            Metadata<'a>, // =
+            ClassNew<'a>,
+        )>,
+    ),
+    Operator(Box<OperatorAssignment<'a>>),
+    IncOrDec(Box<IncOrDecExpression<'a>>),
+}
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct OperatorAssignment<'a>(
@@ -62,6 +92,54 @@ pub enum AssignmentOperator<'a> {
     GtGtEq(Metadata<'a>),
     LtLtLtEq(Metadata<'a>),
     GtGtGtEq(Metadata<'a>),
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct NonblockingAssignment<'a>(
+    pub VariableLvalue<'a>,
+    pub Metadata<'a>, // <=
+    pub Option<DelayOrEventControl<'a>>,
+    pub Expression<'a>,
+);
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum ProceduralContinuousAssignment<'a> {
+    Assign(
+        Box<(
+            Metadata<'a>, // assign
+            VariableAssignment<'a>,
+        )>,
+    ),
+    Deassign(
+        Box<(
+            Metadata<'a>, // deassign
+            VariableLvalue<'a>,
+        )>,
+    ),
+    ForceVar(
+        Box<(
+            Metadata<'a>, // force
+            VariableAssignment<'a>,
+        )>,
+    ),
+    ForceNet(
+        Box<(
+            Metadata<'a>, // force
+            NetAssignment<'a>,
+        )>,
+    ),
+    ReleaseVar(
+        Box<(
+            Metadata<'a>, // release
+            VariableLvalue<'a>,
+        )>,
+    ),
+    ReleaseNet(
+        Box<(
+            Metadata<'a>, // release
+            NetLvalue<'a>,
+        )>,
+    ),
 }
 
 #[derive(Clone, Debug, PartialEq)]
