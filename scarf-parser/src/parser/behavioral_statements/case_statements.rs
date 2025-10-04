@@ -7,7 +7,189 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, repeat};
+use winnow::combinator::{alt, opt, repeat};
+
+enum CaseStatementBody<'a> {
+    Regular((CaseItem<'a>, Vec<CaseItem<'a>>)),
+    Matches(
+        (
+            Metadata<'a>, // matches
+            CasePatternItem<'a>,
+            Vec<CasePatternItem<'a>>,
+        ),
+    ),
+    Inside(
+        (
+            Metadata<'a>, // inside
+            CaseInsideItem<'a>,
+            Vec<CaseInsideItem<'a>>,
+        ),
+    ),
+}
+
+pub fn case_statement_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<CaseStatement<'s>, VerboseError<'s>> {
+    let _case_statement_header_parser = (
+        opt(unique_priority_parser),
+        case_keyword_parser,
+        token(Token::Paren),
+        case_expression_parser,
+        token(Token::EParen),
+    );
+    let _regular_body_parser =
+        (case_item_parser, repeat(0.., case_item_parser))
+            .map(|(a, b)| CaseStatementBody::Regular((a, b)));
+    let _matches_body_parser = (
+        token(Token::Matches),
+        case_pattern_item_parser,
+        repeat(0.., case_pattern_item_parser),
+    )
+        .map(|(a, b, c)| CaseStatementBody::Matches((a, b, c)));
+    let _inside_body_parser = (
+        token(Token::Inside),
+        case_inside_item_parser,
+        repeat(0.., case_inside_item_parser),
+    )
+        .map(|(a, b, c)| CaseStatementBody::Inside((a, b, c)));
+    (
+        _case_statement_header_parser,
+        alt((
+            _regular_body_parser,
+            _matches_body_parser,
+            _inside_body_parser,
+        )),
+        token(Token::Endcase),
+    )
+        .map(|((a, b, c, d, e), body, end)| match body {
+            CaseStatementBody::Regular((first, rest)) => {
+                CaseStatement::Regular(Box::new((
+                    a, b, c, d, e, first, rest, end,
+                )))
+            }
+            CaseStatementBody::Matches((matches, first, rest)) => {
+                CaseStatement::Matches(Box::new((
+                    a, b, c, d, e, matches, first, rest, end,
+                )))
+            }
+            CaseStatementBody::Inside((inside, first, rest)) => {
+                CaseStatement::Inside(Box::new((
+                    a, b, c, d, e, inside, first, rest, end,
+                )))
+            }
+        })
+        .parse_next(input)
+}
+
+pub fn case_expression_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<CaseExpression<'s>, VerboseError<'s>> {
+    expression_parser
+        .map(|a| CaseExpression(a))
+        .parse_next(input)
+}
+
+pub fn case_keyword_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<CaseKeyword<'s>, VerboseError<'s>> {
+    alt((
+        token(Token::Case).map(|a| CaseKeyword::Case(a)),
+        token(Token::Casez).map(|a| CaseKeyword::Casez(a)),
+        token(Token::Casex).map(|a| CaseKeyword::Casex(a)),
+    ))
+    .parse_next(input)
+}
+
+pub fn case_item_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<CaseItem<'s>, VerboseError<'s>> {
+    let _expression_parser = (
+        case_item_expression_parser,
+        repeat(0.., (token(Token::Comma), case_item_expression_parser)),
+        token(Token::Colon),
+        statement_or_null_parser,
+    )
+        .map(|(a, b, c, d)| CaseItem::Expression(Box::new((a, b, c, d))));
+    let _default_parser = (
+        token(Token::Default),
+        opt(token(Token::Colon)),
+        statement_or_null_parser,
+    )
+        .map(|(a, b, c)| CaseItem::Default(Box::new((a, b, c))));
+    alt((_expression_parser, _default_parser)).parse_next(input)
+}
+
+pub fn case_pattern_item_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<CasePatternItem<'s>, VerboseError<'s>> {
+    let _expression_parser = (
+        pattern_parser,
+        opt((token(Token::AmpAmpAmp), expression_parser)),
+        token(Token::Colon),
+        statement_or_null_parser,
+    )
+        .map(|(a, b, c, d)| {
+            CasePatternItem::Expression(Box::new((a, b, c, d)))
+        });
+    let _default_parser = (
+        token(Token::Default),
+        opt(token(Token::Colon)),
+        statement_or_null_parser,
+    )
+        .map(|(a, b, c)| CasePatternItem::Default(Box::new((a, b, c))));
+    alt((_expression_parser, _default_parser)).parse_next(input)
+}
+
+pub fn case_inside_item_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<CaseInsideItem<'s>, VerboseError<'s>> {
+    let _expression_parser = (
+        range_list_parser,
+        token(Token::Colon),
+        statement_or_null_parser,
+    )
+        .map(|(a, b, c)| CaseInsideItem::Expression(Box::new((a, b, c))));
+    let _default_parser = (
+        token(Token::Default),
+        opt(token(Token::Colon)),
+        statement_or_null_parser,
+    )
+        .map(|(a, b, c)| CaseInsideItem::Default(Box::new((a, b, c))));
+    alt((_expression_parser, _default_parser)).parse_next(input)
+}
+
+pub fn case_item_expression_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<CaseItemExpression<'s>, VerboseError<'s>> {
+    expression_parser
+        .map(|a| CaseItemExpression(a))
+        .parse_next(input)
+}
+
+pub fn randcase_statement_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<RandcaseStatement<'s>, VerboseError<'s>> {
+    (
+        token(Token::Randcase),
+        randcase_item_parser,
+        repeat(0.., randcase_item_parser),
+        token(Token::Endcase),
+    )
+        .map(|(a, b, c, d)| RandcaseStatement(a, b, c, d))
+        .parse_next(input)
+}
+
+pub fn randcase_item_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<RandcaseItem<'s>, VerboseError<'s>> {
+    (
+        expression_parser,
+        token(Token::Comma),
+        statement_or_null_parser,
+    )
+        .map(|(a, b, c)| RandcaseItem(a, b, c))
+        .parse_next(input)
+}
 
 pub fn range_list_parser<'s>(
     input: &mut Tokens<'s>,

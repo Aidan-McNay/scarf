@@ -112,7 +112,7 @@ fn amp_amp_amp_operator_binding_power<'s>() -> u8 {
 }
 
 #[inline(always)]
-fn matches_operator_binding_power<'s>() -> u8 {
+pub(crate) fn matches_operator_binding_power<'s>() -> u8 {
     no_assoc(4)
 }
 
@@ -351,7 +351,7 @@ fn pattern_bp_parser<'s>(
     .parse_next(input)
 }
 
-fn gen_pattern_parser<'s>(
+pub(crate) fn gen_pattern_parser<'s>(
     min_bp: u8,
 ) -> impl FnMut(&mut Tokens<'s>) -> ModalResult<Pattern<'s>, VerboseError<'s>> {
     move |input| pattern_bp_parser(input, min_bp)
@@ -599,6 +599,13 @@ fn expression_bp_parser<'s>(
             }
         }
     }
+}
+
+pub(crate) fn gen_expression_parser<'s>(
+    min_bp: u8,
+) -> impl FnMut(&mut Tokens<'s>) -> ModalResult<Expression<'s>, VerboseError<'s>>
+{
+    move |input| expression_bp_parser(input, min_bp)
 }
 
 pub fn expression_parser<'s>(

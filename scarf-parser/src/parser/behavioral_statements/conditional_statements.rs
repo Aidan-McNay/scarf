@@ -7,7 +7,47 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, repeat};
+use winnow::combinator::{alt, opt, repeat};
+
+pub fn conditional_statement_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<ConditionalStatement<'s>, VerboseError<'s>> {
+    (
+        opt(unique_priority_parser),
+        token(Token::If),
+        token(Token::Paren),
+        cond_predicate_parser,
+        token(Token::EParen),
+        statement_or_null_parser,
+        repeat(
+            0..,
+            (
+                token(Token::Else),
+                token(Token::If),
+                token(Token::Paren),
+                cond_predicate_parser,
+                token(Token::EParen),
+                statement_or_null_parser,
+            ),
+        ),
+        opt((token(Token::Else), statement_or_null_parser)),
+    )
+        .map(|(a, b, c, d, e, f, g, h)| {
+            ConditionalStatement(a, b, c, d, e, f, g, h)
+        })
+        .parse_next(input)
+}
+
+pub fn unique_priority_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<UniquePriority<'s>, VerboseError<'s>> {
+    alt((
+        token(Token::Unique).map(|a| UniquePriority::Unique(a)),
+        token(Token::Unique0).map(|a| UniquePriority::Unique0(a)),
+        token(Token::Priority).map(|a| UniquePriority::Priority(a)),
+    ))
+    .parse_next(input)
+}
 
 pub fn cond_predicate_parser<'s>(
     input: &mut Tokens<'s>,
@@ -26,19 +66,30 @@ pub fn cond_predicate_parser<'s>(
 pub fn expression_or_cond_pattern_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<ExpressionOrCondPattern<'s>, VerboseError<'s>> {
-    alt((
-        expression_parser
-            .map(|a| ExpressionOrCondPattern::Expression(Box::new(a))),
-        cond_pattern_parser
-            .map(|a| ExpressionOrCondPattern::CondPattern(Box::new(a))),
-    ))
-    .parse_next(input)
+    (
+        gen_expression_parser(matches_operator_binding_power() + 1),
+        opt((
+            token(Token::Matches),
+            gen_pattern_parser(matches_operator_binding_power() + 1),
+        )),
+    )
+        .map(|(a, b)| match b {
+            Some((metadata, pattern)) => ExpressionOrCondPattern::CondPattern(
+                Box::new(CondPattern(a, metadata, pattern)),
+            ),
+            None => ExpressionOrCondPattern::Expression(Box::new(a)),
+        })
+        .parse_next(input)
 }
 
 pub fn cond_pattern_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<CondPattern<'s>, VerboseError<'s>> {
-    (expression_parser, token(Token::Matches), pattern_parser)
+    (
+        gen_expression_parser(matches_operator_binding_power() + 1),
+        token(Token::Matches),
+        gen_pattern_parser(matches_operator_binding_power() + 1),
+    )
         .map(|(a, b, c)| CondPattern(a, b, c))
         .parse_next(input)
 }
