@@ -33,6 +33,10 @@ fn format(args: &FormatArgs) {
     for path in &args.paths {
         let src = std::fs::read_to_string(&path).unwrap();
         let lexed_src = lex(&src);
+        match dump_lex(&lexed_src, "./scarf_debug/lex.txt") {
+            Ok(_) => (),
+            Err(err) => println!("{}", err),
+        }
         let lex_errors = report_lex_errors(&lexed_src, path);
         if !lex_errors.is_empty() {
             for report in lex_errors {

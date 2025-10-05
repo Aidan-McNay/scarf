@@ -13,6 +13,9 @@ pub use callbacks::*;
 pub use keywords::*;
 pub use logos::{Logos, Span};
 pub use postprocess::postprocess;
+use std::fs::{self, File};
+use std::io::{self, BufWriter, Write};
+use std::path::Path;
 pub use tokens::Token;
 
 pub fn lex<'a>(src: &'a str) -> Vec<(Result<Token<'a>, String>, Span)> {
@@ -61,4 +64,30 @@ pub fn report_lex_errors<'a, 'b>(
         }
     }
     reports
+}
+
+pub fn dump_lex<'a>(
+    lex_stream: &Vec<(Result<Token<'a>, String>, Span)>,
+    file_path: &str,
+) -> io::Result<()> {
+    let file_path = Path::new(file_path);
+    if let Some(parent_dir) = file_path.parent() {
+        fs::create_dir_all(parent_dir)?;
+    }
+    let file = File::create(file_path)?;
+    let mut writer = BufWriter::new(file);
+    for (result, span) in lex_stream {
+        let dump_str = format!(
+            "[{:>2}:{:>2}] {}\n",
+            span.start,
+            span.end,
+            match result {
+                Ok(token) => token,
+                Err(_) => &Token::Error,
+            }
+        );
+        writer.write_all(dump_str.as_bytes())?;
+    }
+    writer.flush()?;
+    Ok(())
 }

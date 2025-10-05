@@ -5,5 +5,8 @@
 
 use crate::*;
 
+pub type ConcurrentAssertionItem<'a> = ();
+pub type ConcurrentAssertionStatement<'a> = ();
+
 pub type SequenceMethodCall<'a> = Metadata<'a>;
 pub type SequenceInstance<'a> = ();

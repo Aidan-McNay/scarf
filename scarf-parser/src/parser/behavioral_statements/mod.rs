@@ -3,6 +3,7 @@
 // =======================================================================
 // Parsing for 1800-2023 A.6
 
+pub mod assertion_statements;
 pub mod case_statements;
 pub mod clocking_block;
 pub mod conditional_statements;
@@ -14,6 +15,7 @@ pub mod procedural_blocks_and_assignments;
 pub mod statements;
 pub mod subroutine_call_statements;
 pub mod timing_control_statements;
+pub use assertion_statements::*;
 pub use case_statements::*;
 pub use clocking_block::*;
 pub use conditional_statements::*;
