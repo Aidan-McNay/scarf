@@ -184,6 +184,16 @@ pub fn struct_union_parser<'s>(
     .parse_next(input)
 }
 
+pub fn data_type_or_void_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<DataTypeOrVoid<'s>, VerboseError<'s>> {
+    alt((
+        data_type_parser.map(|a| DataTypeOrVoid::DataType(Box::new(a))),
+        token(Token::Void).map(|a| DataTypeOrVoid::Void(Box::new(a))),
+    ))
+    .parse_next(input)
+}
+
 pub fn type_reference_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<TypeReference<'s>, VerboseError<'s>> {

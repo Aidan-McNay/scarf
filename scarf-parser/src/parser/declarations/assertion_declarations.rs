@@ -20,6 +20,12 @@ pub fn concurrent_assertion_statement_parser<'s>(
     fail.parse_next(input)
 }
 
+pub fn assertion_item_declaration_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<AssertionItemDeclaration<'s>, VerboseError<'s>> {
+    fail.parse_next(input)
+}
+
 pub fn sequence_method_call_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<SequenceMethodCall<'s>, VerboseError<'s>> {

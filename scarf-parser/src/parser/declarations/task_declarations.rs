@@ -6,7 +6,14 @@
 use crate::*;
 use scarf_syntax::*;
 use winnow::Parser;
+use winnow::combinator::fail;
 use winnow::error::ModalResult;
+
+pub fn tf_port_list_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<TfPortList<'s>, VerboseError<'s>> {
+    fail.parse_next(input)
+}
 
 pub fn final_specifier_parser<'s>(
     input: &mut Tokens<'s>,

@@ -5,6 +5,8 @@
 
 use crate::*;
 
+pub type TfPortList<'a> = ();
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct FinalSpecifier<'a>(
     pub Metadata<'a>, // :

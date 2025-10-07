@@ -113,6 +113,12 @@ pub enum StructUnion<'a> {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+pub enum DataTypeOrVoid<'a> {
+    DataType(Box<DataType<'a>>),
+    Void(Box<Metadata<'a>>),
+}
+
+#[derive(Clone, Debug, PartialEq)]
 pub enum TypeReference<'a> {
     Expression(
         Box<(
