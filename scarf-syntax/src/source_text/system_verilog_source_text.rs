@@ -15,7 +15,7 @@ pub struct SourceText<'a>(
 #[derive(Clone, Debug, PartialEq)]
 pub enum Description<'a> {
     ModuleDeclaration(Box<ModuleDeclaration<'a>>),
-    UdpDeclaration(Box<UdpDeclaration>),
+    UdpDeclaration(Box<UdpDeclaration<'a>>),
     InterfaceDeclaration(Box<InterfaceDeclaration<'a>>),
     ProgramDeclaration(Box<ProgramDeclaration<'a>>),
     PackageDeclaration(Box<PackageDeclaration<'a>>),
@@ -62,11 +62,11 @@ pub struct ModuleAnsiHeader<'a>(
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum ModuleDeclaration<'a> {
-    ModuleDeclarationNonansi(Box<ModuleDeclarationNonansi<'a>>),
-    ModuleDeclarationAnsi(Box<ModuleDeclarationAnsi<'a>>),
-    ModuleDeclarationWildcard(Box<ModuleDeclarationWildcard<'a>>),
-    ModuleDeclarationExternNonansi(Box<ModuleDeclarationExternNonansi<'a>>),
-    ModuleDeclarationExternAnsi(Box<ModuleDeclarationExternAnsi<'a>>),
+    Nonansi(Box<ModuleDeclarationNonansi<'a>>),
+    Ansi(Box<ModuleDeclarationAnsi<'a>>),
+    Wildcard(Box<ModuleDeclarationWildcard<'a>>),
+    ExternNonansi(Box<ModuleDeclarationExternNonansi<'a>>),
+    ExternAnsi(Box<ModuleDeclarationExternAnsi<'a>>),
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -95,7 +95,8 @@ pub struct ModuleDeclarationWildcard<'a>(
     pub ModuleIdentifier<'a>,
     pub Metadata<'a>, // (
     pub Metadata<'a>, // .
-    pub Metadata<'a>, // *)
+    pub Metadata<'a>, // *
+    pub Metadata<'a>, // )
     pub Metadata<'a>, // ;
     pub Option<TimeunitsDeclaration<'a>>,
     pub Vec<ModuleItem>,
@@ -123,13 +124,11 @@ pub enum ModuleKeyword<'a> {
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum InterfaceDeclaration<'a> {
-    InterfaceDeclarationNonansi(Box<InterfaceDeclarationNonansi<'a>>),
-    InterfaceDeclarationAnsi(Box<InterfaceDeclarationAnsi<'a>>),
-    InterfaceDeclarationWildcard(Box<InterfaceDeclarationWildcard<'a>>),
-    InterfaceDeclarationExternNonansi(
-        Box<InterfaceDeclarationExternNonansi<'a>>,
-    ),
-    InterfaceDeclarationExternAnsi(Box<InterfaceDeclarationExternAnsi<'a>>),
+    Nonansi(Box<InterfaceDeclarationNonansi<'a>>),
+    Ansi(Box<InterfaceDeclarationAnsi<'a>>),
+    Wildcard(Box<InterfaceDeclarationWildcard<'a>>),
+    ExternNonansi(Box<InterfaceDeclarationExternNonansi<'a>>),
+    ExternAnsi(Box<InterfaceDeclarationExternAnsi<'a>>),
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -157,7 +156,8 @@ pub struct InterfaceDeclarationWildcard<'a>(
     pub InterfaceIdentifier<'a>,
     pub Metadata<'a>, // (
     pub Metadata<'a>, // .
-    pub Metadata<'a>, // *)
+    pub Metadata<'a>, // *
+    pub Metadata<'a>, // )
     pub Metadata<'a>, // ;
     pub Option<TimeunitsDeclaration<'a>>,
     pub Vec<InterfaceItem>,
@@ -203,11 +203,11 @@ pub struct InterfaceAnsiHeader<'a>(
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum ProgramDeclaration<'a> {
-    ProgramDeclarationNonansi(Box<ProgramDeclarationNonansi<'a>>),
-    ProgramDeclarationAnsi(Box<ProgramDeclarationAnsi<'a>>),
-    ProgramDeclarationWildcard(Box<ProgramDeclarationWildcard<'a>>),
-    ProgramDeclarationExternNonansi(Box<ProgramDeclarationExternNonansi<'a>>),
-    ProgramDeclarationExternAnsi(Box<ProgramDeclarationExternAnsi<'a>>),
+    Nonansi(Box<ProgramDeclarationNonansi<'a>>),
+    Ansi(Box<ProgramDeclarationAnsi<'a>>),
+    Wildcard(Box<ProgramDeclarationWildcard<'a>>),
+    ExternNonansi(Box<ProgramDeclarationExternNonansi<'a>>),
+    ExternAnsi(Box<ProgramDeclarationExternAnsi<'a>>),
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -235,7 +235,8 @@ pub struct ProgramDeclarationWildcard<'a>(
     pub ProgramIdentifier<'a>,
     pub Metadata<'a>, // (
     pub Metadata<'a>, // .
-    pub Metadata<'a>, // *)
+    pub Metadata<'a>, // *
+    pub Metadata<'a>, // )
     pub Metadata<'a>, // ;
     pub Option<TimeunitsDeclaration<'a>>,
     pub Vec<ProgramItem>,

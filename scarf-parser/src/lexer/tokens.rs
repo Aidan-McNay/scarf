@@ -724,10 +724,6 @@ pub enum Token<'a> {
     QuoteQuoteQuote,
     #[token(r"\")]
     Bslash,
-    #[token("(*")]
-    ParenStar,
-    #[token("*)")]
-    StarEparen,
     // Other Language Grammar
     #[token("std")]
     Std,
@@ -1179,8 +1175,6 @@ impl<'a> Token<'a> {
             Token::Quote => r#"""#,
             Token::QuoteQuoteQuote => r#"""""#,
             Token::Bslash => r"\",
-            Token::ParenStar => "(*",
-            Token::StarEparen => "*)",
             Token::Std => "std",
             Token::PathpulseDollar => "PATHPULSE$",
             Token::Option => "option",

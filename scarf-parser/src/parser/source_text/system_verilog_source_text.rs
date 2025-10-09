@@ -67,17 +67,15 @@ pub fn module_declaration_parser<'s>(
 ) -> ModalResult<ModuleDeclaration<'s>, VerboseError<'s>> {
     alt((
         module_declaration_nonansi_parser
-            .map(|a| ModuleDeclaration::ModuleDeclarationNonansi(Box::new(a))),
+            .map(|a| ModuleDeclaration::Nonansi(Box::new(a))),
         module_declaration_ansi_parser
-            .map(|a| ModuleDeclaration::ModuleDeclarationAnsi(Box::new(a))),
+            .map(|a| ModuleDeclaration::Ansi(Box::new(a))),
         module_declaration_wildcard_parser
-            .map(|a| ModuleDeclaration::ModuleDeclarationWildcard(Box::new(a))),
-        module_declaration_extern_nonansi_parser.map(|a| {
-            ModuleDeclaration::ModuleDeclarationExternNonansi(Box::new(a))
-        }),
-        module_declaration_extern_ansi_parser.map(|a| {
-            ModuleDeclaration::ModuleDeclarationExternAnsi(Box::new(a))
-        }),
+            .map(|a| ModuleDeclaration::Wildcard(Box::new(a))),
+        module_declaration_extern_nonansi_parser
+            .map(|a| ModuleDeclaration::ExternNonansi(Box::new(a))),
+        module_declaration_extern_ansi_parser
+            .map(|a| ModuleDeclaration::ExternAnsi(Box::new(a))),
     ))
     .parse_next(input)
 }
@@ -158,15 +156,16 @@ pub fn module_declaration_wildcard_parser<'s>(
         module_identifier_parser,
         token(Token::Paren),
         token(Token::Period),
-        token(Token::StarEparen),
+        token(Token::Star),
+        token(Token::EParen),
         token(Token::SColon),
         opt(timeunits_declaration_parser),
         repeat(0.., module_item_parser),
         token(Token::Endmodule),
         opt((token(Token::Colon), module_identifier_parser)),
     )
-        .map(|(a, b, c, d, e, f, g, h, i, j, k, l)| {
-            ModuleDeclarationWildcard(a, b, c, d, e, f, g, h, i, j, k, l)
+        .map(|(a, b, c, d, e, f, g, h, i, j, k, l, m)| {
+            ModuleDeclarationWildcard(a, b, c, d, e, f, g, h, i, j, k, l, m)
         })
         .parse_next(input)
 }
@@ -201,21 +200,16 @@ pub fn interface_declaration_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<InterfaceDeclaration<'s>, VerboseError<'s>> {
     alt((
-        interface_declaration_nonansi_parser.map(|a| {
-            InterfaceDeclaration::InterfaceDeclarationNonansi(Box::new(a))
-        }),
-        interface_declaration_ansi_parser.map(|a| {
-            InterfaceDeclaration::InterfaceDeclarationAnsi(Box::new(a))
-        }),
-        interface_declaration_wildcard_parser.map(|a| {
-            InterfaceDeclaration::InterfaceDeclarationWildcard(Box::new(a))
-        }),
-        interface_declaration_extern_nonansi_parser.map(|a| {
-            InterfaceDeclaration::InterfaceDeclarationExternNonansi(Box::new(a))
-        }),
-        interface_declaration_extern_ansi_parser.map(|a| {
-            InterfaceDeclaration::InterfaceDeclarationExternAnsi(Box::new(a))
-        }),
+        interface_declaration_nonansi_parser
+            .map(|a| InterfaceDeclaration::Nonansi(Box::new(a))),
+        interface_declaration_ansi_parser
+            .map(|a| InterfaceDeclaration::Ansi(Box::new(a))),
+        interface_declaration_wildcard_parser
+            .map(|a| InterfaceDeclaration::Wildcard(Box::new(a))),
+        interface_declaration_extern_nonansi_parser
+            .map(|a| InterfaceDeclaration::ExternNonansi(Box::new(a))),
+        interface_declaration_extern_ansi_parser
+            .map(|a| InterfaceDeclaration::ExternAnsi(Box::new(a))),
     ))
     .parse_next(input)
 }
@@ -257,15 +251,16 @@ pub fn interface_declaration_wildcard_parser<'s>(
         interface_identifier_parser,
         token(Token::Paren),
         token(Token::Period),
-        token(Token::StarEparen),
+        token(Token::Star),
+        token(Token::EParen),
         token(Token::SColon),
         opt(timeunits_declaration_parser),
         repeat(0.., interface_item_parser),
         token(Token::Endinterface),
         opt((token(Token::Colon), interface_identifier_parser)),
     )
-        .map(|(a, b, c, d, e, f, g, h, i, j, k)| {
-            InterfaceDeclarationWildcard(a, b, c, d, e, f, g, h, i, j, k)
+        .map(|(a, b, c, d, e, f, g, h, i, j, k, l)| {
+            InterfaceDeclarationWildcard(a, b, c, d, e, f, g, h, i, j, k, l)
         })
         .parse_next(input)
 }
@@ -328,20 +323,16 @@ pub fn program_declaration_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<ProgramDeclaration<'s>, VerboseError<'s>> {
     alt((
-        program_declaration_nonansi_parser.map(|a| {
-            ProgramDeclaration::ProgramDeclarationNonansi(Box::new(a))
-        }),
+        program_declaration_nonansi_parser
+            .map(|a| ProgramDeclaration::Nonansi(Box::new(a))),
         program_declaration_ansi_parser
-            .map(|a| ProgramDeclaration::ProgramDeclarationAnsi(Box::new(a))),
-        program_declaration_wildcard_parser.map(|a| {
-            ProgramDeclaration::ProgramDeclarationWildcard(Box::new(a))
-        }),
-        program_declaration_extern_nonansi_parser.map(|a| {
-            ProgramDeclaration::ProgramDeclarationExternNonansi(Box::new(a))
-        }),
-        program_declaration_extern_ansi_parser.map(|a| {
-            ProgramDeclaration::ProgramDeclarationExternAnsi(Box::new(a))
-        }),
+            .map(|a| ProgramDeclaration::Ansi(Box::new(a))),
+        program_declaration_wildcard_parser
+            .map(|a| ProgramDeclaration::Wildcard(Box::new(a))),
+        program_declaration_extern_nonansi_parser
+            .map(|a| ProgramDeclaration::ExternNonansi(Box::new(a))),
+        program_declaration_extern_ansi_parser
+            .map(|a| ProgramDeclaration::ExternAnsi(Box::new(a))),
     ))
     .parse_next(input)
 }
@@ -383,15 +374,16 @@ pub fn program_declaration_wildcard_parser<'s>(
         program_identifier_parser,
         token(Token::Paren),
         token(Token::Period),
-        token(Token::StarEparen),
+        token(Token::Star),
+        token(Token::EParen),
         token(Token::SColon),
         opt(timeunits_declaration_parser),
         repeat(0.., program_item_parser),
         token(Token::Endprogram),
         opt((token(Token::Colon), program_identifier_parser)),
     )
-        .map(|(a, b, c, d, e, f, g, h, i, j, k)| {
-            ProgramDeclarationWildcard(a, b, c, d, e, f, g, h, i, j, k)
+        .map(|(a, b, c, d, e, f, g, h, i, j, k, l)| {
+            ProgramDeclarationWildcard(a, b, c, d, e, f, g, h, i, j, k, l)
         })
         .parse_next(input)
 }

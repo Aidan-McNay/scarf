@@ -80,6 +80,17 @@ pub fn list_of_port_identifiers_parser<'s>(
         .parse_next(input)
 }
 
+pub fn list_of_udp_port_identifiers_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<ListOfUdpPortIdentifiers<'s>, VerboseError<'s>> {
+    (
+        port_identifier_parser,
+        repeat(0.., (token(Token::Comma), port_identifier_parser)),
+    )
+        .map(|(a, b)| ListOfUdpPortIdentifiers(a, b))
+        .parse_next(input)
+}
+
 pub fn list_of_specparam_assignments_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<ListOfSpecparamAssignments<'s>, VerboseError<'s>> {

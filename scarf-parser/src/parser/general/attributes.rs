@@ -13,12 +13,14 @@ pub fn attribute_instance_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<AttributeInstance<'s>, VerboseError<'s>> {
     (
-        token(Token::ParenStar),
+        token(Token::Paren),
+        token(Token::Star),
         attr_spec_parser,
         repeat(0.., (token(Token::Comma), attr_spec_parser)),
-        token(Token::StarEparen),
+        token(Token::Star),
+        token(Token::EParen),
     )
-        .map(|(a, b, c, d)| AttributeInstance(a, b, c, d))
+        .map(|(a, b, c, d, e, f)| AttributeInstance(a, b, c, d, e, f))
         .parse_next(input)
 }
 

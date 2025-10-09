@@ -46,6 +46,15 @@ pub struct ListOfPortIdentifiers<'a>(
 );
 
 #[derive(Clone, Debug, PartialEq)]
+pub struct ListOfUdpPortIdentifiers<'a>(
+    pub PortIdentifier<'a>,
+    pub  Vec<(
+        Metadata<'a>, // ,
+        PortIdentifier<'a>,
+    )>,
+);
+
+#[derive(Clone, Debug, PartialEq)]
 pub struct ListOfSpecparamAssignments<'a>(
     pub SpecparamAssignment<'a>,
     pub  Vec<(
