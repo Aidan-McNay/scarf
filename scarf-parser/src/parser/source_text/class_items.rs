@@ -19,3 +19,9 @@ pub fn interface_class_item_parser<'s>(
 ) -> ModalResult<InterfaceClassItem, VerboseError<'s>> {
     fail.parse_next(input)
 }
+
+pub fn method_prototype_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<MethodPrototype<'s>, VerboseError<'s>> {
+    fail.parse_next(input)
+}
