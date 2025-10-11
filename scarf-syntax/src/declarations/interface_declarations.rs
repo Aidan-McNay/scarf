@@ -61,7 +61,7 @@ pub enum ModportSimplePort<'a> {
     Name(Box<PortIdentifier<'a>>),
     Expression(
         Box<(
-            Metadata<'a>, // ,
+            Metadata<'a>, // .
             PortIdentifier<'a>,
             Metadata<'a>, // (
             Option<Expression<'a>>,

@@ -44,26 +44,9 @@ pub fn conditional_expression_parser<'s>(
         .parse_next(input)
 }
 
-enum BinaryOrTernaryOp<'a> {
+enum ConstantExpressionPrattOp<'a> {
     Binary(BinaryOperator<'a>),
     Ternary(Metadata<'a>),
-}
-
-#[inline(always)]
-fn left_assoc(bp: u8) -> (u8, u8) {
-    let scaled_bp = bp * 2;
-    (scaled_bp - 1, scaled_bp)
-}
-
-#[inline(always)]
-fn right_assoc(bp: u8) -> (u8, u8) {
-    let scaled_bp = bp * 2;
-    (scaled_bp, scaled_bp - 1)
-}
-
-#[inline(always)]
-fn no_assoc(bp: u8) -> u8 {
-    bp * 2
 }
 
 #[inline]
@@ -143,26 +126,26 @@ fn constant_expression_bp_parser<'s>(
                 if l_bp < min_bp {
                     return None;
                 }
-                Some((BinaryOrTernaryOp::Binary(a), r_bp))
+                Some((ConstantExpressionPrattOp::Binary(a), r_bp))
             }),
             token(Token::Quest).verify_map(|a| {
                 let (l_bp, r_bp) = ternary_operator_binding_power();
                 if l_bp < min_bp {
                     return None;
                 }
-                Some((BinaryOrTernaryOp::Ternary(a), r_bp))
+                Some((ConstantExpressionPrattOp::Ternary(a), r_bp))
             }),
         ))
         .parse_next(input) else {
             return Ok(lhs);
         };
         lhs = match op {
-            BinaryOrTernaryOp::Binary(binop) => {
+            ConstantExpressionPrattOp::Binary(binop) => {
                 let attrs = attribute_instance_vec_parser(input)?;
                 let rhs = constant_expression_bp_parser(input, r_bp)?;
                 ConstantExpression::Binary(Box::new((lhs, binop, attrs, rhs)))
             }
-            BinaryOrTernaryOp::Ternary(quest) => {
+            ConstantExpressionPrattOp::Ternary(quest) => {
                 let attrs = attribute_instance_vec_parser(input)?;
                 let mhs = constant_expression_bp_parser(input, 0)?;
                 let colon = token(Token::Colon)(input)?;
@@ -388,7 +371,7 @@ fn basic_expression_parser<'s>(
     .parse_next(input)
 }
 
-enum BinaryTernaryMatchesAmpAmpAmpInsideOp<'a> {
+enum ExpressionPrattOp<'a> {
     Binary(BinaryOperator<'a>),
     Ternary(Metadata<'a>),
     Matches(Metadata<'a>),
@@ -408,47 +391,47 @@ fn expression_bp_parser<'s>(
                 if l_bp < min_bp {
                     return None;
                 }
-                Some((BinaryTernaryMatchesAmpAmpAmpInsideOp::Binary(a), r_bp))
+                Some((ExpressionPrattOp::Binary(a), r_bp))
             }),
             token(Token::Quest).verify_map(|a| {
                 let (l_bp, r_bp) = ternary_operator_binding_power();
                 if l_bp < min_bp {
                     return None;
                 }
-                Some((BinaryTernaryMatchesAmpAmpAmpInsideOp::Ternary(a), r_bp))
+                Some((ExpressionPrattOp::Ternary(a), r_bp))
             }),
             token(Token::Matches).verify_map(|a| {
                 let bp = matches_operator_binding_power();
                 if bp < min_bp {
                     return None;
                 }
-                Some((BinaryTernaryMatchesAmpAmpAmpInsideOp::Matches(a), bp))
+                Some((ExpressionPrattOp::Matches(a), bp))
             }),
             token(Token::AmpAmpAmp).verify_map(|a| {
                 let bp = amp_amp_amp_operator_binding_power();
                 if bp < min_bp {
                     return None;
                 }
-                Some((BinaryTernaryMatchesAmpAmpAmpInsideOp::AmpAmpAmp(a), bp))
+                Some((ExpressionPrattOp::AmpAmpAmp(a), bp))
             }),
             token(Token::Inside).verify_map(|a| {
                 let (l_bp, r_bp) = inside_operator_binding_power();
                 if l_bp < min_bp {
                     return None;
                 }
-                Some((BinaryTernaryMatchesAmpAmpAmpInsideOp::Inside(a), r_bp))
+                Some((ExpressionPrattOp::Inside(a), r_bp))
             }),
         ))
         .parse_next(input) else {
             return Ok(lhs);
         };
         lhs = match op {
-            BinaryTernaryMatchesAmpAmpAmpInsideOp::Binary(binop) => {
+            ExpressionPrattOp::Binary(binop) => {
                 let attrs = attribute_instance_vec_parser(input)?;
                 let rhs = expression_bp_parser(input, r_bp)?;
                 Expression::Binary(Box::new((lhs, binop, attrs, rhs)))
             }
-            BinaryTernaryMatchesAmpAmpAmpInsideOp::Ternary(quest) => {
+            ExpressionPrattOp::Ternary(quest) => {
                 let attrs = attribute_instance_vec_parser(input)?;
                 let mhs = expression_bp_parser(input, 0)?;
                 let colon = token(Token::Colon)(input)?;
@@ -467,7 +450,7 @@ fn expression_bp_parser<'s>(
                     ),
                 ))
             }
-            BinaryTernaryMatchesAmpAmpAmpInsideOp::Matches(matches) => {
+            ExpressionPrattOp::Matches(matches) => {
                 let pattern = pattern_bp_parser(input, r_bp + 1)?;
                 let cond_pattern = CondPattern(lhs, matches, pattern);
                 let mut cond_predicate: Vec<(
@@ -532,9 +515,7 @@ fn expression_bp_parser<'s>(
                     ),
                 ))
             }
-            BinaryTernaryMatchesAmpAmpAmpInsideOp::AmpAmpAmp(
-                mut amp_amp_amp,
-            ) => {
+            ExpressionPrattOp::AmpAmpAmp(mut amp_amp_amp) => {
                 let mut cond_predicate: Vec<(
                     Metadata<'s>,
                     ExpressionOrCondPattern<'s>,
@@ -589,7 +570,7 @@ fn expression_bp_parser<'s>(
                     ),
                 ))
             }
-            BinaryTernaryMatchesAmpAmpAmpInsideOp::Inside(inside) => {
+            ExpressionPrattOp::Inside(inside) => {
                 let brace = token(Token::Brace)(input)?;
                 let range_list = range_list_parser(input)?;
                 let ebrace = token(Token::EBrace)(input)?;

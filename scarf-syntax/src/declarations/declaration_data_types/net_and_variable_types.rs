@@ -85,6 +85,7 @@ pub enum NetType<'a> {
 
 pub type NetPortType<'a> = ();
 pub type VariablePortType<'a> = ();
+pub type VarDataType<'a> = ();
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Signing<'a> {

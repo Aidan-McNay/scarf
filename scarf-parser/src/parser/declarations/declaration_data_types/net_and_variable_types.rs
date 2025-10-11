@@ -146,6 +146,12 @@ pub fn variable_port_type_parser<'s>(
     fail.parse_next(input)
 }
 
+pub fn var_data_type_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<VarDataType<'s>, VerboseError<'s>> {
+    fail.parse_next(input)
+}
+
 pub fn signing_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<Signing<'s>, VerboseError<'s>> {
