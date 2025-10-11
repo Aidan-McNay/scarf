@@ -199,5 +199,5 @@ pub fn rs_case_item_parser<'s>(
         token(Token::SColon),
     )
         .map(|(a, b, c, d)| RsCaseItem::Default(Box::new((a, b, c, d))));
-    alt((_expression_parser, _default_parser)).parse_next(input)
+    alt((_default_parser, _expression_parser)).parse_next(input)
 }

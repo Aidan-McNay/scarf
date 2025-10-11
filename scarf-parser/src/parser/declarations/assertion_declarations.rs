@@ -8,6 +8,7 @@ use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
 use winnow::combinator::{alt, fail, opt, repeat};
+use winnow::stream::Stream;
 
 pub fn concurrent_assertion_item_parser<'s>(
     input: &mut Tokens<'s>,
@@ -25,6 +26,152 @@ pub fn assertion_item_declaration_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<AssertionItemDeclaration<'s>, VerboseError<'s>> {
     fail.parse_next(input)
+}
+
+#[inline(always)]
+fn not_nexttime_binding_power<'s>() -> u8 {
+    no_assoc(7)
+}
+
+#[inline(always)]
+fn and_binding_power<'s>() -> (u8, u8) {
+    left_assoc(6)
+}
+
+#[inline(always)]
+fn or_binding_power<'s>() -> (u8, u8) {
+    left_assoc(5)
+}
+
+#[inline(always)]
+fn iff_binding_power<'s>() -> (u8, u8) {
+    right_assoc(4)
+}
+
+#[inline(always)]
+fn until_binding_power<'s>() -> (u8, u8) {
+    right_assoc(3)
+}
+
+pub fn property_expr_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<PropertyExpr<'s>, VerboseError<'s>> {
+    fail.parse_next(input)
+}
+
+pub fn property_case_item_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<PropertyCaseItem<'s>, VerboseError<'s>> {
+    let _expr_parser = (
+        expression_or_dist_parser,
+        repeat(0.., (token(Token::Comma), expression_or_dist_parser)),
+        token(Token::Colon),
+        property_expr_parser,
+        token(Token::SColon),
+    )
+        .map(|(a, b, c, d, e)| {
+            PropertyCaseItem::Expr(Box::new((a, b, c, d, e)))
+        });
+    let _default_parser = (
+        token(Token::Default),
+        opt(token(Token::Colon)),
+        property_expr_parser,
+        token(Token::SColon),
+    )
+        .map(|(a, b, c, d)| PropertyCaseItem::Default(Box::new((a, b, c, d))));
+    alt((_default_parser, _expr_parser)).parse_next(input)
+}
+
+pub fn sequence_declaration_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<SequenceDeclaration<'s>, VerboseError<'s>> {
+    (
+        token(Token::Sequence),
+        sequence_identifier_parser,
+        opt((
+            token(Token::Paren),
+            opt(sequence_port_list_parser),
+            token(Token::EParen),
+        )),
+        token(Token::SColon),
+        repeat(0.., assertion_variable_declaration_parser),
+        sequence_expr_parser,
+        opt(token(Token::SColon)),
+        token(Token::Endsequence),
+        opt((token(Token::Colon), sequence_identifier_parser)),
+    )
+        .map(|(a, b, c, d, e, f, g, h, i)| {
+            SequenceDeclaration(a, b, c, d, e, f, g, h, i)
+        })
+        .parse_next(input)
+}
+
+pub fn sequence_port_list_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<SequencePortList<'s>, VerboseError<'s>> {
+    (
+        sequence_port_item_parser,
+        repeat(0.., (token(Token::Comma), sequence_port_item_parser)),
+    )
+        .map(|(a, b)| SequencePortList(a, b))
+        .parse_next(input)
+}
+
+pub fn sequence_port_item_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<SequencePortItem<'s>, VerboseError<'s>> {
+    (
+        attribute_instance_vec_parser,
+        opt((
+            token(Token::Local),
+            opt(sequence_lvar_port_direction_parser),
+        )),
+        sequence_formal_type_parser,
+        formal_port_identifier_parser,
+        repeat(0.., variable_dimension_parser),
+        opt((token(Token::Eq), sequence_actual_arg_parser)),
+    )
+        .map(|(a, b, c, d, e, f)| SequencePortItem(a, b, c, d, e, f))
+        .parse_next(input)
+}
+
+pub fn sequence_lvar_port_direction_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<SequenceLvarPortDirection<'s>, VerboseError<'s>> {
+    alt((
+        token(Token::Input).map(|a| SequenceLvarPortDirection::Input(a)),
+        token(Token::Inout).map(|a| SequenceLvarPortDirection::Inout(a)),
+        token(Token::Output).map(|a| SequenceLvarPortDirection::Output(a)),
+    ))
+    .parse_next(input)
+}
+
+pub fn sequence_formal_type_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<SequenceFormalType<'s>, VerboseError<'s>> {
+    alt((
+        data_type_or_implicit_parser
+            .map(|a| SequenceFormalType::DataTypeOrImplicit(Box::new(a))),
+        token(Token::Sequence)
+            .map(|a| SequenceFormalType::Sequence(Box::new(a))),
+        token(Token::Untyped).map(|a| SequenceFormalType::Untyped(Box::new(a))),
+    ))
+    .parse_next(input)
+}
+
+#[inline(always)]
+fn throughout_binding_power<'s>() -> u8 {
+    no_assoc(10)
+}
+
+#[inline(always)]
+fn within_binding_power<'s>() -> (u8, u8) {
+    left_assoc(9)
+}
+
+#[inline(always)]
+fn intersect_binding_power<'s>() -> (u8, u8) {
+    left_assoc(8)
 }
 
 fn basic_sequence_expr_parser<'s>(
@@ -76,34 +223,10 @@ enum SequencePrattOp<'a> {
     Or(Metadata<'a>),
 }
 
-#[inline(always)]
-fn throughout_binding_power<'s>() -> u8 {
-    no_assoc(10)
-}
-
-#[inline(always)]
-fn within_binding_power<'s>() -> (u8, u8) {
-    left_assoc(9)
-}
-
-#[inline(always)]
-fn intersect_binding_power<'s>() -> (u8, u8) {
-    left_assoc(8)
-}
-
-#[inline(always)]
-fn and_binding_power<'s>() -> (u8, u8) {
-    left_assoc(6)
-}
-
-#[inline(always)]
-fn or_binding_power<'s>() -> (u8, u8) {
-    left_assoc(5)
-}
-
 fn sequence_expr_bp_parser<'s>(
     input: &mut Tokens<'s>,
     min_bp: u8,
+    must_consume_and_or: bool,
 ) -> ModalResult<SequenceExpr<'s>, VerboseError<'s>> {
     let mut lhs = alt((
         basic_sequence_expr_parser,
@@ -111,12 +234,17 @@ fn sequence_expr_bp_parser<'s>(
             expression_or_dist_parser,
             token(Token::Throughout),
             |input: &mut Tokens<'s>| {
-                sequence_expr_bp_parser(input, throughout_binding_power())
+                sequence_expr_bp_parser(
+                    input,
+                    throughout_binding_power(),
+                    must_consume_and_or,
+                )
             },
         )
             .map(|(a, b, c)| SequenceExpr::Throughout(Box::new((a, b, c)))),
     ))
     .parse_next(input)?;
+    let mut checkpoint = input.checkpoint();
     loop {
         let Ok((op, r_bp)) = alt((
             cycle_delay_range_parser.map(|a| {
@@ -170,29 +298,52 @@ fn sequence_expr_bp_parser<'s>(
                 )))
             }
             SequencePrattOp::Within(within) => {
-                let rhs = sequence_expr_bp_parser(input, r_bp)?;
+                let rhs =
+                    sequence_expr_bp_parser(input, r_bp, must_consume_and_or)?;
                 SequenceExpr::Within(Box::new((lhs, within, rhs)))
             }
             SequencePrattOp::Intersect(intersect) => {
-                let rhs = sequence_expr_bp_parser(input, r_bp)?;
+                let rhs =
+                    sequence_expr_bp_parser(input, r_bp, must_consume_and_or)?;
                 SequenceExpr::Intersect(Box::new((lhs, intersect, rhs)))
             }
             SequencePrattOp::And(and) => {
-                let rhs = sequence_expr_bp_parser(input, r_bp)?;
-                SequenceExpr::And(Box::new((lhs, and, rhs)))
+                match sequence_expr_bp_parser(input, r_bp, must_consume_and_or)
+                {
+                    Ok(rhs) => SequenceExpr::And(Box::new((lhs, and, rhs))),
+                    Err(err) => {
+                        if must_consume_and_or {
+                            return Err(err);
+                        } else {
+                            input.reset(&checkpoint);
+                            lhs
+                        }
+                    }
+                }
             }
             SequencePrattOp::Or(or) => {
-                let rhs = sequence_expr_bp_parser(input, r_bp)?;
-                SequenceExpr::Or(Box::new((lhs, or, rhs)))
+                match sequence_expr_bp_parser(input, r_bp, must_consume_and_or)
+                {
+                    Ok(rhs) => SequenceExpr::Or(Box::new((lhs, or, rhs))),
+                    Err(err) => {
+                        if must_consume_and_or {
+                            return Err(err);
+                        } else {
+                            input.reset(&checkpoint);
+                            lhs
+                        }
+                    }
+                }
             }
-        }
+        };
+        checkpoint = input.checkpoint();
     }
 }
 
 pub fn sequence_expr_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<SequenceExpr<'s>, VerboseError<'s>> {
-    sequence_expr_bp_parser(input, 0)
+    sequence_expr_bp_parser(input, 0, true)
 }
 
 pub fn cycle_delay_range_parser<'s>(

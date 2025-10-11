@@ -116,7 +116,7 @@ pub fn case_item_parser<'s>(
         statement_or_null_parser,
     )
         .map(|(a, b, c)| CaseItem::Default(Box::new((a, b, c))));
-    alt((_expression_parser, _default_parser)).parse_next(input)
+    alt((_default_parser, _expression_parser)).parse_next(input)
 }
 
 pub fn case_pattern_item_parser<'s>(
@@ -137,7 +137,7 @@ pub fn case_pattern_item_parser<'s>(
         statement_or_null_parser,
     )
         .map(|(a, b, c)| CasePatternItem::Default(Box::new((a, b, c))));
-    alt((_expression_parser, _default_parser)).parse_next(input)
+    alt((_default_parser, _expression_parser)).parse_next(input)
 }
 
 pub fn case_inside_item_parser<'s>(
@@ -155,7 +155,7 @@ pub fn case_inside_item_parser<'s>(
         statement_or_null_parser,
     )
         .map(|(a, b, c)| CaseInsideItem::Default(Box::new((a, b, c))));
-    alt((_expression_parser, _default_parser)).parse_next(input)
+    alt((_default_parser, _expression_parser)).parse_next(input)
 }
 
 pub fn case_item_expression_parser<'s>(
