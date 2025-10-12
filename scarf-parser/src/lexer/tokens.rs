@@ -718,6 +718,10 @@ pub enum Token<'a> {
     EqGt,
     #[token("*>")]
     StarGt,
+    #[token("|->")]
+    PipeMinusGt,
+    #[token("|=>")]
+    PipeEqGt,
     #[token(r#"""#)]
     Quote,
     #[token(r#"""""#)]
@@ -1172,6 +1176,8 @@ impl<'a> Token<'a> {
             Token::PoundEqPound => "#=#",
             Token::EqGt => "=>",
             Token::StarGt => "*>",
+            Token::PipeMinusGt => "|->",
+            Token::PipeEqGt => "|=>",
             Token::Quote => r#"""#,
             Token::QuoteQuoteQuote => r#"""""#,
             Token::Bslash => r"\",

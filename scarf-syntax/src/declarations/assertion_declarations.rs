@@ -273,14 +273,14 @@ pub enum PropertyExpr<'a> {
     ),
     OverlapImpl(
         Box<(
-            PropertyExpr<'a>,
+            SequenceExpr<'a>,
             Metadata<'a>, // |->
             PropertyExpr<'a>,
         )>,
     ),
     NonoverlapImpl(
         Box<(
-            PropertyExpr<'a>,
+            SequenceExpr<'a>,
             Metadata<'a>, // |=>
             PropertyExpr<'a>,
         )>,
@@ -452,7 +452,7 @@ pub enum PropertyExpr<'a> {
             PropertyExpr<'a>,
         )>,
     ),
-    RejecttOn(
+    RejectOn(
         Box<(
             Metadata<'a>, // reject_on
             Metadata<'a>, // (
@@ -470,7 +470,7 @@ pub enum PropertyExpr<'a> {
             PropertyExpr<'a>,
         )>,
     ),
-    SyncRejecttOn(
+    SyncRejectOn(
         Box<(
             Metadata<'a>, // sync_reject_on
             Metadata<'a>, // (
