@@ -227,7 +227,6 @@ pub enum BinsOrOptions<'a> {
                 Metadata<'a>, // ]
             )>,
             Metadata<'a>, // =
-            Metadata<'a>, // {
             CoverPointIdentifier<'a>,
             Metadata<'a>, // with
             Metadata<'a>, // (
@@ -435,7 +434,7 @@ pub enum CrossBody<'a> {
             Metadata<'a>, // }
         )>,
     ),
-    Mull(Box<Metadata<'a>>),
+    Null(Box<Metadata<'a>>),
 }
 
 #[derive(Clone, Debug, PartialEq)]

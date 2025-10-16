@@ -9,6 +9,607 @@ use winnow::ModalResult;
 use winnow::Parser;
 use winnow::combinator::{alt, opt, repeat};
 
+pub fn covergroup_declaration_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<CovergroupDeclaration<'s>, VerboseError<'s>> {
+    let _initial_parser = (
+        token(Token::Covergroup),
+        covergroup_identifier_parser,
+        opt((
+            token(Token::Paren),
+            opt(tf_port_list_parser),
+            token(Token::EParen),
+        )),
+        opt(coverage_event_parser),
+        token(Token::SColon),
+        repeat(0.., coverage_spec_or_option_parser),
+        token(Token::Endgroup),
+        opt((token(Token::Colon), covergroup_identifier_parser)),
+    )
+        .map(|(a, b, c, d, e, f, g, h)| {
+            CovergroupDeclaration::Initial(Box::new((a, b, c, d, e, f, g, h)))
+        });
+    let _extends_parser = (
+        token(Token::Covergroup),
+        token(Token::Extends),
+        covergroup_identifier_parser,
+        token(Token::SColon),
+        repeat(0.., coverage_spec_or_option_parser),
+        token(Token::Endgroup),
+        opt((token(Token::Colon), covergroup_identifier_parser)),
+    )
+        .map(|(a, b, c, d, e, f, g)| {
+            CovergroupDeclaration::Extends(Box::new((a, b, c, d, e, f, g)))
+        });
+    alt((_initial_parser, _extends_parser)).parse_next(input)
+}
+
+pub fn coverage_spec_or_option_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<CoverageSpecOrOption<'s>, VerboseError<'s>> {
+    alt((
+        (attribute_instance_vec_parser, coverage_spec_parser)
+            .map(|(a, b)| CoverageSpecOrOption::Spec(Box::new((a, b)))),
+        (
+            attribute_instance_vec_parser,
+            coverage_option_parser,
+            token(Token::SColon),
+        )
+            .map(|(a, b, c)| CoverageSpecOrOption::Option(Box::new((a, b, c)))),
+    ))
+    .parse_next(input)
+}
+
+pub fn coverage_option_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<CoverageOption<'s>, VerboseError<'s>> {
+    let _option_parser = (
+        token(Token::Option),
+        token(Token::Period),
+        member_identifier_parser,
+        token(Token::Eq),
+        expression_parser,
+    )
+        .map(|(a, b, c, d, e)| {
+            CoverageOption::Option(Box::new((a, b, c, d, e)))
+        });
+    let _type_option_parser = (
+        token(Token::TypeOption),
+        token(Token::Period),
+        member_identifier_parser,
+        token(Token::Eq),
+        constant_expression_parser,
+    )
+        .map(|(a, b, c, d, e)| {
+            CoverageOption::TypeOption(Box::new((a, b, c, d, e)))
+        });
+    alt((_option_parser, _type_option_parser)).parse_next(input)
+}
+
+pub fn coverage_spec_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<CoverageSpec<'s>, VerboseError<'s>> {
+    alt((
+        cover_point_parser.map(|a| CoverageSpec::Point(Box::new(a))),
+        cover_cross_parser.map(|a| CoverageSpec::Cross(Box::new(a))),
+    ))
+    .parse_next(input)
+}
+
+pub fn coverage_event_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<CoverageEvent<'s>, VerboseError<'s>> {
+    let _clocking_parser =
+        clocking_event_parser.map(|a| CoverageEvent::Clocking(Box::new(a)));
+    let _function_parser = (
+        token(Token::With),
+        token(Token::Function),
+        token(Token::Sample),
+        token(Token::Paren),
+        opt(tf_port_list_parser),
+        token(Token::EParen),
+    )
+        .map(|(a, b, c, d, e, f)| {
+            CoverageEvent::Function(Box::new((a, b, c, d, e, f)))
+        });
+    let _block_parser = (
+        token(Token::AtAt),
+        token(Token::Paren),
+        block_event_expression_parser,
+        token(Token::Paren),
+    )
+        .map(|(a, b, c, d)| CoverageEvent::Block(Box::new((a, b, c, d))));
+    alt((_function_parser, _block_parser, _clocking_parser)).parse_next(input)
+}
+
+fn basic_block_event_expression_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<BlockEventExpression<'s>, VerboseError<'s>> {
+    let _begin_parser =
+        (token(Token::Begin), hierarchical_btf_identifier_parser)
+            .map(|(a, b)| BlockEventExpression::Begin(Box::new((a, b))));
+    let _end_parser = (token(Token::End), hierarchical_btf_identifier_parser)
+        .map(|(a, b)| BlockEventExpression::End(Box::new((a, b))));
+    alt((_begin_parser, _end_parser)).parse_next(input)
+}
+
+pub fn block_event_expression_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<BlockEventExpression<'s>, VerboseError<'s>> {
+    let mut lhs = basic_block_event_expression_parser(input)?;
+    loop {
+        let Ok(op) = token(Token::Or)(input) else {
+            return Ok(lhs);
+        };
+        lhs = {
+            let rhs = basic_block_event_expression_parser(input)?;
+            BlockEventExpression::Or(Box::new((lhs, op, rhs)))
+        }
+    }
+}
+
+pub fn hierarchical_identifier_or_class_scope_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<HierarchicalIdentifierOrClassScope<'s>, VerboseError<'s>> {
+    alt((
+        (hierarchical_identifier_parser, token(Token::Period)).map(|(a, b)| {
+            HierarchicalIdentifierOrClassScope::Identifier(Box::new((a, b)))
+        }),
+        class_scope_parser
+            .map(|a| HierarchicalIdentifierOrClassScope::Scope(Box::new(a))),
+    ))
+    .parse_next(input)
+}
+
+pub fn hierarchical_btf_identifier_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<HierarchicalBtfIdentifier<'s>, VerboseError<'s>> {
+    alt((
+        (
+            opt(hierarchical_identifier_or_class_scope_parser),
+            method_identifier_parser,
+        )
+            .map(|(a, b)| HierarchicalBtfIdentifier::Method(Box::new((a, b)))),
+        hierarchical_tf_identifier_parser
+            .map(|a| HierarchicalBtfIdentifier::Tf(Box::new(a))),
+        hierarchical_block_identifier_parser
+            .map(|a| HierarchicalBtfIdentifier::Block(Box::new(a))),
+    ))
+    .parse_next(input)
+}
+
+pub fn cover_point_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<CoverPoint<'s>, VerboseError<'s>> {
+    (
+        opt((
+            opt(data_type_or_implicit_parser),
+            cover_point_identifier_parser,
+            token(Token::Colon),
+        )),
+        token(Token::Coverpoint),
+        expression_parser,
+        opt((
+            token(Token::Iff),
+            token(Token::Paren),
+            expression_parser,
+            token(Token::EParen),
+        )),
+        bins_or_empty_parser,
+    )
+        .map(|(a, b, c, d, e)| CoverPoint(a, b, c, d, e))
+        .parse_next(input)
+}
+
+pub fn bins_or_empty_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<BinsOrEmpty<'s>, VerboseError<'s>> {
+    let _bins_parser = (
+        token(Token::Brace),
+        attribute_instance_vec_parser,
+        repeat(0.., (bins_or_options_parser, token(Token::SColon))),
+        token(Token::EBrace),
+    )
+        .map(|(a, b, c, d)| BinsOrEmpty::Bins(Box::new((a, b, c, d))));
+    alt((
+        _bins_parser,
+        token(Token::SColon).map(|a| BinsOrEmpty::Empty(Box::new(a))),
+    ))
+    .parse_next(input)
+}
+
+enum BinsOrOptionsOp<'a> {
+    Range(
+        (
+            Metadata<'a>, // {
+            CovergroupRangeList<'a>,
+            Metadata<'a>, // }
+        ),
+    ),
+    Point(CoverPointIdentifier<'a>),
+    Set(SetCovergroupExpression<'a>),
+    Trans(TransList<'a>),
+    Default(Metadata<'a>),
+    DefaultSequence(
+        (
+            Metadata<'a>, // default
+            Metadata<'a>, // sequence
+        ),
+    ),
+}
+
+pub fn bins_or_options_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<BinsOrOptions<'s>, VerboseError<'s>> {
+    let _bins_parser = (
+        opt(token(Token::Wildcard)),
+        bins_keyword_parser,
+        bin_identifier_parser,
+        opt((
+            token(Token::Bracket),
+            opt(covergroup_expression_parser),
+            token(Token::EBrace),
+        )),
+        token(Token::Eq),
+        alt((
+            (
+                token(Token::Brace),
+                covergroup_range_list_parser,
+                token(Token::EBrace),
+            )
+                .map(|(a, b, c)| BinsOrOptionsOp::Range((a, b, c))),
+            cover_point_identifier_parser.map(|a| BinsOrOptionsOp::Point(a)),
+            set_covergroup_expression_parser.map(|a| BinsOrOptionsOp::Set(a)),
+            trans_list_parser.map(|a| BinsOrOptionsOp::Trans(a)),
+            (token(Token::Default), token(Token::Sequence))
+                .map(|(a, b)| BinsOrOptionsOp::DefaultSequence((a, b))),
+            token(Token::Default).map(|a| BinsOrOptionsOp::Default(a)),
+        )),
+        opt((
+            token(Token::With),
+            token(Token::Paren),
+            with_covergroup_expression_parser,
+            token(Token::EParen),
+        )),
+        opt((
+            token(Token::Iff),
+            token(Token::Paren),
+            expression_parser,
+            token(Token::EParen),
+        )),
+    )
+        .verify_map(
+            |(
+                wildcard,
+                bins_keyword,
+                bin_identifier,
+                covergroup,
+                eq,
+                op,
+                with,
+                iff,
+            )| match (wildcard, covergroup, op, with) {
+                (
+                    wildcard,
+                    covergroup,
+                    BinsOrOptionsOp::Range((brace, range, ebrace)),
+                    with,
+                ) => Some(BinsOrOptions::Range(Box::new((
+                    wildcard,
+                    bins_keyword,
+                    bin_identifier,
+                    covergroup,
+                    eq,
+                    brace,
+                    range,
+                    ebrace,
+                    with,
+                    iff,
+                )))),
+                (
+                    wildcard,
+                    covergroup,
+                    BinsOrOptionsOp::Point(coverpoint),
+                    Some((with, paren, with_expr, eparen)),
+                ) => Some(BinsOrOptions::Point(Box::new((
+                    wildcard,
+                    bins_keyword,
+                    bin_identifier,
+                    covergroup,
+                    eq,
+                    coverpoint,
+                    with,
+                    paren,
+                    with_expr,
+                    eparen,
+                    iff,
+                )))),
+                (wildcard, covergroup, BinsOrOptionsOp::Set(set), None) => {
+                    Some(BinsOrOptions::Set(Box::new((
+                        wildcard,
+                        bins_keyword,
+                        bin_identifier,
+                        covergroup,
+                        eq,
+                        set,
+                        iff,
+                    ))))
+                }
+                (
+                    wildcard,
+                    Some((bracket, None, ebracket)),
+                    BinsOrOptionsOp::Trans(trans_list),
+                    None,
+                ) => Some(BinsOrOptions::Trans(Box::new((
+                    wildcard,
+                    bins_keyword,
+                    bin_identifier,
+                    Some((bracket, ebracket)),
+                    eq,
+                    trans_list,
+                    iff,
+                )))),
+                (wildcard, None, BinsOrOptionsOp::Trans(trans_list), None) => {
+                    Some(BinsOrOptions::Trans(Box::new((
+                        wildcard,
+                        bins_keyword,
+                        bin_identifier,
+                        None,
+                        eq,
+                        trans_list,
+                        iff,
+                    ))))
+                }
+                (None, covergroup, BinsOrOptionsOp::Default(default), None) => {
+                    Some(BinsOrOptions::Default(Box::new((
+                        bins_keyword,
+                        bin_identifier,
+                        covergroup,
+                        eq,
+                        default,
+                        iff,
+                    ))))
+                }
+                (
+                    None,
+                    None,
+                    BinsOrOptionsOp::DefaultSequence((default, sequence)),
+                    None,
+                ) => Some(BinsOrOptions::DefaultSequence(Box::new((
+                    bins_keyword,
+                    bin_identifier,
+                    eq,
+                    default,
+                    sequence,
+                    iff,
+                )))),
+                _ => None,
+            },
+        );
+    alt((
+        _bins_parser,
+        coverage_option_parser.map(|a| BinsOrOptions::Coverage(Box::new(a))),
+    ))
+    .parse_next(input)
+}
+
+pub fn bins_keyword_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<BinsKeyword<'s>, VerboseError<'s>> {
+    alt((
+        token(Token::Bins).map(|a| BinsKeyword::Bins(a)),
+        token(Token::IllegalBins).map(|a| BinsKeyword::IllegalBins(a)),
+        token(Token::IgnoreBins).map(|a| BinsKeyword::IgnoreBins(a)),
+    ))
+    .parse_next(input)
+}
+
+pub fn trans_list_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<TransList<'s>, VerboseError<'s>> {
+    (
+        token(Token::Paren),
+        trans_set_parser,
+        token(Token::EParen),
+        repeat(
+            0..,
+            (
+                token(Token::Comma),
+                token(Token::Paren),
+                trans_set_parser,
+                token(Token::EParen),
+            ),
+        ),
+    )
+        .map(|(a, b, c, d)| TransList(a, b, c, d))
+        .parse_next(input)
+}
+
+pub fn trans_set_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<TransSet<'s>, VerboseError<'s>> {
+    (
+        trans_range_list_parser,
+        repeat(0.., (token(Token::EqGt), trans_range_list_parser)),
+    )
+        .map(|(a, b)| TransSet(a, b))
+        .parse_next(input)
+}
+
+enum TransRangeListOp<'a> {
+    Repeat(Metadata<'a>),
+    GotoRepeat(Metadata<'a>),
+    NonconsecutiveRepeat(Metadata<'a>),
+}
+
+pub fn trans_range_list_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<TransRangeList<'s>, VerboseError<'s>> {
+    (
+        trans_item_parser,
+        opt((
+            token(Token::Bracket),
+            alt((
+                token(Token::Star).map(|a| TransRangeListOp::Repeat(a)),
+                token(Token::MinusGt).map(|a| TransRangeListOp::GotoRepeat(a)),
+                token(Token::Eq)
+                    .map(|a| TransRangeListOp::NonconsecutiveRepeat(a)),
+            )),
+            repeat_range_parser,
+            token(Token::EBracket),
+        )),
+    )
+        .map(|(a, b)| match b {
+            None => TransRangeList::NoRepeat(Box::new(a)),
+            Some((
+                bracket,
+                TransRangeListOp::Repeat(metadata),
+                range,
+                ebracket,
+            )) => TransRangeList::Repeat(Box::new((
+                a, bracket, metadata, range, ebracket,
+            ))),
+            Some((
+                bracket,
+                TransRangeListOp::GotoRepeat(metadata),
+                range,
+                ebracket,
+            )) => TransRangeList::GotoRepeat(Box::new((
+                a, bracket, metadata, range, ebracket,
+            ))),
+            Some((
+                bracket,
+                TransRangeListOp::NonconsecutiveRepeat(metadata),
+                range,
+                ebracket,
+            )) => TransRangeList::NonconsecutiveRepeat(Box::new((
+                a, bracket, metadata, range, ebracket,
+            ))),
+        })
+        .parse_next(input)
+}
+
+pub fn trans_item_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<TransItem<'s>, VerboseError<'s>> {
+    covergroup_range_list_parser
+        .map(|a| TransItem(a))
+        .parse_next(input)
+}
+
+pub fn repeat_range_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<RepeatRange<'s>, VerboseError<'s>> {
+    (
+        covergroup_expression_parser,
+        opt((token(Token::Colon), covergroup_expression_parser)),
+    )
+        .map(|(a, b)| match b {
+            None => RepeatRange::Expr(Box::new(a)),
+            Some((b, c)) => RepeatRange::Range(Box::new((a, b, c))),
+        })
+        .parse_next(input)
+}
+
+pub fn cover_cross_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<CoverCross<'s>, VerboseError<'s>> {
+    (
+        opt((cross_identifier_parser, token(Token::Colon))),
+        token(Token::Cross),
+        list_of_cross_items_parser,
+        opt((
+            token(Token::Iff),
+            token(Token::Paren),
+            expression_parser,
+            token(Token::EParen),
+        )),
+        cross_body_parser,
+    )
+        .map(|(a, b, c, d, e)| CoverCross(a, b, c, d, e))
+        .parse_next(input)
+}
+
+pub fn list_of_cross_items_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<ListOfCrossItems<'s>, VerboseError<'s>> {
+    (
+        cross_item_parser,
+        token(Token::Comma),
+        cross_item_parser,
+        repeat(0.., (token(Token::Comma), cross_item_parser)),
+    )
+        .map(|(a, b, c, d)| ListOfCrossItems(a, b, c, d))
+        .parse_next(input)
+}
+
+pub fn cross_item_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<CrossItem<'s>, VerboseError<'s>> {
+    alt((
+        cover_point_identifier_parser
+            .map(|a| CrossItem::CoverPoint(Box::new(a))),
+        variable_identifier_parser.map(|a| CrossItem::Variable(Box::new(a))),
+    ))
+    .parse_next(input)
+}
+
+pub fn cross_body_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<CrossBody<'s>, VerboseError<'s>> {
+    let _items_parser = (
+        token(Token::Brace),
+        repeat(0.., cross_body_item_parser),
+        token(Token::EBrace),
+    )
+        .map(|(a, b, c)| CrossBody::Items(Box::new((a, b, c))));
+    let _null_parser =
+        token(Token::SColon).map(|a| CrossBody::Null(Box::new(a)));
+    alt((_items_parser, _null_parser)).parse_next(input)
+}
+
+pub fn cross_body_item_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<CrossBodyItem<'s>, VerboseError<'s>> {
+    alt((
+        function_declaration_parser
+            .map(|a| CrossBodyItem::Function(Box::new(a))),
+        (bins_selection_or_option_parser, token(Token::SColon))
+            .map(|(a, b)| CrossBodyItem::BinsSelection(Box::new((a, b)))),
+    ))
+    .parse_next(input)
+}
+
+pub fn bins_selection_or_option_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<BinsSelectionOrOption<'s>, VerboseError<'s>> {
+    let _coverage_parser =
+        (attribute_instance_vec_parser, coverage_option_parser)
+            .map(|(a, b)| BinsSelectionOrOption::Coverage(Box::new((a, b))));
+    let _bins_parser = (attribute_instance_vec_parser, bins_selection_parser)
+        .map(|(a, b)| BinsSelectionOrOption::Bins(Box::new((a, b))));
+    alt((_coverage_parser, _bins_parser)).parse_next(input)
+}
+
+pub fn bins_selection_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<BinsSelection<'s>, VerboseError<'s>> {
+    (
+        bins_keyword_parser,
+        bin_identifier_parser,
+        token(Token::Eq),
+        select_expression_parser,
+        opt((
+            token(Token::Iff),
+            token(Token::Paren),
+            expression_parser,
+            token(Token::EParen),
+        )),
+    )
+        .map(|(a, b, c, d, e)| BinsSelection(a, b, c, d, e))
+        .parse_next(input)
+}
+
 #[inline(always)]
 fn covergroup_matches_operator_binding_power<'s>() -> u8 {
     no_assoc(3)
