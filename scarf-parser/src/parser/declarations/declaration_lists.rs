@@ -7,7 +7,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::repeat;
+use winnow::combinator::{opt, repeat};
 
 pub fn list_of_genvar_identifiers_parser<'s>(
     input: &mut Tokens<'s>,
@@ -99,6 +99,27 @@ pub fn list_of_specparam_assignments_parser<'s>(
         repeat(0.., (token(Token::Comma), specparam_assignment_parser)),
     )
         .map(|(a, b)| ListOfSpecparamAssignments(a, b))
+        .parse_next(input)
+}
+
+pub fn list_of_tf_variable_identifiers_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<ListOfTfVariableIdentifiers<'s>, VerboseError<'s>> {
+    (
+        port_identifier_parser,
+        repeat(0.., variable_dimension_parser),
+        opt((token(Token::Eq), expression_parser)),
+        repeat(
+            0..,
+            (
+                token(Token::Comma),
+                port_identifier_parser,
+                repeat(0.., variable_dimension_parser),
+                opt((token(Token::Eq), expression_parser)),
+            ),
+        ),
+    )
+        .map(|(a, b, c, d)| ListOfTfVariableIdentifiers(a, b, c, d))
         .parse_next(input)
 }
 

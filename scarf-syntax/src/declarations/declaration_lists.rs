@@ -64,6 +64,25 @@ pub struct ListOfSpecparamAssignments<'a>(
 );
 
 #[derive(Clone, Debug, PartialEq)]
+pub struct ListOfTfVariableIdentifiers<'a>(
+    pub PortIdentifier<'a>,
+    pub Vec<VariableDimension<'a>>,
+    pub  Option<(
+        Metadata<'a>, // =
+        Expression<'a>,
+    )>,
+    pub  Vec<(
+        Metadata<'a>, // ,
+        PortIdentifier<'a>,
+        Vec<VariableDimension<'a>>,
+        Option<(
+            Metadata<'a>, // =
+            Expression<'a>,
+        )>,
+    )>,
+);
+
+#[derive(Clone, Debug, PartialEq)]
 pub struct ListOfTypeAssignments<'a>(
     pub TypeAssignment<'a>,
     pub Vec<(Metadata<'a>, TypeAssignment<'a>)>,
