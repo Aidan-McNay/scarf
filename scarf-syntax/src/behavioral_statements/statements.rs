@@ -26,5 +26,59 @@ pub struct Statement<'a>(
     pub StatementItem<'a>,
 );
 
-pub type StatementItem<'a> = ();
-pub type FunctionStatement<'a> = ();
+#[derive(Clone, Debug, PartialEq)]
+pub enum StatementItem<'a> {
+    Blocking(
+        Box<(
+            BlockingAssignment<'a>,
+            Metadata<'a>, // ;
+        )>,
+    ),
+    Nonblocking(
+        Box<(
+            NonblockingAssignment<'a>,
+            Metadata<'a>, // ;
+        )>,
+    ),
+    ProceduralContinuous(
+        Box<(
+            ProceduralContinuousAssignment<'a>,
+            Metadata<'a>, // ;
+        )>,
+    ),
+    Case(Box<CaseStatement<'a>>),
+    Conditional(Box<ConditionalStatement<'a>>),
+    SubroutineCall(Box<SubroutineCallStatement<'a>>),
+    Disable(Box<DisableStatement<'a>>),
+    Event(Box<EventTrigger<'a>>),
+    Loop(Box<LoopStatement<'a>>),
+    Jump(Box<JumpStatement<'a>>),
+    Par(Box<ParBlock<'a>>),
+    ProceduralTimingControl(Box<ProceduralTimingControlStatement<'a>>),
+    Seq(Box<SeqBlock<'a>>),
+    Wait(Box<WaitStatement<'a>>),
+    ProceduralAssertion(Box<ProceduralAssertionStatement<'a>>),
+    Clocking(
+        Box<(
+            ClockingDrive<'a>,
+            Metadata<'a>, // ;
+        )>,
+    ),
+    Randsequence(Box<RandsequenceStatement<'a>>),
+    Randcase(Box<RandcaseStatement<'a>>),
+    Expect(Box<ExpectPropertyStatement<'a>>),
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct FunctionStatement<'a>(pub Statement<'a>);
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum FunctionStatementOrNull<'a> {
+    FunctionStatement(Box<FunctionStatement<'a>>),
+    Null(
+        Box<(
+            Vec<AttributeInstance<'a>>,
+            Metadata<'a>, // ;
+        )>,
+    ),
+}
