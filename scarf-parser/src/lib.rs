@@ -12,6 +12,10 @@ use parser::*;
 pub use parser::{parse, report_parse_errors};
 use winnow::Parser;
 use winnow::stream::TokenSlice;
+#[cfg(test)]
+pub mod test;
+#[cfg(test)]
+pub use test::*;
 
 pub fn lex_to_parse_stream<'s>(
     input: Vec<(Result<Token<'s>, String>, Span)>,

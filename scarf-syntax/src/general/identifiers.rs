@@ -14,6 +14,7 @@ pub struct BlockIdentifier<'a>(pub Identifier<'a>);
 #[derive(Clone, Debug, PartialEq)]
 pub struct BinIdentifier<'a>(pub Identifier<'a>);
 
+#[derive(Clone, Debug, PartialEq)]
 pub struct CIdentifier<'a>(pub &'a str, pub Metadata<'a>);
 
 #[derive(Clone, Debug, PartialEq)]

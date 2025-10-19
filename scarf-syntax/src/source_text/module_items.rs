@@ -6,15 +6,15 @@
 use crate::*;
 
 #[derive(Clone, Debug, PartialEq)]
-pub enum SystemSeverityTask<'a> {
-    Fatal(Box<FatalSystemSeverityTask<'a>>),
-    Error(Box<ErrorSystemSeverityTask<'a>>),
-    Warning(Box<WarningSystemSeverityTask<'a>>),
-    Info(Box<InfoSystemSeverityTask<'a>>),
+pub enum SeveritySystemTask<'a> {
+    Fatal(Box<FatalSeveritySystemTask<'a>>),
+    Error(Box<ErrorSeveritySystemTask<'a>>),
+    Warning(Box<WarningSeveritySystemTask<'a>>),
+    Info(Box<InfoSeveritySystemTask<'a>>),
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct FatalSystemSeverityTask<'a>(
+pub struct FatalSeveritySystemTask<'a>(
     pub Metadata<'a>, // $fatal
     pub  Option<(
         Metadata<'a>, // (
@@ -29,7 +29,7 @@ pub struct FatalSystemSeverityTask<'a>(
 );
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct ErrorSystemSeverityTask<'a>(
+pub struct ErrorSeveritySystemTask<'a>(
     pub Metadata<'a>, // $error
     pub  Option<(
         Metadata<'a>, // (
@@ -40,7 +40,7 @@ pub struct ErrorSystemSeverityTask<'a>(
 );
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct WarningSystemSeverityTask<'a>(
+pub struct WarningSeveritySystemTask<'a>(
     pub Metadata<'a>, // $warning
     pub  Option<(
         Metadata<'a>, // (
@@ -51,7 +51,7 @@ pub struct WarningSystemSeverityTask<'a>(
 );
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct InfoSystemSeverityTask<'a>(
+pub struct InfoSeveritySystemTask<'a>(
     pub Metadata<'a>, // $info
     pub  Option<(
         Metadata<'a>, // (
@@ -69,7 +69,7 @@ pub enum FinishNumber<'a> {
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct ElaborationSystemSeverityTask<'a>(pub SystemSeverityTask<'a>);
+pub struct ElaborationSeveritySystemTask<'a>(pub SeveritySystemTask<'a>);
 
 pub type BindDirective = ();
 pub type ModuleItem = ();

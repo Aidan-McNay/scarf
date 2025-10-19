@@ -12,23 +12,23 @@ use winnow::token::any;
 
 pub fn system_severity_task_parser<'s>(
     input: &mut Tokens<'s>,
-) -> ModalResult<SystemSeverityTask<'s>, VerboseError<'s>> {
+) -> ModalResult<SeveritySystemTask<'s>, VerboseError<'s>> {
     alt((
         fatal_system_severity_task_parser
-            .map(|a| SystemSeverityTask::Fatal(Box::new(a))),
+            .map(|a| SeveritySystemTask::Fatal(Box::new(a))),
         error_system_severity_task_parser
-            .map(|a| SystemSeverityTask::Error(Box::new(a))),
+            .map(|a| SeveritySystemTask::Error(Box::new(a))),
         warning_system_severity_task_parser
-            .map(|a| SystemSeverityTask::Warning(Box::new(a))),
+            .map(|a| SeveritySystemTask::Warning(Box::new(a))),
         info_system_severity_task_parser
-            .map(|a| SystemSeverityTask::Info(Box::new(a))),
+            .map(|a| SeveritySystemTask::Info(Box::new(a))),
     ))
     .parse_next(input)
 }
 
 pub fn fatal_system_severity_task_parser<'s>(
     input: &mut Tokens<'s>,
-) -> ModalResult<FatalSystemSeverityTask<'s>, VerboseError<'s>> {
+) -> ModalResult<FatalSeveritySystemTask<'s>, VerboseError<'s>> {
     (
         token(Token::DollarFatal),
         opt((
@@ -39,13 +39,13 @@ pub fn fatal_system_severity_task_parser<'s>(
         )),
         token(Token::SColon),
     )
-        .map(|(a, b, c)| FatalSystemSeverityTask(a, b, c))
+        .map(|(a, b, c)| FatalSeveritySystemTask(a, b, c))
         .parse_next(input)
 }
 
 pub fn error_system_severity_task_parser<'s>(
     input: &mut Tokens<'s>,
-) -> ModalResult<ErrorSystemSeverityTask<'s>, VerboseError<'s>> {
+) -> ModalResult<ErrorSeveritySystemTask<'s>, VerboseError<'s>> {
     (
         token(Token::DollarError),
         opt((
@@ -55,13 +55,13 @@ pub fn error_system_severity_task_parser<'s>(
         )),
         token(Token::SColon),
     )
-        .map(|(a, b, c)| ErrorSystemSeverityTask(a, b, c))
+        .map(|(a, b, c)| ErrorSeveritySystemTask(a, b, c))
         .parse_next(input)
 }
 
 pub fn warning_system_severity_task_parser<'s>(
     input: &mut Tokens<'s>,
-) -> ModalResult<WarningSystemSeverityTask<'s>, VerboseError<'s>> {
+) -> ModalResult<WarningSeveritySystemTask<'s>, VerboseError<'s>> {
     (
         token(Token::DollarWarning),
         opt((
@@ -71,13 +71,13 @@ pub fn warning_system_severity_task_parser<'s>(
         )),
         token(Token::SColon),
     )
-        .map(|(a, b, c)| WarningSystemSeverityTask(a, b, c))
+        .map(|(a, b, c)| WarningSeveritySystemTask(a, b, c))
         .parse_next(input)
 }
 
 pub fn info_system_severity_task_parser<'s>(
     input: &mut Tokens<'s>,
-) -> ModalResult<InfoSystemSeverityTask<'s>, VerboseError<'s>> {
+) -> ModalResult<InfoSeveritySystemTask<'s>, VerboseError<'s>> {
     (
         token(Token::DollarInfo),
         opt((
@@ -87,7 +87,7 @@ pub fn info_system_severity_task_parser<'s>(
         )),
         token(Token::SColon),
     )
-        .map(|(a, b, c)| InfoSystemSeverityTask(a, b, c))
+        .map(|(a, b, c)| InfoSeveritySystemTask(a, b, c))
         .parse_next(input)
 }
 
@@ -128,9 +128,9 @@ pub fn finish_number_parser<'s>(
 
 pub fn elaboration_system_severity_task_parser<'s>(
     input: &mut Tokens<'s>,
-) -> ModalResult<ElaborationSystemSeverityTask<'s>, VerboseError<'s>> {
+) -> ModalResult<ElaborationSeveritySystemTask<'s>, VerboseError<'s>> {
     system_severity_task_parser
-        .map(|a| ElaborationSystemSeverityTask(a))
+        .map(|a| ElaborationSeveritySystemTask(a))
         .parse_next(input)
 }
 
