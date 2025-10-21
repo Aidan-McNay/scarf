@@ -7,7 +7,19 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, fail, opt, repeat};
+use winnow::combinator::{alt, opt, repeat};
+
+pub fn defparam_assignment_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<DefparamAssignment<'s>, VerboseError<'s>> {
+    (
+        hierarchical_parameter_identifier_parser,
+        token(Token::Eq),
+        constant_mintypmax_expression_parser,
+    )
+        .map(|(a, b, c)| DefparamAssignment(a, b, c))
+        .parse_next(input)
+}
 
 pub fn net_decl_assignment_parser<'s>(
     input: &mut Tokens<'s>,
@@ -36,7 +48,89 @@ pub fn param_assignment_parser<'s>(
 pub fn specparam_assignment_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<SpecparamAssignment<'s>, VerboseError<'s>> {
-    fail.parse_next(input)
+    let _base_parser = (
+        specparam_identifier_parser,
+        token(Token::Eq),
+        constant_mintypmax_expression_parser,
+    )
+        .map(|(a, b, c)| SpecparamAssignment::Base(Box::new((a, b, c))));
+    let _pulse_parser = pulse_control_specparam_parser
+        .map(|a| SpecparamAssignment::Pulse(Box::new(a)));
+    alt((_base_parser, _pulse_parser)).parse_next(input)
+}
+
+fn pathpulse_pathspecific_path_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<Identifier<'s>, VerboseError<'s>> {
+    identifier_parser
+        .verify_map(|a| match a {
+            Identifier::EscapedIdentifier(_) => None,
+            Identifier::SimpleIdentifier((text, metadata)) => {
+                if !text.starts_with("PATHPULSE$") {
+                    None
+                } else {
+                    if text.chars().filter(|&c| c == '$').count() != 2 {
+                        None
+                    } else {
+                        Some(Identifier::SimpleIdentifier((text, metadata)))
+                    }
+                }
+            }
+        })
+        .context("PATHPULSE path")
+        .parse_next(input)
+}
+
+pub fn pulse_control_specparam_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<PulseControlSpecparam<'s>, VerboseError<'s>> {
+    let _nonpath_specific_parser = (
+        token(Token::PathpulseDollar),
+        token(Token::Eq),
+        token(Token::Paren),
+        reject_limit_value_parser,
+        opt((token(Token::Comma), error_limit_value_parser)),
+        token(Token::EParen),
+    )
+        .map(|(a, b, c, d, e, f)| {
+            PulseControlSpecparam::NonpathSpecific(Box::new((a, b, c, d, e, f)))
+        });
+    let _path_specific_parser = (
+        pathpulse_pathspecific_path_parser,
+        token(Token::Eq),
+        token(Token::Paren),
+        reject_limit_value_parser,
+        opt((token(Token::Comma), error_limit_value_parser)),
+        token(Token::EParen),
+    )
+        .map(|(a, b, c, d, e, f)| {
+            PulseControlSpecparam::PathSpecific(Box::new((a, b, c, d, e, f)))
+        });
+    alt((_nonpath_specific_parser, _path_specific_parser)).parse_next(input)
+}
+
+pub fn error_limit_value_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<ErrorLimitValue<'s>, VerboseError<'s>> {
+    limit_value_parser
+        .map(|a| ErrorLimitValue(a))
+        .parse_next(input)
+}
+
+pub fn reject_limit_value_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<RejectLimitValue<'s>, VerboseError<'s>> {
+    limit_value_parser
+        .map(|a| RejectLimitValue(a))
+        .parse_next(input)
+}
+
+pub fn limit_value_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<LimitValue<'s>, VerboseError<'s>> {
+    constant_mintypmax_expression_parser
+        .map(|a| LimitValue(a))
+        .parse_next(input)
 }
 
 pub fn type_assignment_parser<'s>(
@@ -56,7 +150,32 @@ pub fn type_assignment_parser<'s>(
 pub fn variable_decl_assignment_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<VariableDeclAssignment<'s>, VerboseError<'s>> {
-    fail.parse_next(input)
+    let _variable_parser = (
+        variable_identifier_parser,
+        repeat(0.., variable_dimension_parser),
+        opt((token(Token::Eq), expression_parser)),
+    )
+        .map(|(a, b, c)| VariableDeclAssignment::Variable(Box::new((a, b, c))));
+    let _dynamic_variable_parser = (
+        dynamic_array_variable_identifier_parser,
+        unsized_dimension_parser,
+        repeat(0.., variable_dimension_parser),
+        opt((token(Token::Eq), dynamic_array_new_parser)),
+    )
+        .map(|(a, b, c, d)| {
+            VariableDeclAssignment::DynamicVariable(Box::new((a, b, c, d)))
+        });
+    let _class_variable_parser = (
+        class_variable_identifier_parser,
+        opt((token(Token::Eq), class_new_parser)),
+    )
+        .map(|(a, b)| VariableDeclAssignment::ClassVariable(Box::new((a, b))));
+    alt((
+        _variable_parser,
+        _dynamic_variable_parser,
+        _class_variable_parser,
+    ))
+    .parse_next(input)
 }
 
 pub fn class_new_parser<'s>(

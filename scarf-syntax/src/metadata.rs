@@ -8,10 +8,18 @@ use core::ops::Range;
 
 pub type Span = Range<usize>;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug)]
 pub struct Metadata<'a> {
     pub span: Span,
     pub extra_nodes: Vec<(ExtraNode<'a>, Span)>,
+}
+
+impl<'a> PartialEq for Metadata<'a> {
+    fn eq(&self, _: &Self) -> bool {
+        // Allows checking of overall AST structure without checking
+        // exact whitespace
+        true
+    }
 }
 
 #[derive(Clone, Debug, PartialEq)]

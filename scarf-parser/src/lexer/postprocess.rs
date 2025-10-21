@@ -43,7 +43,10 @@ pub fn block_comment_merge_postprocess<'a>(
                         end: end_span.start,
                     };
                     let comment_text = &src[text_span.start..text_span.end];
-                    new_vec.push((Ok(Token::BlockComment(comment_text)), comment_span));
+                    new_vec.push((
+                        Ok(Token::BlockComment(comment_text)),
+                        comment_span,
+                    ));
                     block_comment_started = false;
                 }
             }
@@ -69,8 +72,12 @@ pub fn block_comment_merge_postprocess<'a>(
 // Turns keywords into identifiers based on which keywords are reserved
 // based on the current standard
 
-pub fn keyword_postprocess<'a>(stream: &mut Vec<(Result<Token<'a>, String>, Span)>, _: &'a str) {
-    let mut curr_standard = vec![(StandardVersion::IEEE1800_2023, Span::default())];
+pub fn keyword_postprocess<'a>(
+    stream: &mut Vec<(Result<Token<'a>, String>, Span)>,
+    _: &'a str,
+) {
+    let mut curr_standard =
+        vec![(StandardVersion::IEEE1800_2023, Span::default())];
     let mut keyword_standard_ended = true;
     let mut begin_keywords_started = false;
     let mut begin_keywords_started_span = Span::default();
@@ -84,35 +91,48 @@ pub fn keyword_postprocess<'a>(stream: &mut Vec<(Result<Token<'a>, String>, Span
             (Ok(Token::StringLiteral(specifier)), span) => {
                 if begin_keywords_started {
                     match *specifier {
-                        "1800-2023" => {
-                            curr_standard.push((StandardVersion::IEEE1800_2023, span.clone()))
-                        }
-                        "1800-2017" => {
-                            curr_standard.push((StandardVersion::IEEE1800_2017, span.clone()))
-                        }
-                        "1800-2012" => {
-                            curr_standard.push((StandardVersion::IEEE1800_2012, span.clone()))
-                        }
-                        "1800-2009" => {
-                            curr_standard.push((StandardVersion::IEEE1800_2009, span.clone()))
-                        }
-                        "1800-2005" => {
-                            curr_standard.push((StandardVersion::IEEE1800_2005, span.clone()))
-                        }
-                        "1364-2005" => {
-                            curr_standard.push((StandardVersion::IEEE1364_2005, span.clone()))
-                        }
-                        "1364-2001" => {
-                            curr_standard.push((StandardVersion::IEEE1364_2001, span.clone()))
-                        }
-                        "1364-2001-noconfig" => curr_standard
-                            .push((StandardVersion::IEEE1364_2001Noconfig, span.clone())),
-                        "1364-1995" => {
-                            curr_standard.push((StandardVersion::IEEE1364_1995, span.clone()))
-                        }
+                        "1800-2023" => curr_standard.push((
+                            StandardVersion::IEEE1800_2023,
+                            span.clone(),
+                        )),
+                        "1800-2017" => curr_standard.push((
+                            StandardVersion::IEEE1800_2017,
+                            span.clone(),
+                        )),
+                        "1800-2012" => curr_standard.push((
+                            StandardVersion::IEEE1800_2012,
+                            span.clone(),
+                        )),
+                        "1800-2009" => curr_standard.push((
+                            StandardVersion::IEEE1800_2009,
+                            span.clone(),
+                        )),
+                        "1800-2005" => curr_standard.push((
+                            StandardVersion::IEEE1800_2005,
+                            span.clone(),
+                        )),
+                        "1364-2005" => curr_standard.push((
+                            StandardVersion::IEEE1364_2005,
+                            span.clone(),
+                        )),
+                        "1364-2001" => curr_standard.push((
+                            StandardVersion::IEEE1364_2001,
+                            span.clone(),
+                        )),
+                        "1364-2001-noconfig" => curr_standard.push((
+                            StandardVersion::IEEE1364_2001Noconfig,
+                            span.clone(),
+                        )),
+                        "1364-1995" => curr_standard.push((
+                            StandardVersion::IEEE1364_1995,
+                            span.clone(),
+                        )),
                         _ => {
                             *chunk = (
-                                Err(format!("Invalid version specifier '{}'", specifier)),
+                                Err(format!(
+                                    "Invalid version specifier '{}'",
+                                    specifier
+                                )),
                                 span.clone(),
                             )
                         }
@@ -126,19 +146,28 @@ pub fn keyword_postprocess<'a>(stream: &mut Vec<(Result<Token<'a>, String>, Span
                     curr_standard.pop();
                 } else {
                     *chunk = (
-                        Err("end_keywords directive with no begin_keywords".to_owned()),
+                        Err("end_keywords directive with no begin_keywords"
+                            .to_owned()),
                         span.clone(),
                     );
                 }
             }
             (result, span) => {
                 if begin_keywords_started {
-                    *chunk = (Err("Expected version specifier".to_owned()), span.clone());
+                    *chunk = (
+                        Err("Expected version specifier".to_owned()),
+                        span.clone(),
+                    );
                     begin_keywords_started = false;
                 } else {
                     if let Ok(token) = result {
-                        if token.keyword_replace(curr_standard.last().unwrap().clone().0) {
-                            *chunk = (Ok(Token::SimpleIdentifier(token.as_str())), span.clone());
+                        if token.keyword_replace(
+                            curr_standard.last().unwrap().clone().0,
+                        ) {
+                            *chunk = (
+                                Ok(Token::SimpleIdentifier(token.as_str())),
+                                span.clone(),
+                            );
                         }
                     }
                 }
@@ -158,7 +187,9 @@ pub fn keyword_postprocess<'a>(stream: &mut Vec<(Result<Token<'a>, String>, Span
 // -----------------------------------------------------------------------
 // Convert identifiers into time units if they follow a number
 
-pub fn time_unit_postprocess<'a>(stream: &mut Vec<(Result<Token<'a>, String>, Span)>) {
+pub fn time_unit_postprocess<'a>(
+    stream: &mut Vec<(Result<Token<'a>, String>, Span)>,
+) {
     let mut previous_number = false;
     for chunk in stream.iter_mut() {
         match chunk {
