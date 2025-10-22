@@ -25,3 +25,9 @@ pub fn method_prototype_parser<'s>(
 ) -> ModalResult<MethodPrototype<'s>, VerboseError<'s>> {
     fail.parse_next(input)
 }
+
+pub fn random_qualifier_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<RandomQualifier<'s>, VerboseError<'s>> {
+    fail.parse_next(input)
+}

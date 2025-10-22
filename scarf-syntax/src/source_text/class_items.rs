@@ -6,3 +6,4 @@
 pub type ClassItem = ();
 pub type InterfaceClassItem = ();
 pub type MethodPrototype<'a> = ();
+pub type RandomQualifier<'a> = ();

@@ -6,6 +6,12 @@
 use crate::*;
 
 #[derive(Clone, Debug, PartialEq)]
+pub struct ListOfDefparamAssignments<'a>(
+    pub DefparamAssignment<'a>,
+    pub Vec<(Metadata<'a>, DefparamAssignment<'a>)>,
+);
+
+#[derive(Clone, Debug, PartialEq)]
 pub struct ListOfGenvarIdentifiers<'a>(
     pub GenvarIdentifier<'a>,
     pub Vec<(Metadata<'a>, GenvarIdentifier<'a>)>,
@@ -102,5 +108,24 @@ pub struct ListOfVariableIdentifiers<'a>(
         Metadata<'a>, // ,
         VariableIdentifier<'a>,
         Vec<VariableDimension<'a>>,
+    )>,
+);
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct ListOfVariablePortIdentifiers<'a>(
+    pub PortIdentifier<'a>,
+    pub Vec<VariableDimension<'a>>,
+    pub  Option<(
+        Metadata<'a>, // =
+        ConstantExpression<'a>,
+    )>,
+    pub  Vec<(
+        Metadata<'a>, // ,
+        PortIdentifier<'a>,
+        Vec<VariableDimension<'a>>,
+        Option<(
+            Metadata<'a>, // =
+            ConstantExpression<'a>,
+        )>,
     )>,
 );

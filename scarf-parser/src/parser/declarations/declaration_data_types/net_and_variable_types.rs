@@ -64,7 +64,7 @@ pub fn class_type_parser<'s>(
 
 pub fn interface_class_type_parser<'s>(
     input: &mut Tokens<'s>,
-) -> ModalResult<InterfaceClassType, VerboseError<'s>> {
+) -> ModalResult<InterfaceClassType<'s>, VerboseError<'s>> {
     fail.parse_next(input)
 }
 

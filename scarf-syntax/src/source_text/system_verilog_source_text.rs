@@ -309,8 +309,8 @@ pub struct ClassDeclaration<'a>(
     )>,
     pub  Option<(
         Metadata<'a>, // implements
-        InterfaceClassType,
-        Vec<(Metadata<'a>, InterfaceClassType)>,
+        InterfaceClassType<'a>,
+        Vec<(Metadata<'a>, InterfaceClassType<'a>)>,
     )>,
     pub Metadata<'a>, // ;
     pub Vec<ClassItem>,
@@ -332,8 +332,8 @@ pub struct InterfaceClassDeclaration<'a>(
     pub Option<ParameterPortList<'a>>,
     pub  Option<(
         Metadata<'a>, // extends
-        InterfaceClassType,
-        Vec<(Metadata<'a>, InterfaceClassType)>,
+        InterfaceClassType<'a>,
+        Vec<(Metadata<'a>, InterfaceClassType<'a>)>,
     )>,
     pub Metadata<'a>, // ;
     pub Vec<InterfaceClassItem>,

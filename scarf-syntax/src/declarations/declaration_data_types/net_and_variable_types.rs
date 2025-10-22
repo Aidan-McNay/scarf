@@ -14,7 +14,77 @@ pub enum CastingType<'a> {
     Const(Box<Metadata<'a>>),
 }
 
-pub type DataType<'a> = ();
+#[derive(Clone, Debug, PartialEq)]
+pub enum ClassOrPackageScope<'a> {
+    Class(Box<ClassScope<'a>>),
+    Package(Box<PackageScope<'a>>),
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum DataType<'a> {
+    Vector(
+        Box<(
+            IntegerVectorType<'a>,
+            Option<Signing<'a>>,
+            Vec<PackedDimension<'a>>,
+        )>,
+    ),
+    Atom(Box<(IntegerAtomType<'a>, Option<Signing<'a>>)>),
+    NonInteger(Box<NonIntegerType<'a>>),
+    StructUnion(
+        Box<(
+            StructUnion<'a>,
+            Option<(
+                Metadata<'a>, // packed
+                Option<Signing<'a>>,
+            )>,
+            Metadata<'a>, // {
+            StructUnionMember<'a>,
+            Vec<StructUnionMember<'a>>,
+            Metadata<'a>, // }
+            Vec<PackedDimension<'a>>,
+        )>,
+    ),
+    Enum(
+        Box<(
+            Metadata<'a>, // enum
+            Option<EnumBaseType<'a>>,
+            Metadata<'a>, // {
+            EnumNameDeclaration<'a>,
+            Vec<(
+                Metadata<'a>, // ,
+                EnumNameDeclaration<'a>,
+            )>,
+            Metadata<'a>, // }
+            Vec<PackedDimension<'a>>,
+        )>,
+    ),
+    String(Box<Metadata<'a>>),
+    Chandle(Box<Metadata<'a>>),
+    Virtual(
+        Box<(
+            Metadata<'a>,         // virtual
+            Option<Metadata<'a>>, // interface
+            InterfaceIdentifier<'a>,
+            Option<ParameterValueAssignment<'a>>,
+            Option<(
+                Metadata<'a>, // .
+                ModportIdentifier<'a>,
+            )>,
+        )>,
+    ),
+    Type(
+        Box<(
+            ClassOrPackageScope<'a>,
+            TypeIdentifier<'a>,
+            Vec<PackedDimension<'a>>,
+        )>,
+    ),
+    ClassType(Box<ClassType<'a>>),
+    Event(Box<Metadata<'a>>),
+    PsCovergroup(Box<PsCovergroupIdentifier<'a>>),
+    TypeRef(Box<TypeReference<'a>>),
+}
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum DataTypeOrImplicit<'a> {
@@ -29,13 +99,58 @@ pub struct ImplicitDataType<'a>(
 );
 
 #[derive(Clone, Debug, PartialEq)]
+pub enum EnumBaseType<'a> {
+    Atom(Box<(IntegerAtomType<'a>, Option<Signing<'a>>)>),
+    Vector(
+        Box<(
+            IntegerVectorType<'a>,
+            Option<Signing<'a>>,
+            Option<PackedDimension<'a>>,
+        )>,
+    ),
+    Type(Box<(TypeIdentifier<'a>, Option<PackedDimension<'a>>)>),
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct EnumNameDeclaration<'a>(
+    pub EnumIdentifier<'a>,
+    pub  Option<(
+        Metadata<'a>, // [
+        IntegralNumber<'a>,
+        Option<(
+            Metadata<'a>, // :
+            IntegralNumber<'a>,
+        )>,
+        Metadata<'a>, // ]
+    )>,
+    pub  Option<(
+        Metadata<'a>, // =
+        ConstantExpression<'a>,
+    )>,
+);
+
+#[derive(Clone, Debug, PartialEq)]
 pub struct ClassScope<'a>(
     pub ClassType<'a>,
     pub Metadata<'a>, // ::
 );
 
-pub type ClassType<'a> = ();
-pub type InterfaceClassType = ();
+#[derive(Clone, Debug, PartialEq)]
+pub struct ClassType<'a>(
+    pub PsClassIdentifier<'a>,
+    pub Option<ParameterValueAssignment<'a>>,
+    pub  Vec<(
+        Metadata<'a>, // ::
+        ClassIdentifier<'a>,
+        Option<ParameterValueAssignment<'a>>,
+    )>,
+);
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct InterfaceClassType<'a>(
+    pub PsClassIdentifier<'a>,
+    pub Option<ParameterValueAssignment<'a>>,
+);
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum IntegerType<'a> {
@@ -83,9 +198,31 @@ pub enum NetType<'a> {
     Wor(Metadata<'a>),
 }
 
-pub type NetPortType<'a> = ();
-pub type VariablePortType<'a> = ();
-pub type VarDataType<'a> = ();
+#[derive(Clone, Debug, PartialEq)]
+pub enum NetPortType<'a> {
+    Implicit(Box<(Option<NetType<'a>>, DataTypeOrImplicit<'a>)>),
+    Nettype(Box<NettypeIdentifier<'a>>),
+    Interconnect(
+        Box<(
+            Metadata<'a>, // interconnect
+            ImplicitDataType<'a>,
+        )>,
+    ),
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct VariablePortType<'a>(pub VarDataType<'a>);
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum VarDataType<'a> {
+    Data(Box<DataType<'a>>),
+    Var(
+        Box<(
+            Metadata<'a>, // var
+            DataTypeOrImplicit<'a>,
+        )>,
+    ),
+}
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Signing<'a> {
@@ -114,6 +251,15 @@ pub enum StructUnion<'a> {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+pub struct StructUnionMember<'a>(
+    pub Vec<AttributeInstance<'a>>,
+    pub Option<RandomQualifier<'a>>,
+    pub DataTypeOrVoid<'a>,
+    pub ListOfVariableDeclAssignments<'a>,
+    pub Metadata<'a>, // ;
+);
+
+#[derive(Clone, Debug, PartialEq)]
 pub enum DataTypeOrVoid<'a> {
     DataType(Box<DataType<'a>>),
     Void(Box<Metadata<'a>>),
@@ -139,4 +285,32 @@ pub enum TypeReference<'a> {
     ),
 }
 
-pub type DataTypeOrIncompleteClassScopedType<'a> = ();
+#[derive(Clone, Debug, PartialEq)]
+pub enum DataTypeOrIncompleteClassScopedType<'a> {
+    Data(Box<DataType<'a>>),
+    IncompleteClassScoped(Box<IncompleteClassScopedType<'a>>),
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum IncompleteClassScopedType<'a> {
+    Base(
+        Box<(
+            TypeIdentifier<'a>,
+            Metadata<'a>, // ::
+            TypeIdentifierOrClassType<'a>,
+        )>,
+    ),
+    Recursive(
+        Box<(
+            IncompleteClassScopedType<'a>,
+            Metadata<'a>, // ::
+            TypeIdentifierOrClassType<'a>,
+        )>,
+    ),
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum TypeIdentifierOrClassType<'a> {
+    Type(Box<TypeIdentifier<'a>>),
+    Class(Box<ClassType<'a>>),
+}

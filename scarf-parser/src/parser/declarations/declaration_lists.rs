@@ -9,6 +9,17 @@ use winnow::ModalResult;
 use winnow::Parser;
 use winnow::combinator::{opt, repeat};
 
+pub fn list_of_defparam_assignments_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<ListOfDefparamAssignments<'s>, VerboseError<'s>> {
+    (
+        defparam_assignment_parser,
+        repeat(0.., (token(Token::Comma), defparam_assignment_parser)),
+    )
+        .map(|(a, b)| ListOfDefparamAssignments(a, b))
+        .parse_next(input)
+}
+
 pub fn list_of_genvar_identifiers_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<ListOfGenvarIdentifiers<'s>, VerboseError<'s>> {
@@ -161,5 +172,26 @@ pub fn list_of_variable_identifiers_parser<'s>(
         ),
     )
         .map(|(a, b, c)| ListOfVariableIdentifiers(a, b, c))
+        .parse_next(input)
+}
+
+pub fn list_of_variable_port_identifiers_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<ListOfVariablePortIdentifiers<'s>, VerboseError<'s>> {
+    (
+        port_identifier_parser,
+        repeat(0.., variable_dimension_parser),
+        opt((token(Token::Eq), constant_expression_parser)),
+        repeat(
+            0..,
+            (
+                token(Token::Comma),
+                port_identifier_parser,
+                repeat(0.., variable_dimension_parser),
+                opt((token(Token::Eq), constant_expression_parser)),
+            ),
+        ),
+    )
+        .map(|(a, b, c, d)| ListOfVariablePortIdentifiers(a, b, c, d))
         .parse_next(input)
 }
