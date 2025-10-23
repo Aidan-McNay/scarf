@@ -7,7 +7,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, fail, opt, repeat};
+use winnow::combinator::{alt, opt, repeat};
 
 pub fn casting_type_parser<'s>(
     input: &mut Tokens<'s>,
@@ -23,10 +23,95 @@ pub fn casting_type_parser<'s>(
     .parse_next(input)
 }
 
+pub fn class_or_package_scope_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<ClassOrPackageScope<'s>, VerboseError<'s>> {
+    alt((
+        class_scope_parser.map(|a| ClassOrPackageScope::Class(Box::new(a))),
+        package_scope_parser.map(|a| ClassOrPackageScope::Package(Box::new(a))),
+    ))
+    .parse_next(input)
+}
+
 pub fn data_type_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<DataType<'s>, VerboseError<'s>> {
-    fail.parse_next(input)
+    let _vector_parser = (
+        integer_vector_type_parser,
+        opt(signing_parser),
+        repeat(0.., packed_dimension_parser),
+    )
+        .map(|(a, b, c)| DataType::Vector(Box::new((a, b, c))));
+    let _atom_parser = (integer_atom_type_parser, opt(signing_parser))
+        .map(|(a, b)| DataType::Atom(Box::new((a, b))));
+    let _non_integer_parser =
+        non_integer_type_parser.map(|a| DataType::NonInteger(Box::new(a)));
+    let _struct_union_parser = (
+        struct_union_parser,
+        opt((token(Token::Packed), opt(signing_parser))),
+        token(Token::Brace),
+        struct_union_member_parser,
+        repeat(0.., struct_union_member_parser),
+        token(Token::EBrace),
+        repeat(0.., packed_dimension_parser),
+    )
+        .map(|(a, b, c, d, e, f, g)| {
+            DataType::StructUnion(Box::new((a, b, c, d, e, f, g)))
+        });
+    let _enum_parser = (
+        token(Token::Enum),
+        opt(enum_base_type_parser),
+        token(Token::Brace),
+        enum_name_declaration_parser,
+        repeat(0.., (token(Token::Comma), enum_name_declaration_parser)),
+        token(Token::EBrace),
+        repeat(0.., packed_dimension_parser),
+    )
+        .map(|(a, b, c, d, e, f, g)| {
+            DataType::Enum(Box::new((a, b, c, d, e, f, g)))
+        });
+    let _string_parser =
+        token(Token::String).map(|a| DataType::String(Box::new(a)));
+    let _chandle_parser =
+        token(Token::Chandle).map(|a| DataType::Chandle(Box::new(a)));
+    let _virtual_parser = (
+        token(Token::Virtual),
+        opt(token(Token::Interface)),
+        interface_identifier_parser,
+        opt(parameter_value_assignment_parser),
+        opt((token(Token::Period), modport_identifier_parser)),
+    )
+        .map(|(a, b, c, d, e)| DataType::Virtual(Box::new((a, b, c, d, e))));
+    let _type_parser = (
+        class_or_package_scope_parser,
+        type_identifier_parser,
+        repeat(0.., packed_dimension_parser),
+    )
+        .map(|(a, b, c)| DataType::Type(Box::new((a, b, c))));
+    let _class_type_parser =
+        class_type_parser.map(|a| DataType::ClassType(Box::new(a)));
+    let _event_parser =
+        token(Token::Event).map(|a| DataType::Event(Box::new(a)));
+    let _ps_covergroup_parser = ps_covergroup_identifier_parser
+        .map(|a| DataType::PsCovergroup(Box::new(a)));
+    let _type_ref_parser =
+        type_reference_parser.map(|a| DataType::TypeRef(Box::new(a)));
+    alt((
+        _vector_parser,
+        _atom_parser,
+        _non_integer_parser,
+        _struct_union_parser,
+        _enum_parser,
+        _string_parser,
+        _chandle_parser,
+        _virtual_parser,
+        _type_parser,
+        _class_type_parser,
+        _event_parser,
+        _ps_covergroup_parser,
+        _type_ref_parser,
+    ))
+    .parse_next(input)
 }
 
 pub fn data_type_or_implicit_parser<'s>(
@@ -48,6 +133,39 @@ pub fn implicit_data_type_parser<'s>(
         .parse_next(input)
 }
 
+pub fn enum_base_type_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<EnumBaseType<'s>, VerboseError<'s>> {
+    let _atom_parser = (integer_atom_type_parser, opt(signing_parser))
+        .map(|(a, b)| EnumBaseType::Atom(Box::new((a, b))));
+    let _vector_parser = (
+        integer_vector_type_parser,
+        opt(signing_parser),
+        opt(packed_dimension_parser),
+    )
+        .map(|(a, b, c)| EnumBaseType::Vector(Box::new((a, b, c))));
+    let _type_parser = (type_identifier_parser, opt(packed_dimension_parser))
+        .map(|(a, b)| EnumBaseType::Type(Box::new((a, b))));
+    alt((_atom_parser, _vector_parser, _type_parser)).parse_next(input)
+}
+
+pub fn enum_name_declaration_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<EnumNameDeclaration<'s>, VerboseError<'s>> {
+    (
+        enum_identifier_parser,
+        opt((
+            token(Token::Bracket),
+            integral_number_parser,
+            opt((token(Token::Colon), integral_number_parser)),
+            token(Token::EBracket),
+        )),
+        opt((token(Token::Eq), constant_expression_parser)),
+    )
+        .map(|(a, b, c)| EnumNameDeclaration(a, b, c))
+        .parse_next(input)
+}
+
 pub fn class_scope_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<ClassScope<'s>, VerboseError<'s>> {
@@ -59,13 +177,31 @@ pub fn class_scope_parser<'s>(
 pub fn class_type_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<ClassType<'s>, VerboseError<'s>> {
-    fail.parse_next(input)
+    (
+        ps_class_identifier_parser,
+        opt(parameter_value_assignment_parser),
+        repeat(
+            0..,
+            (
+                token(Token::ColonColon),
+                class_identifier_parser,
+                opt(parameter_value_assignment_parser),
+            ),
+        ),
+    )
+        .map(|(a, b, c)| ClassType(a, b, c))
+        .parse_next(input)
 }
 
 pub fn interface_class_type_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<InterfaceClassType<'s>, VerboseError<'s>> {
-    fail.parse_next(input)
+    (
+        ps_class_identifier_parser,
+        opt(parameter_value_assignment_parser),
+    )
+        .map(|(a, b)| InterfaceClassType(a, b))
+        .parse_next(input)
 }
 
 pub fn integer_type_parser<'s>(
@@ -137,19 +273,34 @@ pub fn net_type_parser<'s>(
 pub fn net_port_type_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<NetPortType<'s>, VerboseError<'s>> {
-    fail.parse_next(input)
+    let _implicit_parser = (opt(net_type_parser), data_type_or_implicit_parser)
+        .map(|(a, b)| NetPortType::Implicit(Box::new((a, b))));
+    let _nettype_parser =
+        nettype_identifier_parser.map(|a| NetPortType::Nettype(Box::new(a)));
+    let _interconnect_parser =
+        (token(Token::Interconnect), implicit_data_type_parser)
+            .map(|(a, b)| NetPortType::Interconnect(Box::new((a, b))));
+    alt((_implicit_parser, _nettype_parser, _interconnect_parser))
+        .parse_next(input)
 }
 
 pub fn variable_port_type_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<VariablePortType<'s>, VerboseError<'s>> {
-    fail.parse_next(input)
+    var_data_type_parser
+        .map(|a| VariablePortType(a))
+        .parse_next(input)
 }
 
 pub fn var_data_type_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<VarDataType<'s>, VerboseError<'s>> {
-    fail.parse_next(input)
+    alt((
+        data_type_parser.map(|a| VarDataType::Data(Box::new(a))),
+        (token(Token::Var), data_type_or_implicit_parser)
+            .map(|(a, b)| VarDataType::Var(Box::new((a, b)))),
+    ))
+    .parse_next(input)
 }
 
 pub fn signing_parser<'s>(
@@ -188,6 +339,20 @@ pub fn struct_union_parser<'s>(
             .map(|(a, b)| StructUnion::Union(a, b)),
     ))
     .parse_next(input)
+}
+
+pub fn struct_union_member_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<StructUnionMember<'s>, VerboseError<'s>> {
+    (
+        attribute_instance_vec_parser,
+        opt(random_qualifier_parser),
+        data_type_or_void_parser,
+        list_of_variable_decl_assignments_parser,
+        token(Token::SColon),
+    )
+        .map(|(a, b, c, d, e)| StructUnionMember(a, b, c, d, e))
+        .parse_next(input)
 }
 
 pub fn data_type_or_void_parser<'s>(
@@ -231,5 +396,50 @@ pub fn type_reference_parser<'s>(
 pub fn data_type_or_incomplete_class_scoped_type_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<DataTypeOrIncompleteClassScopedType<'s>, VerboseError<'s>> {
-    fail.parse_next(input)
+    alt((
+        data_type_parser
+            .map(|a| DataTypeOrIncompleteClassScopedType::Data(Box::new(a))),
+        incomplete_class_scoped_type_parser.map(|a| {
+            DataTypeOrIncompleteClassScopedType::IncompleteClassScoped(
+                Box::new(a),
+            )
+        }),
+    ))
+    .parse_next(input)
+}
+
+pub fn incomplete_class_scoped_type_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<IncompleteClassScopedType<'s>, VerboseError<'s>> {
+    let mut base = (
+        type_identifier_parser,
+        token(Token::ColonColon),
+        type_identifier_or_class_type_parser,
+    )
+        .map(|(a, b, c)| IncompleteClassScopedType::Base(Box::new((a, b, c))))
+        .parse_next(input)?;
+    loop {
+        let Ok(metadata) = token(Token::ColonColon).parse_next(input) else {
+            return Ok(base);
+        };
+        let type_identifier_or_class_type =
+            type_identifier_or_class_type_parser.parse_next(input)?;
+        base = IncompleteClassScopedType::Recursive(Box::new((
+            base,
+            metadata,
+            type_identifier_or_class_type,
+        )));
+    }
+}
+
+pub fn type_identifier_or_class_type_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<TypeIdentifierOrClassType<'s>, VerboseError<'s>> {
+    alt((
+        type_identifier_parser
+            .map(|a| TypeIdentifierOrClassType::Type(Box::new(a))),
+        class_type_parser
+            .map(|a| TypeIdentifierOrClassType::Class(Box::new(a))),
+    ))
+    .parse_next(input)
 }
