@@ -7,7 +7,7 @@ use crate::*;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct SourceText<'a>(
-    pub Vec<(ExtraNode<'a>, Span)>, // Leading whitespace/comments/directives
+    pub Vec<ExtraNode<'a>>, // Leading whitespace/comments/directives
     pub Option<TimeunitsDeclaration<'a>>,
     pub Vec<Description<'a>>,
 );
@@ -27,7 +27,7 @@ pub enum Description<'a> {
 #[derive(Clone, Debug, PartialEq)]
 pub struct DescriptionPackageItem<'a>(
     pub Vec<AttributeInstance<'a>>,
-    pub PackageItem,
+    pub PackageItem<'a>,
 );
 
 #[derive(Clone, Debug, PartialEq)]
@@ -349,7 +349,7 @@ pub struct PackageDeclaration<'a>(
     pub PackageIdentifier<'a>,
     pub Metadata<'a>, // ;
     pub Option<TimeunitsDeclaration<'a>>,
-    pub Vec<(Vec<AttributeInstance<'a>>, PackageItem)>,
+    pub Vec<(Vec<AttributeInstance<'a>>, PackageItem<'a>)>,
     pub Metadata<'a>, // endpackage
     pub Option<(Metadata<'a>, PackageIdentifier<'a>)>,
 );

@@ -35,3 +35,9 @@ pub fn dist_list_parser<'s>(
 ) -> ModalResult<DistList<'s>, VerboseError<'s>> {
     fail.parse_next(input)
 }
+
+pub fn extern_constraint_declaration_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<ExternConstraintDeclaration<'s>, VerboseError<'s>> {
+    fail.parse_next(input)
+}

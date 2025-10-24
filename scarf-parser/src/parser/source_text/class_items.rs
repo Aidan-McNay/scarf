@@ -14,6 +14,12 @@ pub fn class_item_parser<'s>(
     fail.parse_next(input)
 }
 
+pub fn class_constructor_declaration_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<ClassConstructorDeclaration<'s>, VerboseError<'s>> {
+    fail.parse_next(input)
+}
+
 pub fn interface_class_item_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<InterfaceClassItem, VerboseError<'s>> {

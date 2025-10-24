@@ -19,3 +19,4 @@ pub struct ExpressionOrDist<'a>(
 );
 
 pub type DistList<'a> = ();
+pub type ExternConstraintDeclaration<'a> = ();
