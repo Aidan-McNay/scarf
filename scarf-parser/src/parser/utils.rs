@@ -4,7 +4,6 @@
 // Helper functions for implementing parsers
 
 use crate::*;
-use lexer::Span;
 use scarf_syntax::*;
 use winnow::Parser;
 use winnow::combinator::alt;
@@ -15,18 +14,18 @@ use winnow::token::any;
 // A parser for matching extra nodes
 pub fn extra_node_parser<'s>(
     input: &mut Tokens<'s>,
-) -> ModalResult<Vec<(ExtraNode<'s>, Span)>, VerboseError<'s>> {
+) -> ModalResult<Vec<ExtraNode<'s>>, VerboseError<'s>> {
     let comment_parser = any.verify_map(|s: &'s SpannedToken<'s>| match s.0 {
         Token::OnelineComment(text) => {
-            Some((ExtraNode::OnelineComment(text), s.1.clone()))
+            Some(ExtraNode::OnelineComment((text, s.1.clone())))
         }
         Token::BlockComment(text) => {
-            Some((ExtraNode::BlockComment(text), s.1.clone()))
+            Some(ExtraNode::BlockComment((text, s.1.clone())))
         }
         _ => None,
     });
     let newline_parser = any.verify_map(|s: &'s SpannedToken<'s>| match s.0 {
-        Token::Newline => Some((ExtraNode::Newline, s.1.clone())),
+        Token::Newline => Some(ExtraNode::Newline),
         _ => None,
     });
     repeat(0.., alt((comment_parser, newline_parser))).parse_next(input)
@@ -35,7 +34,7 @@ pub fn extra_node_parser<'s>(
 // A mapping function for replacing extra nodes in metadata
 pub fn replace_nodes<'a>(
     old_metadata: Metadata<'a>,
-    new_nodes: Vec<(ExtraNode<'a>, Span)>,
+    new_nodes: Vec<ExtraNode<'a>>,
 ) -> Metadata<'a> {
     Metadata {
         span: old_metadata.span,

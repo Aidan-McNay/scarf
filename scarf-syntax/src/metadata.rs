@@ -11,7 +11,7 @@ pub type Span = Range<usize>;
 #[derive(Clone, Debug)]
 pub struct Metadata<'a> {
     pub span: Span,
-    pub extra_nodes: Vec<(ExtraNode<'a>, Span)>,
+    pub extra_nodes: Vec<ExtraNode<'a>>,
 }
 
 impl<'a> PartialEq for Metadata<'a> {
@@ -24,8 +24,8 @@ impl<'a> PartialEq for Metadata<'a> {
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum ExtraNode<'a> {
-    OnelineComment(&'a str),
-    BlockComment(&'a str),
-    Directive(CompilerDirective),
+    OnelineComment((&'a str, Span)),
+    BlockComment((&'a str, Span)),
+    Directive(CompilerDirective<'a>),
     Newline,
 }

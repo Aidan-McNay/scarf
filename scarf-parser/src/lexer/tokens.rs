@@ -812,6 +812,9 @@ pub enum Token<'a> {
     SimpleIdentifier(&'a str),
     #[regex(r"\\[!-~]+", |lex| lex.slice())]
     EscapedIdentifier(&'a str),
+    #[regex(r"`[a-zA-Z_][a-zA-Z0-9_\$]*", |lex| lex.slice())]
+    #[regex(r"`\\[!-~]+", |lex| lex.slice())]
+    TextMacro(&'a str),
     TimeUnit(&'a str), // Created in post-processing
     #[regex(
         r#""([^"\r\n\\]|\\[\x00-\x7F]|\\[0-7]{1,3}|\\x[0-9a-fA-F]{1,2})*""#,
@@ -824,6 +827,34 @@ pub enum Token<'a> {
 }
 
 impl<'a> Token<'a> {
+    pub fn is_directive(&self) -> bool {
+        match self {
+            Token::DirUnderscoreFile
+            | Token::DirUnderscoreLine
+            | Token::DirBeginKeywords
+            | Token::DirCellDefine
+            | Token::DirDefaultNettype
+            | Token::DirDefine
+            | Token::DirElse
+            | Token::DirElsif
+            | Token::DirEndKeywords
+            | Token::DirEndcelldefine
+            | Token::DirEndif
+            | Token::DirIfdef
+            | Token::DirIfndef
+            | Token::DirInclude
+            | Token::DirLine
+            | Token::DirNounconnectedDrive
+            | Token::DirPragma
+            | Token::DirResetall
+            | Token::DirTimescale
+            | Token::DirUnconnectedDrive
+            | Token::DirUndef
+            | Token::DirUndefineall
+            | Token::TextMacro(_) => true,
+            _ => false,
+        }
+    }
     pub fn as_str(&self) -> &'static str {
         match self {
             Token::EOI => "end of input",
@@ -1221,6 +1252,7 @@ impl<'a> Token<'a> {
             Token::SystemTfIdentifier(_text) => "<system tf identifier>",
             Token::SimpleIdentifier(_text) => "<simple identifier>",
             Token::EscapedIdentifier(_text) => "<escaped identifier>",
+            Token::TextMacro(_text) => "<text macro>",
             Token::TimeUnit(_text) => "<time unit>",
             Token::StringLiteral(_text) => "<string>",
             Token::TripleQuoteStringLiteral(_text) => "<triple-quote string>",
@@ -1288,6 +1320,10 @@ impl<'a> fmt::Display for Token<'a> {
             }
             Token::EscapedIdentifier(text) => {
                 temp_str = format!("escaped identifier '{}'", text);
+                temp_str.as_str()
+            }
+            Token::TextMacro(text) => {
+                temp_str = format!("text macro '{}'", text);
                 temp_str.as_str()
             }
             Token::TimeUnit(text) => {

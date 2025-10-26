@@ -220,7 +220,7 @@ fn class_qualifier_or_package_scope_parser<'s>(
     .parse_next(input)
 }
 
-fn implicit_class_handle_or_class_scope_parser<'s>(
+pub fn implicit_class_handle_or_class_scope_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<ImplicitClassHandleOrClassScope<'s>, VerboseError<'s>> {
     alt((
