@@ -7,14 +7,14 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{opt, repeat};
+use winnow::combinator::opt;
 
 pub fn list_of_defparam_assignments_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<ListOfDefparamAssignments<'s>, VerboseError<'s>> {
     (
         defparam_assignment_parser,
-        repeat(0.., (token(Token::Comma), defparam_assignment_parser)),
+        repeat_strict((token(Token::Comma), defparam_assignment_parser)),
     )
         .map(|(a, b)| ListOfDefparamAssignments(a, b))
         .parse_next(input)
@@ -25,7 +25,7 @@ pub fn list_of_genvar_identifiers_parser<'s>(
 ) -> ModalResult<ListOfGenvarIdentifiers<'s>, VerboseError<'s>> {
     (
         genvar_identifier_parser,
-        repeat(0.., (token(Token::Comma), genvar_identifier_parser)),
+        repeat_strict((token(Token::Comma), genvar_identifier_parser)),
     )
         .map(|(a, b)| ListOfGenvarIdentifiers(a, b))
         .parse_next(input)
@@ -36,15 +36,12 @@ pub fn list_of_interface_identifiers_parser<'s>(
 ) -> ModalResult<ListOfInterfaceIdentifiers<'s>, VerboseError<'s>> {
     (
         interface_identifier_parser,
-        repeat(0.., unpacked_dimension_parser),
-        repeat(
-            0..,
-            (
-                token(Token::Comma),
-                interface_identifier_parser,
-                repeat(0.., unpacked_dimension_parser),
-            ),
-        ),
+        repeat_strict(unpacked_dimension_parser),
+        repeat_strict((
+            token(Token::Comma),
+            interface_identifier_parser,
+            repeat_strict(unpacked_dimension_parser),
+        )),
     )
         .map(|(a, b, c)| ListOfInterfaceIdentifiers(a, b, c))
         .parse_next(input)
@@ -55,7 +52,7 @@ pub fn list_of_net_decl_assignments_parser<'s>(
 ) -> ModalResult<ListOfNetDeclAssignments<'s>, VerboseError<'s>> {
     (
         net_decl_assignment_parser,
-        repeat(0.., (token(Token::Comma), net_decl_assignment_parser)),
+        repeat_strict((token(Token::Comma), net_decl_assignment_parser)),
     )
         .map(|(a, b)| ListOfNetDeclAssignments(a, b))
         .parse_next(input)
@@ -66,7 +63,7 @@ pub fn list_of_param_assignments_parser<'s>(
 ) -> ModalResult<ListOfParamAssignments<'s>, VerboseError<'s>> {
     (
         param_assignment_parser,
-        repeat(0.., (token(Token::Comma), param_assignment_parser)),
+        repeat_strict((token(Token::Comma), param_assignment_parser)),
     )
         .map(|(a, b)| ListOfParamAssignments(a, b))
         .parse_next(input)
@@ -77,15 +74,12 @@ pub fn list_of_port_identifiers_parser<'s>(
 ) -> ModalResult<ListOfPortIdentifiers<'s>, VerboseError<'s>> {
     (
         port_identifier_parser,
-        repeat(0.., unpacked_dimension_parser),
-        repeat(
-            0..,
-            (
-                token(Token::Comma),
-                port_identifier_parser,
-                repeat(0.., unpacked_dimension_parser),
-            ),
-        ),
+        repeat_strict(unpacked_dimension_parser),
+        repeat_strict((
+            token(Token::Comma),
+            port_identifier_parser,
+            repeat_strict(unpacked_dimension_parser),
+        )),
     )
         .map(|(a, b, c)| ListOfPortIdentifiers(a, b, c))
         .parse_next(input)
@@ -96,7 +90,7 @@ pub fn list_of_udp_port_identifiers_parser<'s>(
 ) -> ModalResult<ListOfUdpPortIdentifiers<'s>, VerboseError<'s>> {
     (
         port_identifier_parser,
-        repeat(0.., (token(Token::Comma), port_identifier_parser)),
+        repeat_strict((token(Token::Comma), port_identifier_parser)),
     )
         .map(|(a, b)| ListOfUdpPortIdentifiers(a, b))
         .parse_next(input)
@@ -107,7 +101,7 @@ pub fn list_of_specparam_assignments_parser<'s>(
 ) -> ModalResult<ListOfSpecparamAssignments<'s>, VerboseError<'s>> {
     (
         specparam_assignment_parser,
-        repeat(0.., (token(Token::Comma), specparam_assignment_parser)),
+        repeat_strict((token(Token::Comma), specparam_assignment_parser)),
     )
         .map(|(a, b)| ListOfSpecparamAssignments(a, b))
         .parse_next(input)
@@ -118,17 +112,14 @@ pub fn list_of_tf_variable_identifiers_parser<'s>(
 ) -> ModalResult<ListOfTfVariableIdentifiers<'s>, VerboseError<'s>> {
     (
         port_identifier_parser,
-        repeat(0.., variable_dimension_parser),
+        repeat_strict(variable_dimension_parser),
         opt((token(Token::Eq), expression_parser)),
-        repeat(
-            0..,
-            (
-                token(Token::Comma),
-                port_identifier_parser,
-                repeat(0.., variable_dimension_parser),
-                opt((token(Token::Eq), expression_parser)),
-            ),
-        ),
+        repeat_strict((
+            token(Token::Comma),
+            port_identifier_parser,
+            repeat_strict(variable_dimension_parser),
+            opt((token(Token::Eq), expression_parser)),
+        )),
     )
         .map(|(a, b, c, d)| ListOfTfVariableIdentifiers(a, b, c, d))
         .parse_next(input)
@@ -139,7 +130,7 @@ pub fn list_of_type_assignments_parser<'s>(
 ) -> ModalResult<ListOfTypeAssignments<'s>, VerboseError<'s>> {
     (
         type_assignment_parser,
-        repeat(0.., (token(Token::Comma), type_assignment_parser)),
+        repeat_strict((token(Token::Comma), type_assignment_parser)),
     )
         .map(|(a, b)| ListOfTypeAssignments(a, b))
         .parse_next(input)
@@ -150,7 +141,7 @@ pub fn list_of_variable_decl_assignments_parser<'s>(
 ) -> ModalResult<ListOfVariableDeclAssignments<'s>, VerboseError<'s>> {
     (
         variable_decl_assignment_parser,
-        repeat(0.., (token(Token::Comma), variable_decl_assignment_parser)),
+        repeat_strict((token(Token::Comma), variable_decl_assignment_parser)),
     )
         .map(|(a, b)| ListOfVariableDeclAssignments(a, b))
         .parse_next(input)
@@ -161,15 +152,12 @@ pub fn list_of_variable_identifiers_parser<'s>(
 ) -> ModalResult<ListOfVariableIdentifiers<'s>, VerboseError<'s>> {
     (
         variable_identifier_parser,
-        repeat(0.., variable_dimension_parser),
-        repeat(
-            0..,
-            (
-                token(Token::Comma),
-                variable_identifier_parser,
-                repeat(0.., variable_dimension_parser),
-            ),
-        ),
+        repeat_strict(variable_dimension_parser),
+        repeat_strict((
+            token(Token::Comma),
+            variable_identifier_parser,
+            repeat_strict(variable_dimension_parser),
+        )),
     )
         .map(|(a, b, c)| ListOfVariableIdentifiers(a, b, c))
         .parse_next(input)
@@ -180,17 +168,14 @@ pub fn list_of_variable_port_identifiers_parser<'s>(
 ) -> ModalResult<ListOfVariablePortIdentifiers<'s>, VerboseError<'s>> {
     (
         port_identifier_parser,
-        repeat(0.., variable_dimension_parser),
+        repeat_strict(variable_dimension_parser),
         opt((token(Token::Eq), constant_expression_parser)),
-        repeat(
-            0..,
-            (
-                token(Token::Comma),
-                port_identifier_parser,
-                repeat(0.., variable_dimension_parser),
-                opt((token(Token::Eq), constant_expression_parser)),
-            ),
-        ),
+        repeat_strict((
+            token(Token::Comma),
+            port_identifier_parser,
+            repeat_strict(variable_dimension_parser),
+            opt((token(Token::Eq), constant_expression_parser)),
+        )),
     )
         .map(|(a, b, c, d)| ListOfVariablePortIdentifiers(a, b, c, d))
         .parse_next(input)

@@ -7,7 +7,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, opt, repeat};
+use winnow::combinator::{alt, opt};
 
 pub fn modport_declaration_parser<'s>(
     input: &mut Tokens<'s>,
@@ -15,7 +15,7 @@ pub fn modport_declaration_parser<'s>(
     (
         token(Token::Modport),
         modport_item_parser,
-        repeat(0.., (token(Token::Comma), modport_item_parser)),
+        repeat_strict( (token(Token::Comma), modport_item_parser)),
         token(Token::SColon),
     )
         .map(|(a, b, c, d)| ModportDeclaration(a, b, c, d))
@@ -29,7 +29,7 @@ pub fn modport_item_parser<'s>(
         modport_identifier_parser,
         token(Token::Paren),
         modport_ports_declaration_parser,
-        repeat(0.., (token(Token::Comma), modport_ports_declaration_parser)),
+        repeat_strict( (token(Token::Comma), modport_ports_declaration_parser)),
         token(Token::EParen),
     )
         .map(|(a, b, c, d, e)| ModportItem(a, b, c, d, e))
@@ -82,7 +82,7 @@ pub fn modport_simple_ports_declaration_parser<'s>(
     (
         port_direction_parser,
         modport_simple_port_parser,
-        repeat(0.., (token(Token::Comma), modport_simple_port_parser)),
+        repeat_strict( (token(Token::Comma), modport_simple_port_parser)),
     )
         .map(|(a, b, c)| ModportSimplePortsDeclaration(a, b, c))
         .parse_next(input)
@@ -113,7 +113,7 @@ pub fn modport_tf_ports_declaration_parser<'s>(
     (
         import_export_parser,
         modport_tf_port_parser,
-        repeat(0.., (token(Token::Comma), modport_tf_port_parser)),
+        repeat_strict( (token(Token::Comma), modport_tf_port_parser)),
     )
         .map(|(a, b, c)| ModportTfPortsDeclaration(a, b, c))
         .parse_next(input)

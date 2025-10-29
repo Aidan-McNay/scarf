@@ -7,7 +7,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, opt, repeat};
+use winnow::combinator::{alt, opt};
 use winnow::token::any;
 
 pub fn function_data_type_or_implicit_parser<'s>(
@@ -40,11 +40,11 @@ pub fn function_body_declaration_parser<'s>(
 ) -> ModalResult<FunctionBodyDeclaration<'s>, VerboseError<'s>> {
     let _tf_parser = (
         function_data_type_or_implicit_parser,
-        interface_identifier_or_class_scope_parser,
+        opt(interface_identifier_or_class_scope_parser),
         function_identifier_parser,
         token(Token::SColon),
-        repeat(0.., tf_item_declaration_parser),
-        repeat(0.., function_statement_or_null_parser),
+        repeat_strict(tf_item_declaration_parser),
+        repeat_strict(function_statement_or_null_parser),
         token(Token::Endfunction),
         opt((token(Token::Colon), function_identifier_parser)),
     )
@@ -53,14 +53,14 @@ pub fn function_body_declaration_parser<'s>(
         });
     let _block_parser = (
         function_data_type_or_implicit_parser,
-        interface_identifier_or_class_scope_parser,
+        opt(interface_identifier_or_class_scope_parser),
         function_identifier_parser,
         token(Token::Paren),
         opt(tf_port_list_parser),
         token(Token::EParen),
         token(Token::SColon),
-        repeat(0.., block_item_declaration_parser),
-        repeat(0.., function_statement_or_null_parser),
+        repeat_strict(block_item_declaration_parser),
+        repeat_strict(function_statement_or_null_parser),
         token(Token::Endfunction),
         opt((token(Token::Colon), function_identifier_parser)),
     )

@@ -7,7 +7,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, opt, repeat};
+use winnow::combinator::{alt, opt};
 
 pub fn covergroup_declaration_parser<'s>(
     input: &mut Tokens<'s>,
@@ -22,7 +22,7 @@ pub fn covergroup_declaration_parser<'s>(
         )),
         opt(coverage_event_parser),
         token(Token::SColon),
-        repeat(0.., coverage_spec_or_option_parser),
+        repeat_strict(coverage_spec_or_option_parser),
         token(Token::Endgroup),
         opt((token(Token::Colon), covergroup_identifier_parser)),
     )
@@ -34,7 +34,7 @@ pub fn covergroup_declaration_parser<'s>(
         token(Token::Extends),
         covergroup_identifier_parser,
         token(Token::SColon),
-        repeat(0.., coverage_spec_or_option_parser),
+        repeat_strict(coverage_spec_or_option_parser),
         token(Token::Endgroup),
         opt((token(Token::Colon), covergroup_identifier_parser)),
     )
@@ -207,7 +207,7 @@ pub fn bins_or_empty_parser<'s>(
     let _bins_parser = (
         token(Token::Brace),
         attribute_instance_vec_parser,
-        repeat(0.., (bins_or_options_parser, token(Token::SColon))),
+        repeat_strict((bins_or_options_parser, token(Token::SColon))),
         token(Token::EBrace),
     )
         .map(|(a, b, c, d)| BinsOrEmpty::Bins(Box::new((a, b, c, d))));
@@ -411,15 +411,12 @@ pub fn trans_list_parser<'s>(
         token(Token::Paren),
         trans_set_parser,
         token(Token::EParen),
-        repeat(
-            0..,
-            (
-                token(Token::Comma),
-                token(Token::Paren),
-                trans_set_parser,
-                token(Token::EParen),
-            ),
-        ),
+        repeat_strict((
+            token(Token::Comma),
+            token(Token::Paren),
+            trans_set_parser,
+            token(Token::EParen),
+        )),
     )
         .map(|(a, b, c, d)| TransList(a, b, c, d))
         .parse_next(input)
@@ -430,7 +427,7 @@ pub fn trans_set_parser<'s>(
 ) -> ModalResult<TransSet<'s>, VerboseError<'s>> {
     (
         trans_range_list_parser,
-        repeat(0.., (token(Token::EqGt), trans_range_list_parser)),
+        repeat_strict((token(Token::EqGt), trans_range_list_parser)),
     )
         .map(|(a, b)| TransSet(a, b))
         .parse_next(input)
@@ -537,7 +534,7 @@ pub fn list_of_cross_items_parser<'s>(
         cross_item_parser,
         token(Token::Comma),
         cross_item_parser,
-        repeat(0.., (token(Token::Comma), cross_item_parser)),
+        repeat_strict((token(Token::Comma), cross_item_parser)),
     )
         .map(|(a, b, c, d)| ListOfCrossItems(a, b, c, d))
         .parse_next(input)
@@ -559,7 +556,7 @@ pub fn cross_body_parser<'s>(
 ) -> ModalResult<CrossBody<'s>, VerboseError<'s>> {
     let _items_parser = (
         token(Token::Brace),
-        repeat(0.., cross_body_item_parser),
+        repeat_strict(cross_body_item_parser),
         token(Token::EBrace),
     )
         .map(|(a, b, c)| CrossBody::Items(Box::new((a, b, c))));
@@ -770,7 +767,7 @@ pub fn covergroup_range_list_parser<'s>(
 ) -> ModalResult<CovergroupRangeList<'s>, VerboseError<'s>> {
     (
         covergroup_value_range_parser,
-        repeat(0.., (token(Token::Comma), covergroup_value_range_parser)),
+        repeat_strict((token(Token::Comma), covergroup_value_range_parser)),
     )
         .map(|(a, b)| CovergroupRangeList(a, b))
         .parse_next(input)

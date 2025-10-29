@@ -6,7 +6,7 @@
 use crate::*;
 use scarf_syntax::*;
 use winnow::Parser;
-use winnow::combinator::{alt, opt, repeat};
+use winnow::combinator::{alt, opt};
 use winnow::error::ModalResult;
 
 pub fn task_declaration_parser<'s>(
@@ -44,8 +44,8 @@ pub fn task_body_declaration_parser<'s>(
         interface_identifier_or_class_scope_parser,
         task_identifier_parser,
         token(Token::SColon),
-        repeat(0.., tf_item_declaration_parser),
-        repeat(0.., statement_or_null_parser),
+        repeat_strict( tf_item_declaration_parser),
+        repeat_strict( statement_or_null_parser),
         token(Token::Endtask),
         opt((token(Token::Colon), task_identifier_parser)),
     )
@@ -59,8 +59,8 @@ pub fn task_body_declaration_parser<'s>(
         opt(tf_port_list_parser),
         token(Token::EParen),
         token(Token::SColon),
-        repeat(0.., block_item_declaration_parser),
-        repeat(0.., statement_or_null_parser),
+        repeat_strict( block_item_declaration_parser),
+        repeat_strict( statement_or_null_parser),
         token(Token::Endtask),
         opt((token(Token::Colon), task_identifier_parser)),
     )
@@ -86,7 +86,7 @@ pub fn tf_port_list_parser<'s>(
 ) -> ModalResult<TfPortList<'s>, VerboseError<'s>> {
     (
         tf_port_item_parser,
-        repeat(0.., (token(Token::Comma), tf_port_item_parser)),
+        repeat_strict( (token(Token::Comma), tf_port_item_parser)),
     )
         .map(|(a, b)| TfPortList(a, b))
         .parse_next(input)
@@ -102,7 +102,7 @@ pub fn tf_port_item_parser<'s>(
         data_type_or_implicit_parser,
         opt((
             port_identifier_parser,
-            repeat(0.., variable_dimension_parser),
+            repeat_strict( variable_dimension_parser),
             opt((token(Token::Eq), expression_parser)),
         )),
     )

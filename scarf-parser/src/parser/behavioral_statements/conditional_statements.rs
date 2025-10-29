@@ -7,7 +7,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, opt, repeat};
+use winnow::combinator::{alt, opt};
 
 pub fn conditional_statement_parser<'s>(
     input: &mut Tokens<'s>,
@@ -19,17 +19,14 @@ pub fn conditional_statement_parser<'s>(
         cond_predicate_parser,
         token(Token::EParen),
         statement_or_null_parser,
-        repeat(
-            0..,
-            (
-                token(Token::Else),
-                token(Token::If),
-                token(Token::Paren),
-                cond_predicate_parser,
-                token(Token::EParen),
-                statement_or_null_parser,
-            ),
-        ),
+        repeat_strict((
+            token(Token::Else),
+            token(Token::If),
+            token(Token::Paren),
+            cond_predicate_parser,
+            token(Token::EParen),
+            statement_or_null_parser,
+        )),
         opt((token(Token::Else), statement_or_null_parser)),
     )
         .map(|(a, b, c, d, e, f, g, h)| {
@@ -54,10 +51,10 @@ pub fn cond_predicate_parser<'s>(
 ) -> ModalResult<CondPredicate<'s>, VerboseError<'s>> {
     (
         expression_or_cond_pattern_parser,
-        repeat(
-            0..,
-            (token(Token::AmpAmpAmp), expression_or_cond_pattern_parser),
-        ),
+        repeat_strict((
+            token(Token::AmpAmpAmp),
+            expression_or_cond_pattern_parser,
+        )),
     )
         .map(|(a, b)| CondPredicate(a, b))
         .parse_next(input)

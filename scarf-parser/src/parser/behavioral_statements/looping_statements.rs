@@ -7,7 +7,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, opt, repeat};
+use winnow::combinator::{alt, opt};
 
 pub fn loop_statement_parser<'s>(
     input: &mut Tokens<'s>,
@@ -90,7 +90,7 @@ pub fn for_initialization_parser<'s>(
             .map(|a| ForInitialization::VariableAssignment(Box::new(a))),
         (
             for_variable_declaration_parser,
-            repeat(0.., (token(Token::Comma), for_variable_declaration_parser)),
+            repeat_strict((token(Token::Comma), for_variable_declaration_parser)),
         )
             .map(|(a, b)| {
                 ForInitialization::VariableDeclarations(Box::new((a, b)))
@@ -108,15 +108,12 @@ pub fn for_variable_declaration_parser<'s>(
         variable_identifier_parser,
         token(Token::Eq),
         expression_parser,
-        repeat(
-            0..,
-            (
-                token(Token::Comma),
-                variable_identifier_parser,
-                token(Token::Eq),
-                expression_parser,
-            ),
-        ),
+        repeat_strict((
+            token(Token::Comma),
+            variable_identifier_parser,
+            token(Token::Eq),
+            expression_parser,
+        )),
     )
         .map(|(a, b, c, d, e, f)| ForVariableDeclaration(a, b, c, d, e, f))
         .parse_next(input)
@@ -127,7 +124,7 @@ pub fn for_step_parser<'s>(
 ) -> ModalResult<ForStep<'s>, VerboseError<'s>> {
     (
         for_step_assignment_parser,
-        repeat(0.., (token(Token::Comma), for_step_assignment_parser)),
+        repeat_strict((token(Token::Comma), for_step_assignment_parser)),
     )
         .map(|(a, b)| ForStep(a, b))
         .parse_next(input)
@@ -152,10 +149,10 @@ pub fn loop_variables_parser<'s>(
 ) -> ModalResult<LoopVariables<'s>, VerboseError<'s>> {
     (
         opt(index_variable_identifier_parser),
-        repeat(
-            0..,
-            (token(Token::Comma), opt(index_variable_identifier_parser)),
-        ),
+        repeat_strict((
+            token(Token::Comma),
+            opt(index_variable_identifier_parser),
+        )),
     )
         .map(|(a, b)| LoopVariables(a, b))
         .parse_next(input)

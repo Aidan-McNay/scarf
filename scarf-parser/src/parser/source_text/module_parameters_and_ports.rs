@@ -7,7 +7,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, opt, repeat};
+use winnow::combinator::{alt, opt};
 
 pub fn parameter_port_list_parser<'s>(
     input: &mut Tokens<'s>,
@@ -16,10 +16,7 @@ pub fn parameter_port_list_parser<'s>(
         token(Token::Pound),
         token(Token::Paren),
         list_of_param_assignments_parser,
-        repeat(
-            0..,
-            (token(Token::Comma), parameter_port_declaration_parser),
-        ),
+        repeat_strict((token(Token::Comma), parameter_port_declaration_parser)),
         token(Token::EParen),
     )
         .map(|(a, b, c, d, e)| ParameterPortList::Defaults(a, b, c, d, e));
@@ -27,10 +24,7 @@ pub fn parameter_port_list_parser<'s>(
         token(Token::Pound),
         token(Token::Paren),
         parameter_port_declaration_parser,
-        repeat(
-            0..,
-            (token(Token::Comma), parameter_port_declaration_parser),
-        ),
+        repeat_strict((token(Token::Comma), parameter_port_declaration_parser)),
         token(Token::EParen),
     )
         .map(|(a, b, c, d, e)| ParameterPortList::NoDefaults(a, b, c, d, e));
@@ -69,7 +63,7 @@ pub fn list_of_ports_parser<'s>(
     (
         token(Token::Paren),
         port_parser,
-        repeat(0.., (token(Token::Comma), port_parser)),
+        repeat_strict((token(Token::Comma), port_parser)),
         token(Token::EParen),
     )
         .map(|(a, b, c, d)| ListOfPorts(a, b, c, d))
@@ -84,14 +78,11 @@ pub fn list_of_port_declarations_parser<'s>(
         opt((
             attribute_instance_vec_parser,
             ansi_port_declaration_parser,
-            repeat(
-                0..,
-                (
-                    token(Token::Comma),
-                    attribute_instance_vec_parser,
-                    ansi_port_declaration_parser,
-                ),
-            ),
+            repeat_strict((
+                token(Token::Comma),
+                attribute_instance_vec_parser,
+                ansi_port_declaration_parser,
+            )),
         )),
         token(Token::EParen),
     )
@@ -155,7 +146,7 @@ pub fn port_expression_parser<'s>(
     let multi_port_reference_parser = (
         token(Token::Brace),
         port_reference_parser,
-        repeat(0.., (token(Token::Comma), port_reference_parser)),
+        repeat_strict((token(Token::Comma), port_reference_parser)),
         token(Token::EBrace),
     )
         .map(|(a, b, c, d)| {
@@ -244,7 +235,7 @@ pub fn ansi_net_port_declaration_parser<'s>(
     (
         opt(net_or_interface_port_header_parser),
         port_identifier_parser,
-        repeat(0.., unpacked_dimension_parser),
+        repeat_strict(unpacked_dimension_parser),
         opt((token(Token::Eq), constant_expression_parser)),
     )
         .map(|(a, b, c, d)| AnsiNetPortDeclaration(a, b, c, d))
@@ -257,7 +248,7 @@ pub fn ansi_variable_port_declaration_parser<'s>(
     (
         opt(variable_port_header_parser),
         port_identifier_parser,
-        repeat(0.., variable_dimension_parser),
+        repeat_strict(variable_dimension_parser),
         opt((token(Token::Eq), constant_expression_parser)),
     )
         .map(|(a, b, c, d)| AnsiVariablePortDeclaration(a, b, c, d))

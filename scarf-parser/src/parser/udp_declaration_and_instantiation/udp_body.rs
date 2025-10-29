@@ -7,7 +7,7 @@ use crate::Span;
 use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
-use winnow::combinator::{alt, opt, repeat};
+use winnow::combinator::{alt, opt};
 
 pub fn udp_body_parser<'s>(
     input: &mut Tokens<'s>,
@@ -25,7 +25,7 @@ pub fn combinational_body_parser<'s>(
     (
         token(Token::Table),
         combinational_entry_parser,
-        repeat(0.., combinational_entry_parser),
+        repeat_strict( combinational_entry_parser),
         token(Token::Endtable),
     )
         .map(|(a, b, c, d)| CombinationalBody(a, b, c, d))
@@ -52,7 +52,7 @@ pub fn sequential_body_parser<'s>(
         opt(udp_initial_statement_parser),
         token(Token::Table),
         sequential_entry_parser,
-        repeat(0.., sequential_entry_parser),
+        repeat_strict( sequential_entry_parser),
         token(Token::Endtable),
     )
         .map(|(a, b, c, d, e)| SequentialBody(a, b, c, d, e))
@@ -126,7 +126,7 @@ pub fn seq_input_list_parser<'s>(
 pub fn level_input_list_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<LevelInputList<'s>, VerboseError<'s>> {
-    (level_symbol_parser, repeat(0.., level_symbol_parser))
+    (level_symbol_parser, repeat_strict( level_symbol_parser))
         .map(|(a, b)| LevelInputList(a, b))
         .parse_next(input)
 }
@@ -135,9 +135,9 @@ pub fn edge_input_list_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<EdgeInputList<'s>, VerboseError<'s>> {
     (
-        repeat(0.., level_symbol_parser),
+        repeat_strict( level_symbol_parser),
         edge_indicator_parser,
-        repeat(0.., level_symbol_parser),
+        repeat_strict( level_symbol_parser),
     )
         .map(|(a, b, c)| EdgeInputList(a, b, c))
         .parse_next(input)

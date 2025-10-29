@@ -7,7 +7,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, opt, repeat};
+use winnow::combinator::{alt, opt};
 
 pub fn randsequence_statement_parser<'s>(
     input: &mut Tokens<'s>,
@@ -18,7 +18,7 @@ pub fn randsequence_statement_parser<'s>(
         opt(rs_production_identifier_parser),
         token(Token::EParen),
         rs_production_parser,
-        repeat(0.., rs_production_parser),
+        repeat_strict( rs_production_parser),
         token(Token::Endsequence),
     )
         .map(|(a, b, c, d, e, f, g)| RandsequenceStatement(a, b, c, d, e, f, g))
@@ -38,7 +38,7 @@ pub fn rs_production_parser<'s>(
         )),
         token(Token::Colon),
         rs_rule_parser,
-        repeat(0.., (token(Token::Pipe), rs_rule_parser)),
+        repeat_strict( (token(Token::Pipe), rs_rule_parser)),
         token(Token::SColon),
     )
         .map(|(a, b, c, d, e, f, g)| RsProduction(a, b, c, d, e, f, g))
@@ -63,7 +63,7 @@ pub fn rs_rule_parser<'s>(
 pub fn rs_production_list_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<RsProductionList<'s>, VerboseError<'s>> {
-    let _producers_parser = (rs_prod_parser, repeat(0.., rs_prod_parser))
+    let _producers_parser = (rs_prod_parser, repeat_strict( rs_prod_parser))
         .map(|(a, b)| RsProductionList::Producers(Box::new((a, b))));
     let _join_parser = (
         token(Token::Rand),
@@ -71,7 +71,7 @@ pub fn rs_production_list_parser<'s>(
         opt((token(Token::Paren), expression_parser, token(Token::EParen))),
         rs_production_item_parser,
         rs_production_item_parser,
-        repeat(0.., rs_production_item_parser),
+        repeat_strict( rs_production_item_parser),
     )
         .map(|(a, b, c, d, e, f)| {
             RsProductionList::Join(Box::new((a, b, c, d, e, f)))
@@ -98,8 +98,8 @@ pub fn rs_code_block_parser<'s>(
 ) -> ModalResult<RsCodeBlock<'s>, VerboseError<'s>> {
     (
         token(Token::Brace),
-        repeat(0.., data_declaration_parser),
-        repeat(0.., statement_or_null_parser),
+        repeat_strict( data_declaration_parser),
+        repeat_strict( statement_or_null_parser),
         token(Token::EBrace),
     )
         .map(|(a, b, c, d)| RsCodeBlock(a, b, c, d))
@@ -172,7 +172,7 @@ pub fn rs_case_parser<'s>(
         case_expression_parser,
         token(Token::EParen),
         rs_case_item_parser,
-        repeat(0.., rs_case_item_parser),
+        repeat_strict( rs_case_item_parser),
         token(Token::Endcase),
     )
         .map(|(a, b, c, d, e, f, g)| RsCase(a, b, c, d, e, f, g))
@@ -184,7 +184,7 @@ pub fn rs_case_item_parser<'s>(
 ) -> ModalResult<RsCaseItem<'s>, VerboseError<'s>> {
     let _expression_parser = (
         case_item_expression_parser,
-        repeat(0.., (token(Token::Comma), case_item_expression_parser)),
+        repeat_strict( (token(Token::Comma), case_item_expression_parser)),
         token(Token::Colon),
         rs_production_item_parser,
         token(Token::SColon),

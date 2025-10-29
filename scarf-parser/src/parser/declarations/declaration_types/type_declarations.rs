@@ -7,7 +7,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, opt, repeat};
+use winnow::combinator::{alt, opt};
 
 pub fn data_declaration_parser<'s>(
     input: &mut Tokens<'s>,
@@ -40,7 +40,7 @@ pub fn package_import_declaration_parser<'s>(
     (
         token(Token::Import),
         package_import_item_parser,
-        repeat(0.., (token(Token::Comma), package_import_item_parser)),
+        repeat_strict( (token(Token::Comma), package_import_item_parser)),
         token(Token::SColon),
     )
         .map(|(a, b, c, d)| PackageImportDeclaration(a, b, c, d))
@@ -53,7 +53,7 @@ pub fn package_export_declaration_parser<'s>(
     let _import_parser = (
         token(Token::Import),
         package_import_item_parser,
-        repeat(0.., (token(Token::Comma), package_import_item_parser)),
+        repeat_strict( (token(Token::Comma), package_import_item_parser)),
         token(Token::SColon),
     )
         .map(|(a, b, c, d)| {
@@ -147,11 +147,11 @@ pub fn net_declaration_parser<'s>(
         implicit_data_type_parser,
         opt((token(Token::Pound), delay_value_parser)),
         net_identifier_parser,
-        repeat(0.., unpacked_dimension_parser),
+        repeat_strict( unpacked_dimension_parser),
         opt((
             token(Token::Comma),
             net_identifier_parser,
-            repeat(0.., unpacked_dimension_parser),
+            repeat_strict( unpacked_dimension_parser),
         )),
     )
         .map(|(a, b, c, d, e, f)| {
@@ -172,7 +172,7 @@ pub fn type_declaration_parser<'s>(
         token(Token::Typedef),
         data_type_or_incomplete_class_scoped_type_parser,
         type_identifier_parser,
-        repeat(0.., variable_dimension_parser),
+        repeat_strict( variable_dimension_parser),
         token(Token::SColon),
     )
         .map(|(a, b, c, d, e)| {

@@ -24,7 +24,7 @@ pub enum FunctionBodyDeclaration<'a> {
     Tf(
         Box<(
             FunctionDataTypeOrImplicit<'a>,
-            InterfaceIdentifierOrClassScope<'a>,
+            Option<InterfaceIdentifierOrClassScope<'a>>,
             FunctionIdentifier<'a>,
             Metadata<'a>, // ;
             Vec<TfItemDeclaration<'a>>,
@@ -39,7 +39,7 @@ pub enum FunctionBodyDeclaration<'a> {
     Block(
         Box<(
             FunctionDataTypeOrImplicit<'a>,
-            InterfaceIdentifierOrClassScope<'a>,
+            Option<InterfaceIdentifierOrClassScope<'a>>,
             FunctionIdentifier<'a>,
             Metadata<'a>, // (
             Option<TfPortList<'a>>,

@@ -7,7 +7,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, opt, repeat};
+use winnow::combinator::{alt, opt};
 
 pub fn net_lvalue_parser<'s>(
     input: &mut Tokens<'s>,
@@ -20,7 +20,7 @@ pub fn net_lvalue_parser<'s>(
     let _nested_net_lvalue_parser = (
         token(Token::Brace),
         net_lvalue_parser,
-        repeat(0.., (token(Token::Comma), net_lvalue_parser)),
+        repeat_strict( (token(Token::Comma), net_lvalue_parser)),
         token(Token::EBrace),
     )
         .map(|(a, b, c, d)| {
@@ -73,7 +73,7 @@ pub fn variable_lvalue_parser<'s>(
     let _nested_variable_lvalue_parser = (
         token(Token::Brace),
         variable_lvalue_parser,
-        repeat(0.., (token(Token::Comma), variable_lvalue_parser)),
+        repeat_strict( (token(Token::Comma), variable_lvalue_parser)),
         token(Token::EBrace),
     )
         .map(|(a, b, c, d)| {

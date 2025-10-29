@@ -7,7 +7,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{opt, repeat};
+use winnow::combinator::{opt};
 
 pub fn attribute_instance_parser<'s>(
     input: &mut Tokens<'s>,
@@ -16,7 +16,7 @@ pub fn attribute_instance_parser<'s>(
         token(Token::Paren),
         token(Token::Star),
         attr_spec_parser,
-        repeat(0.., (token(Token::Comma), attr_spec_parser)),
+        repeat_strict( (token(Token::Comma), attr_spec_parser)),
         token(Token::Star),
         token(Token::EParen),
     )

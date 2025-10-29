@@ -6,7 +6,7 @@
 use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
-use winnow::combinator::{alt, opt, repeat};
+use winnow::combinator::{alt, opt};
 
 pub fn constraint_declaration_parser<'s>(
     input: &mut Tokens<'s>,
@@ -27,7 +27,7 @@ pub fn constraint_block_parser<'s>(
 ) -> ModalResult<ConstraintBlock<'s>, VerboseError<'s>> {
     (
         token(Token::Brace),
-        repeat(0.., constraint_block_item_parser),
+        repeat_strict( constraint_block_item_parser),
         token(Token::EBrace),
     )
         .map(|(a, b, c)| ConstraintBlock(a, b, c))
@@ -57,7 +57,7 @@ pub fn solve_before_list_parser<'s>(
 ) -> ModalResult<SolveBeforeList<'s>, VerboseError<'s>> {
     (
         constraint_primary_parser,
-        repeat(0.., (token(Token::Comma), constraint_primary_parser)),
+        repeat_strict( (token(Token::Comma), constraint_primary_parser)),
     )
         .map(|(a, b)| SolveBeforeList(a, b))
         .parse_next(input)
@@ -160,7 +160,7 @@ pub fn constraint_set_parser<'s>(
         .map(|a| ConstraintSet::Single(Box::new(a)));
     let _multi_parser = (
         token(Token::Brace),
-        repeat(0.., constraint_expression_parser),
+        repeat_strict( constraint_expression_parser),
         token(Token::EBrace),
     )
         .map(|(a, b, c)| ConstraintSet::Multi(Box::new((a, b, c))));
@@ -188,7 +188,7 @@ pub fn dist_list_parser<'s>(
 ) -> ModalResult<DistList<'s>, VerboseError<'s>> {
     (
         dist_item_parser,
-        repeat(0.., (token(Token::Comma), dist_item_parser)),
+        repeat_strict( (token(Token::Comma), dist_item_parser)),
     )
         .map(|(a, b)| DistList(a, b))
         .parse_next(input)

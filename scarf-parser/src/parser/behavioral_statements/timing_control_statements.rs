@@ -7,7 +7,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, opt, repeat};
+use winnow::combinator::{alt, opt};
 
 pub fn procedural_timing_control_statement_parser<'s>(
     input: &mut Tokens<'s>,
@@ -192,7 +192,7 @@ pub fn wait_statement_parser<'s>(
         token(Token::WaitOrder),
         token(Token::Paren),
         hierarchical_identifier_parser,
-        repeat(0.., (token(Token::Comma), hierarchical_identifier_parser)),
+        repeat_strict( (token(Token::Comma), hierarchical_identifier_parser)),
         token(Token::EParen),
         action_block_parser,
     )

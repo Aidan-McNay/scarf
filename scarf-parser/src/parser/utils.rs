@@ -7,7 +7,6 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::Parser;
 use winnow::combinator::alt;
-use winnow::combinator::repeat;
 use winnow::error::ModalResult;
 use winnow::token::any;
 
@@ -28,7 +27,7 @@ pub fn extra_node_parser<'s>(
         Token::Newline => Some(ExtraNode::Newline),
         _ => None,
     });
-    repeat(0.., alt((comment_parser, newline_parser))).parse_next(input)
+    repeat_strict(alt((comment_parser, newline_parser))).parse_next(input)
 }
 
 // A mapping function for replacing extra nodes in metadata

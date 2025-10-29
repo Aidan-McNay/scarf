@@ -7,7 +7,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, opt, repeat};
+use winnow::combinator::{alt, opt};
 
 pub fn timing_check_event_parser<'s>(
     input: &mut Tokens<'s>,
@@ -67,7 +67,7 @@ pub fn edge_control_specifier_parser<'s>(
         token(Token::Edge),
         token(Token::Bracket),
         edge_descriptor_parser,
-        repeat(0.., (token(Token::Comma), edge_descriptor_parser)),
+        repeat_strict( (token(Token::Comma), edge_descriptor_parser)),
         token(Token::EBracket),
     )
         .map(|(a, b, c, d, e)| EdgeControlSpecifier(a, b, c, d, e))

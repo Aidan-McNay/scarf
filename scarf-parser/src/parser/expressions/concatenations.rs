@@ -7,7 +7,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, opt, repeat};
+use winnow::combinator::{alt, opt};
 
 pub fn concatenation_parser<'s>(
     input: &mut Tokens<'s>,
@@ -15,7 +15,7 @@ pub fn concatenation_parser<'s>(
     (
         token(Token::Brace),
         expression_parser,
-        repeat(0.., (token(Token::Comma), expression_parser)),
+        repeat_strict( (token(Token::Comma), expression_parser)),
         token(Token::EBrace),
     )
         .map(|(a, b, c, d)| Concatenation(a, b, c, d))
@@ -28,7 +28,7 @@ pub fn constant_concatenation_parser<'s>(
     (
         token(Token::Brace),
         constant_expression_parser,
-        repeat(0.., (token(Token::Comma), constant_expression_parser)),
+        repeat_strict( (token(Token::Comma), constant_expression_parser)),
         token(Token::EBrace),
     )
         .map(|(a, b, c, d)| ConstantConcatenation(a, b, c, d))
@@ -54,7 +54,7 @@ pub fn module_path_concatenation_parser<'s>(
     (
         token(Token::Brace),
         module_path_expression_parser,
-        repeat(0.., (token(Token::Comma), module_path_expression_parser)),
+        repeat_strict( (token(Token::Comma), module_path_expression_parser)),
         token(Token::EBrace),
     )
         .map(|(a, b, c, d)| ModulePathConcatenation(a, b, c, d))
@@ -127,7 +127,7 @@ pub fn stream_concatenation_parser<'s>(
     (
         token(Token::Brace),
         stream_expression_parser,
-        repeat(0.., (token(Token::Comma), stream_expression_parser)),
+        repeat_strict( (token(Token::Comma), stream_expression_parser)),
         token(Token::EBrace),
     )
         .map(|(a, b, c, d)| StreamConcatenation(a, b, c, d))

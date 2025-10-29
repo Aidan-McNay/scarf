@@ -7,7 +7,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, opt, repeat};
+use winnow::combinator::{alt, opt};
 
 pub fn defparam_assignment_parser<'s>(
     input: &mut Tokens<'s>,
@@ -26,7 +26,7 @@ pub fn net_decl_assignment_parser<'s>(
 ) -> ModalResult<NetDeclAssignment<'s>, VerboseError<'s>> {
     (
         net_identifier_parser,
-        repeat(0.., unpacked_dimension_parser),
+        repeat_strict( unpacked_dimension_parser),
         opt((token(Token::Eq), expression_parser)),
     )
         .map(|(a, b, c)| NetDeclAssignment(a, b, c))
@@ -38,7 +38,7 @@ pub fn param_assignment_parser<'s>(
 ) -> ModalResult<ParamAssignment<'s>, VerboseError<'s>> {
     (
         parameter_identifier_parser,
-        repeat(0.., variable_dimension_parser),
+        repeat_strict( variable_dimension_parser),
         opt((token(Token::Eq), constant_param_expression_parser)),
     )
         .map(|(a, b, c)| ParamAssignment(a, b, c))
@@ -152,14 +152,14 @@ pub fn variable_decl_assignment_parser<'s>(
 ) -> ModalResult<VariableDeclAssignment<'s>, VerboseError<'s>> {
     let _variable_parser = (
         variable_identifier_parser,
-        repeat(0.., variable_dimension_parser),
+        repeat_strict( variable_dimension_parser),
         opt((token(Token::Eq), expression_parser)),
     )
         .map(|(a, b, c)| VariableDeclAssignment::Variable(Box::new((a, b, c))));
     let _dynamic_variable_parser = (
         dynamic_array_variable_identifier_parser,
         unsized_dimension_parser,
-        repeat(0.., variable_dimension_parser),
+        repeat_strict( variable_dimension_parser),
         opt((token(Token::Eq), dynamic_array_new_parser)),
     )
         .map(|(a, b, c, d)| {

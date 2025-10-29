@@ -7,7 +7,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, opt, repeat};
+use winnow::combinator::{alt, opt};
 
 pub fn clocking_declaration_parser<'s>(
     input: &mut Tokens<'s>,
@@ -18,7 +18,7 @@ pub fn clocking_declaration_parser<'s>(
         opt(clocking_identifier_parser),
         clocking_event_parser,
         token(Token::SColon),
-        repeat(0.., clocking_item_parser),
+        repeat_strict(clocking_item_parser),
         token(Token::Endclocking),
         opt((token(Token::Colon), clocking_identifier_parser)),
     )
@@ -31,7 +31,7 @@ pub fn clocking_declaration_parser<'s>(
         opt(clocking_identifier_parser),
         clocking_event_parser,
         token(Token::SColon),
-        repeat(0.., clocking_item_parser),
+        repeat_strict(clocking_item_parser),
         token(Token::Endclocking),
         opt((token(Token::Colon), clocking_identifier_parser)),
     )
@@ -108,7 +108,7 @@ pub fn list_of_clocking_decl_assign_parser<'s>(
 ) -> ModalResult<ListOfClockingDeclAssign<'s>, VerboseError<'s>> {
     (
         clocking_decl_assign_parser,
-        repeat(0.., (token(Token::Comma), clocking_decl_assign_parser)),
+        repeat_strict((token(Token::Comma), clocking_decl_assign_parser)),
     )
         .map(|(a, b)| ListOfClockingDeclAssign(a, b))
         .parse_next(input)

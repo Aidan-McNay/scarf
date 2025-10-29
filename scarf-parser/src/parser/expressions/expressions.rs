@@ -9,7 +9,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, opt, repeat};
+use winnow::combinator::{alt, opt};
 
 pub fn inc_or_dec_expression_parser<'s>(
     input: &mut Tokens<'s>,
@@ -296,7 +296,7 @@ fn pattern_bp_parser<'s>(
         token(Token::Apost),
         token(Token::Brace),
         pattern_parser,
-        repeat(0.., (token(Token::Apost), pattern_parser)),
+        repeat_strict((token(Token::Apost), pattern_parser)),
         token(Token::EBrace),
     )
         .map(|(a, b, c, d, e)| {
@@ -308,15 +308,12 @@ fn pattern_bp_parser<'s>(
         member_identifier_parser,
         token(Token::Colon),
         pattern_parser,
-        repeat(
-            0..,
-            (
-                token(Token::Apost),
-                member_identifier_parser,
-                token(Token::Colon),
-                pattern_parser,
-            ),
-        ),
+        repeat_strict((
+            token(Token::Apost),
+            member_identifier_parser,
+            token(Token::Colon),
+            pattern_parser,
+        )),
         token(Token::EBrace),
     )
         .map(|(a, b, c, d, e, f, g)| {

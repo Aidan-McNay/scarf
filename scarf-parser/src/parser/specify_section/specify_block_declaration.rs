@@ -7,14 +7,14 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, repeat};
+use winnow::combinator::{alt};
 
 pub fn specify_block_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<SpecifyBlock<'s>, VerboseError<'s>> {
     (
         token(Token::Specify),
-        repeat(0.., specify_item_parser),
+        repeat_strict( specify_item_parser),
         token(Token::Endspecify),
     )
         .map(|(a, b, c)| SpecifyBlock(a, b, c))

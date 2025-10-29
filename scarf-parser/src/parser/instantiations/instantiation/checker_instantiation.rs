@@ -7,7 +7,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, opt, repeat};
+use winnow::combinator::{alt, opt};
 
 pub fn checker_instantiation_parser<'s>(
     input: &mut Tokens<'s>,
@@ -29,18 +29,15 @@ pub fn list_of_checker_port_connections_parser<'s>(
 ) -> ModalResult<ListOfCheckerPortConnections<'s>, VerboseError<'s>> {
     let _ordered_parser = (
         ordered_checker_port_connection_parser,
-        repeat(
-            0..,
-            (token(Token::Comma), ordered_checker_port_connection_parser),
-        ),
+        repeat_strict((
+            token(Token::Comma),
+            ordered_checker_port_connection_parser,
+        )),
     )
         .map(|(a, b)| ListOfCheckerPortConnections::Ordered(Box::new((a, b))));
     let _named_parser = (
         named_checker_port_connection_parser,
-        repeat(
-            0..,
-            (token(Token::Comma), named_checker_port_connection_parser),
-        ),
+        repeat_strict((token(Token::Comma), named_checker_port_connection_parser)),
     )
         .map(|(a, b)| ListOfCheckerPortConnections::Named(Box::new((a, b))));
     alt((_named_parser, _ordered_parser)).parse_next(input)

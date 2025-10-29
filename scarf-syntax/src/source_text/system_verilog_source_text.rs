@@ -313,7 +313,7 @@ pub struct ClassDeclaration<'a>(
         Vec<(Metadata<'a>, InterfaceClassType<'a>)>,
     )>,
     pub Metadata<'a>, // ;
-    pub Vec<ClassItem>,
+    pub Vec<ClassItem<'a>>,
     pub Metadata<'a>, // endclass
     pub Option<(Metadata<'a>, ClassIdentifier<'a>)>,
 );
@@ -336,7 +336,7 @@ pub struct InterfaceClassDeclaration<'a>(
         Vec<(Metadata<'a>, InterfaceClassType<'a>)>,
     )>,
     pub Metadata<'a>, // ;
-    pub Vec<InterfaceClassItem>,
+    pub Vec<InterfaceClassItem<'a>>,
     pub Metadata<'a>, // endclass
     pub Option<(Metadata<'a>, ClassIdentifier<'a>)>,
 );

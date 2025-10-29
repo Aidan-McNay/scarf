@@ -7,7 +7,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, opt, repeat};
+use winnow::combinator::{alt, opt};
 
 pub fn action_block_parser<'s>(
     input: &mut Tokens<'s>,
@@ -30,8 +30,8 @@ pub fn seq_block_parser<'s>(
     (
         token(Token::Begin),
         opt((token(Token::Colon), block_identifier_parser)),
-        repeat(0.., block_item_declaration_parser),
-        repeat(0.., statement_or_null_parser),
+        repeat_strict( block_item_declaration_parser),
+        repeat_strict( statement_or_null_parser),
         token(Token::End),
         opt((token(Token::Colon), block_identifier_parser)),
     )
@@ -45,8 +45,8 @@ pub fn par_block_parser<'s>(
     (
         token(Token::Fork),
         opt((token(Token::Colon), block_identifier_parser)),
-        repeat(0.., block_item_declaration_parser),
-        repeat(0.., statement_or_null_parser),
+        repeat_strict( block_item_declaration_parser),
+        repeat_strict( statement_or_null_parser),
         join_keyword_parser,
         opt((token(Token::Colon), block_identifier_parser)),
     )

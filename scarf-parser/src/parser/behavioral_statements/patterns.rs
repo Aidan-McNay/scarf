@@ -7,7 +7,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, opt, repeat};
+use winnow::combinator::{alt, opt};
 
 pub fn pattern_parser<'s>(
     input: &mut Tokens<'s>,
@@ -32,7 +32,7 @@ pub fn pattern_parser<'s>(
         token(Token::Apost),
         token(Token::Brace),
         pattern_parser,
-        repeat(0.., (token(Token::Apost), pattern_parser)),
+        repeat_strict((token(Token::Apost), pattern_parser)),
         token(Token::EBrace),
     )
         .map(|(a, b, c, d, e)| {
@@ -44,15 +44,12 @@ pub fn pattern_parser<'s>(
         member_identifier_parser,
         token(Token::Colon),
         pattern_parser,
-        repeat(
-            0..,
-            (
-                token(Token::Apost),
-                member_identifier_parser,
-                token(Token::Colon),
-                pattern_parser,
-            ),
-        ),
+        repeat_strict((
+            token(Token::Apost),
+            member_identifier_parser,
+            token(Token::Colon),
+            pattern_parser,
+        )),
         token(Token::EBrace),
     )
         .map(|(a, b, c, d, e, f, g)| {
@@ -77,7 +74,7 @@ pub fn assignment_pattern_parser<'s>(
         token(Token::Apost),
         token(Token::Brace),
         expression_parser,
-        repeat(0.., (token(Token::Comma), expression_parser)),
+        repeat_strict((token(Token::Comma), expression_parser)),
         token(Token::EBrace),
     )
         .map(|(a, b, c, d, e)| {
@@ -89,15 +86,12 @@ pub fn assignment_pattern_parser<'s>(
         structure_pattern_key_parser,
         token(Token::Colon),
         expression_parser,
-        repeat(
-            0..,
-            (
-                token(Token::Comma),
-                structure_pattern_key_parser,
-                token(Token::Colon),
-                expression_parser,
-            ),
-        ),
+        repeat_strict((
+            token(Token::Comma),
+            structure_pattern_key_parser,
+            token(Token::Colon),
+            expression_parser,
+        )),
         token(Token::EBrace),
     )
         .map(|(a, b, c, d, e, f, g)| {
@@ -109,15 +103,12 @@ pub fn assignment_pattern_parser<'s>(
         array_pattern_key_parser,
         token(Token::Colon),
         expression_parser,
-        repeat(
-            0..,
-            (
-                token(Token::Comma),
-                array_pattern_key_parser,
-                token(Token::Colon),
-                expression_parser,
-            ),
-        ),
+        repeat_strict((
+            token(Token::Comma),
+            array_pattern_key_parser,
+            token(Token::Colon),
+            expression_parser,
+        )),
         token(Token::EBrace),
     )
         .map(|(a, b, c, d, e, f, g)| {
@@ -129,7 +120,7 @@ pub fn assignment_pattern_parser<'s>(
         constant_expression_parser,
         token(Token::Brace),
         expression_parser,
-        repeat(0.., (token(Token::Comma), expression_parser)),
+        repeat_strict((token(Token::Comma), expression_parser)),
         token(Token::EBrace),
         token(Token::EBrace),
     )
@@ -223,7 +214,7 @@ pub fn assignment_pattern_net_lvalue_parser<'s>(
         token(Token::Apost),
         token(Token::Brace),
         net_lvalue_parser,
-        repeat(0.., (token(Token::Comma), net_lvalue_parser)),
+        repeat_strict((token(Token::Comma), net_lvalue_parser)),
         token(Token::EBrace),
     )
         .map(|(a, b, c, d, e)| AssignmentPatternNetLvalue(a, b, c, d, e))
@@ -238,7 +229,7 @@ pub fn assignment_pattern_variable_lvalue_parser<'s>(
         token(Token::Apost),
         token(Token::Brace),
         variable_lvalue_parser,
-        repeat(0.., (token(Token::Comma), variable_lvalue_parser)),
+        repeat_strict((token(Token::Comma), variable_lvalue_parser)),
         token(Token::EBrace),
     )
         .map(|(a, b, c, d, e)| AssignmentPatternVariableLvalue(a, b, c, d, e))

@@ -6,7 +6,7 @@
 use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
-use winnow::combinator::{opt, repeat};
+use winnow::combinator::{opt};
 
 pub fn udp_instantiation_parser<'s>(
     input: &mut Tokens<'s>,
@@ -16,7 +16,7 @@ pub fn udp_instantiation_parser<'s>(
         opt(drive_strength_parser),
         opt(delay2_parser),
         udp_instance_parser,
-        repeat(0.., (token(Token::Comma), udp_instance_parser)),
+        repeat_strict( (token(Token::Comma), udp_instance_parser)),
         token(Token::SColon),
     )
         .map(|(a, b, c, d, e, f)| UdpInstantiation(a, b, c, d, e, f))
@@ -32,7 +32,7 @@ pub fn udp_instance_parser<'s>(
         output_terminal_parser,
         token(Token::Comma),
         input_terminal_parser,
-        repeat(0.., (token(Token::Comma), input_terminal_parser)),
+        repeat_strict( (token(Token::Comma), input_terminal_parser)),
         token(Token::EParen),
     )
         .map(|(a, b, c, d, e, f, g)| UdpInstance(a, b, c, d, e, f, g))

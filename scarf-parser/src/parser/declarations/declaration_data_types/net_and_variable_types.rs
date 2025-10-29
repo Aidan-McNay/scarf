@@ -7,7 +7,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, opt, repeat};
+use winnow::combinator::{alt, opt};
 
 pub fn casting_type_parser<'s>(
     input: &mut Tokens<'s>,
@@ -39,7 +39,7 @@ pub fn data_type_parser<'s>(
     let _vector_parser = (
         integer_vector_type_parser,
         opt(signing_parser),
-        repeat(0.., packed_dimension_parser),
+        repeat_strict(packed_dimension_parser),
     )
         .map(|(a, b, c)| DataType::Vector(Box::new((a, b, c))));
     let _atom_parser = (integer_atom_type_parser, opt(signing_parser))
@@ -51,9 +51,9 @@ pub fn data_type_parser<'s>(
         opt((token(Token::Packed), opt(signing_parser))),
         token(Token::Brace),
         struct_union_member_parser,
-        repeat(0.., struct_union_member_parser),
+        repeat_strict(struct_union_member_parser),
         token(Token::EBrace),
-        repeat(0.., packed_dimension_parser),
+        repeat_strict(packed_dimension_parser),
     )
         .map(|(a, b, c, d, e, f, g)| {
             DataType::StructUnion(Box::new((a, b, c, d, e, f, g)))
@@ -63,9 +63,9 @@ pub fn data_type_parser<'s>(
         opt(enum_base_type_parser),
         token(Token::Brace),
         enum_name_declaration_parser,
-        repeat(0.., (token(Token::Comma), enum_name_declaration_parser)),
+        repeat_strict((token(Token::Comma), enum_name_declaration_parser)),
         token(Token::EBrace),
-        repeat(0.., packed_dimension_parser),
+        repeat_strict(packed_dimension_parser),
     )
         .map(|(a, b, c, d, e, f, g)| {
             DataType::Enum(Box::new((a, b, c, d, e, f, g)))
@@ -85,7 +85,7 @@ pub fn data_type_parser<'s>(
     let _type_parser = (
         class_or_package_scope_parser,
         type_identifier_parser,
-        repeat(0.., packed_dimension_parser),
+        repeat_strict(packed_dimension_parser),
     )
         .map(|(a, b, c)| DataType::Type(Box::new((a, b, c))));
     let _class_type_parser =
@@ -128,7 +128,7 @@ pub fn data_type_or_implicit_parser<'s>(
 pub fn implicit_data_type_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<ImplicitDataType<'s>, VerboseError<'s>> {
-    (opt(signing_parser), repeat(0.., packed_dimension_parser))
+    (opt(signing_parser), repeat_strict(packed_dimension_parser))
         .map(|(a, b)| ImplicitDataType(a, b))
         .parse_next(input)
 }
@@ -180,14 +180,11 @@ pub fn class_type_parser<'s>(
     (
         ps_class_identifier_parser,
         opt(parameter_value_assignment_parser),
-        repeat(
-            0..,
-            (
-                token(Token::ColonColon),
-                class_identifier_parser,
-                opt(parameter_value_assignment_parser),
-            ),
-        ),
+        repeat_strict((
+            token(Token::ColonColon),
+            class_identifier_parser,
+            opt(parameter_value_assignment_parser),
+        )),
     )
         .map(|(a, b, c)| ClassType(a, b, c))
         .parse_next(input)

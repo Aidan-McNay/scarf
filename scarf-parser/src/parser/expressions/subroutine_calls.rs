@@ -6,7 +6,7 @@
 use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
-use winnow::combinator::{alt, opt, repeat};
+use winnow::combinator::{alt, opt};
 
 pub fn constant_function_call_parser<'s>(
     input: &mut Tokens<'s>,
@@ -56,7 +56,7 @@ pub fn system_tf_call_parser<'s>(
         system_tf_identifier_parser,
         token(Token::Paren),
         expression_parser,
-        repeat(0.., (token(Token::Comma), opt(expression_parser))),
+        repeat_strict((token(Token::Comma), opt(expression_parser))),
         opt((token(Token::Comma), opt(clocking_event_parser))),
         token(Token::EParen),
     )
@@ -95,18 +95,15 @@ pub fn list_of_arguments_parser<'s>(
 ) -> ModalResult<ListOfArguments<'s>, VerboseError<'s>> {
     let _expressions_parser = (
         opt(expression_parser),
-        repeat(0.., (token(Token::Comma), opt(expression_parser))),
-        repeat(
-            0..,
-            (
-                token(Token::Comma),
-                token(Token::Period),
-                identifier_parser,
-                token(Token::Paren),
-                opt(expression_parser),
-                token(Token::EParen),
-            ),
-        ),
+        repeat_strict((token(Token::Comma), opt(expression_parser))),
+        repeat_strict((
+            token(Token::Comma),
+            token(Token::Period),
+            identifier_parser,
+            token(Token::Paren),
+            opt(expression_parser),
+            token(Token::EParen),
+        )),
     )
         .map(|(a, b, c)| ListOfArguments::Expressions(Box::new((a, b, c))));
     let _no_expressions_parser = (
@@ -115,17 +112,14 @@ pub fn list_of_arguments_parser<'s>(
         token(Token::Paren),
         opt(expression_parser),
         token(Token::EParen),
-        repeat(
-            0..,
-            (
-                token(Token::Comma),
-                token(Token::Period),
-                identifier_parser,
-                token(Token::Paren),
-                opt(expression_parser),
-                token(Token::EParen),
-            ),
-        ),
+        repeat_strict((
+            token(Token::Comma),
+            token(Token::Period),
+            identifier_parser,
+            token(Token::Paren),
+            opt(expression_parser),
+            token(Token::EParen),
+        )),
     )
         .map(|(a, b, c, d, e, f)| {
             ListOfArguments::NoExpressions(Box::new((a, b, c, d, e, f)))
@@ -234,7 +228,7 @@ pub fn variable_identifier_list_parser<'s>(
 ) -> ModalResult<VariableIdentifierList<'s>, VerboseError<'s>> {
     (
         variable_identifier_parser,
-        repeat(0.., (token(Token::Comma), variable_identifier_parser)),
+        repeat_strict((token(Token::Comma), variable_identifier_parser)),
     )
         .map(|(a, b)| VariableIdentifierList(a, b))
         .parse_next(input)
@@ -245,17 +239,88 @@ pub fn identifier_list_parser<'s>(
 ) -> ModalResult<IdentifierList<'s>, VerboseError<'s>> {
     (
         identifier_parser,
-        repeat(0.., (token(Token::Comma), identifier_parser)),
+        repeat_strict((token(Token::Comma), identifier_parser)),
     )
         .map(|(a, b)| IdentifierList(a, b))
         .parse_next(input)
+}
+
+// Parse separate from other primaries to avoid subroutine call recursion
+fn method_root_primary_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<Primary<'s>, VerboseError<'s>> {
+    let _primary_literal_parser =
+        primary_literal_parser.map(|a| Primary::PrimaryLiteral(Box::new(a)));
+    let _hierarchical_identifier_parser = (
+        opt(class_qualifier_or_package_scope_parser),
+        hierarchical_identifier_parser,
+        select_parser,
+    )
+        .map(|(a, b, c)| Primary::HierarchicalIdentifier(Box::new((a, b, c))));
+    let _empty_unpacked_array_concatenation_parser =
+        empty_unpacked_array_concatenation_parser
+            .map(|a| Primary::EmptyUnpackedArrayConcatenation(Box::new(a)));
+    let _concatenation_parser = (
+        concatenation_parser,
+        opt((
+            token(Token::Bracket),
+            range_expression_parser,
+            token(Token::EBracket),
+        )),
+    )
+        .map(|(a, b)| Primary::Concatenation(Box::new((a, b))));
+    let _multiple_concatenation_parser = (
+        multiple_concatenation_parser,
+        opt((
+            token(Token::Bracket),
+            range_expression_parser,
+            token(Token::EBracket),
+        )),
+    )
+        .map(|(a, b)| Primary::MultipleConcatenation(Box::new((a, b))));
+    let _let_expression_parser =
+        let_expression_parser.map(|a| Primary::LetExpression(Box::new(a)));
+    let _mintypmax_parser = (
+        token(Token::Paren),
+        mintypmax_expression_parser,
+        token(Token::EParen),
+    )
+        .map(|(a, b, c)| Primary::MintypmaxExpression(Box::new((a, b, c))));
+    let _assignment_pattern_expression_parser =
+        assignment_pattern_expression_parser
+            .map(|a| Primary::AssignmentPatternExpression(Box::new(a)));
+    let _streaming_concatenation_parser = streaming_concatenation_parser
+        .map(|a| Primary::StreamingConcatenation(Box::new(a)));
+    let _sequence_method_call_parser = sequence_method_call_parser
+        .map(|a| Primary::SequenceMethodCall(Box::new(a)));
+    let _this_parser = token(Token::This).map(|a| Primary::This(Box::new(a)));
+    let _dollar_parser =
+        token(Token::Dollar).map(|a| Primary::This(Box::new(a)));
+    let _null_parser = token(Token::Null).map(|a| Primary::This(Box::new(a)));
+    alt((
+        _primary_literal_parser,
+        _hierarchical_identifier_parser,
+        _empty_unpacked_array_concatenation_parser,
+        _concatenation_parser,
+        _multiple_concatenation_parser,
+        _let_expression_parser,
+        _mintypmax_parser,
+        _assignment_pattern_expression_parser,
+        _streaming_concatenation_parser,
+        _sequence_method_call_parser,
+        _this_parser,
+        _dollar_parser,
+        _null_parser,
+    ))
+    .parse_next(input)
 }
 
 pub fn method_call_root_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<MethodCallRoot<'s>, VerboseError<'s>> {
     alt((
-        primary_parser.map(|a| MethodCallRoot::Primary(Box::new(a))),
+        method_root_primary_parser
+            .map(|a| MethodCallRoot::Primary(Box::new(a))),
         implicit_class_handle_parser
             .map(|a| MethodCallRoot::ImplicitClassHandle(Box::new(a))),
     ))

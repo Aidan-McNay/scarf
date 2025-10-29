@@ -7,7 +7,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, opt, repeat};
+use winnow::combinator::{alt, opt};
 
 pub fn let_declaration_parser<'s>(
     input: &mut Tokens<'s>,
@@ -41,7 +41,7 @@ pub fn let_port_list_parser<'s>(
 ) -> ModalResult<LetPortList<'s>, VerboseError<'s>> {
     (
         let_port_item_parser,
-        repeat(0.., (token(Token::Comma), let_port_item_parser)),
+        repeat_strict((token(Token::Comma), let_port_item_parser)),
     )
         .map(|(a, b)| LetPortList(a, b))
         .parse_next(input)
@@ -54,7 +54,7 @@ pub fn let_port_item_parser<'s>(
         attribute_instance_vec_parser,
         let_formal_type_parser,
         formal_port_identifier_parser,
-        repeat(0.., variable_dimension_parser),
+        repeat_strict(variable_dimension_parser),
         opt((token(Token::Eq), expression_parser)),
     )
         .map(|(a, b, c, d, e)| LetPortItem(a, b, c, d, e))
@@ -93,18 +93,15 @@ pub fn let_list_of_arguments_parser<'s>(
 ) -> ModalResult<LetListOfArguments<'s>, VerboseError<'s>> {
     let _partial_identifier_parser = (
         opt(let_actual_arg_parser),
-        repeat(0.., (token(Token::Comma), opt(let_actual_arg_parser))),
-        repeat(
-            0..,
-            (
-                token(Token::Comma),
-                token(Token::Period),
-                identifier_parser,
-                token(Token::Paren),
-                opt(let_actual_arg_parser),
-                token(Token::EParen),
-            ),
-        ),
+        repeat_strict((token(Token::Comma), opt(let_actual_arg_parser))),
+        repeat_strict((
+            token(Token::Comma),
+            token(Token::Period),
+            identifier_parser,
+            token(Token::Paren),
+            opt(let_actual_arg_parser),
+            token(Token::EParen),
+        )),
     )
         .map(|(a, b, c)| LetListOfPartialIdentifierArguments(a, b, c));
     let _identifier_parser = (
@@ -113,17 +110,14 @@ pub fn let_list_of_arguments_parser<'s>(
         token(Token::Paren),
         opt(let_actual_arg_parser),
         token(Token::EParen),
-        repeat(
-            0..,
-            (
-                token(Token::Comma),
-                token(Token::Period),
-                identifier_parser,
-                token(Token::Paren),
-                opt(let_actual_arg_parser),
-                token(Token::EParen),
-            ),
-        ),
+        repeat_strict((
+            token(Token::Comma),
+            token(Token::Period),
+            identifier_parser,
+            token(Token::Paren),
+            opt(let_actual_arg_parser),
+            token(Token::EParen),
+        )),
     )
         .map(|(a, b, c, d, e, f)| {
             LetListOfIdentifierArguments(a, b, c, d, e, f)

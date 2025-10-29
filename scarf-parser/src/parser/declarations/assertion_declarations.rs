@@ -7,7 +7,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, opt, repeat};
+use winnow::combinator::{alt, opt};
 use winnow::stream::Stream;
 
 pub fn concurrent_assertion_item_parser<'s>(
@@ -160,18 +160,15 @@ pub fn property_list_of_arguments_parser<'s>(
 ) -> ModalResult<PropertyListOfArguments<'s>, VerboseError<'s>> {
     let _partial_identifier_parser = (
         opt(property_actual_arg_parser),
-        repeat(0.., (token(Token::Comma), opt(property_actual_arg_parser))),
-        repeat(
-            0..,
-            (
-                token(Token::Comma),
-                token(Token::Period),
-                identifier_parser,
-                token(Token::Paren),
-                opt(property_actual_arg_parser),
-                token(Token::EParen),
-            ),
-        ),
+        repeat_strict((token(Token::Comma), opt(property_actual_arg_parser))),
+        repeat_strict((
+            token(Token::Comma),
+            token(Token::Period),
+            identifier_parser,
+            token(Token::Paren),
+            opt(property_actual_arg_parser),
+            token(Token::EParen),
+        )),
     )
         .map(|(a, b, c)| {
             PropertyListOfArguments::PartialIdentifier(Box::new((a, b, c)))
@@ -182,17 +179,14 @@ pub fn property_list_of_arguments_parser<'s>(
         token(Token::Paren),
         opt(property_actual_arg_parser),
         token(Token::EParen),
-        repeat(
-            0..,
-            (
-                token(Token::Comma),
-                token(Token::Period),
-                identifier_parser,
-                token(Token::Paren),
-                opt(property_actual_arg_parser),
-                token(Token::EParen),
-            ),
-        ),
+        repeat_strict((
+            token(Token::Comma),
+            token(Token::Period),
+            identifier_parser,
+            token(Token::Paren),
+            opt(property_actual_arg_parser),
+            token(Token::EParen),
+        )),
     )
         .map(|(a, b, c, d, e, f)| {
             PropertyListOfArguments::Identifier(Box::new((a, b, c, d, e, f)))
@@ -237,7 +231,7 @@ pub fn property_declaration_parser<'s>(
             token(Token::EParen),
         )),
         token(Token::SColon),
-        repeat(0.., assertion_variable_declaration_parser),
+        repeat_strict(assertion_variable_declaration_parser),
         property_spec_parser,
         opt(token(Token::SColon)),
         token(Token::Endproperty),
@@ -254,7 +248,7 @@ pub fn property_port_list_parser<'s>(
 ) -> ModalResult<PropertyPortList<'s>, VerboseError<'s>> {
     (
         property_port_item_parser,
-        repeat(0.., (token(Token::Comma), property_port_item_parser)),
+        repeat_strict((token(Token::Comma), property_port_item_parser)),
     )
         .map(|(a, b)| PropertyPortList(a, b))
         .parse_next(input)
@@ -271,7 +265,7 @@ pub fn property_port_item_parser<'s>(
         )),
         property_formal_type_parser,
         formal_port_identifier_parser,
-        repeat(0.., variable_dimension_parser),
+        repeat_strict(variable_dimension_parser),
         opt((token(Token::Eq), property_actual_arg_parser)),
     )
         .map(|(a, b, c, d, e, f)| PropertyPortItem(a, b, c, d, e, f))
@@ -442,7 +436,7 @@ fn basic_property_expr_parser<'s>(
         expression_or_dist_parser,
         token(Token::EParen),
         property_case_item_parser,
-        repeat(0.., property_case_item_parser),
+        repeat_strict(property_case_item_parser),
         token(Token::Endcase),
     )
         .map(|(a, b, c, d, e, f, g)| {
@@ -729,7 +723,7 @@ pub fn property_case_item_parser<'s>(
 ) -> ModalResult<PropertyCaseItem<'s>, VerboseError<'s>> {
     let _expr_parser = (
         expression_or_dist_parser,
-        repeat(0.., (token(Token::Comma), expression_or_dist_parser)),
+        repeat_strict((token(Token::Comma), expression_or_dist_parser)),
         token(Token::Colon),
         property_expr_parser,
         token(Token::SColon),
@@ -759,7 +753,7 @@ pub fn sequence_declaration_parser<'s>(
             token(Token::EParen),
         )),
         token(Token::SColon),
-        repeat(0.., assertion_variable_declaration_parser),
+        repeat_strict(assertion_variable_declaration_parser),
         sequence_expr_parser,
         opt(token(Token::SColon)),
         token(Token::Endsequence),
@@ -776,7 +770,7 @@ pub fn sequence_port_list_parser<'s>(
 ) -> ModalResult<SequencePortList<'s>, VerboseError<'s>> {
     (
         sequence_port_item_parser,
-        repeat(0.., (token(Token::Comma), sequence_port_item_parser)),
+        repeat_strict((token(Token::Comma), sequence_port_item_parser)),
     )
         .map(|(a, b)| SequencePortList(a, b))
         .parse_next(input)
@@ -793,7 +787,7 @@ pub fn sequence_port_item_parser<'s>(
         )),
         sequence_formal_type_parser,
         formal_port_identifier_parser,
-        repeat(0.., variable_dimension_parser),
+        repeat_strict(variable_dimension_parser),
         opt((token(Token::Eq), sequence_actual_arg_parser)),
     )
         .map(|(a, b, c, d, e, f)| SequencePortItem(a, b, c, d, e, f))
@@ -845,7 +839,7 @@ fn basic_sequence_expr_parser<'s>(
     let _start_delay_parser = (
         cycle_delay_range_parser,
         sequence_expr_parser,
-        repeat(0.., (cycle_delay_range_parser, sequence_expr_parser)),
+        repeat_strict((cycle_delay_range_parser, sequence_expr_parser)),
     )
         .map(|(a, b, c)| SequenceExpr::StartDelay(Box::new((a, b, c))));
     let _expr_parser = (expression_or_dist_parser, opt(boolean_abbrev_parser))
@@ -853,7 +847,7 @@ fn basic_sequence_expr_parser<'s>(
     let _paren_parser = (
         token(Token::Paren),
         sequence_expr_parser,
-        repeat(0.., (token(Token::Comma), sequence_match_item_parser)),
+        repeat_strict((token(Token::Comma), sequence_match_item_parser)),
         token(Token::EParen),
         opt(sequence_abbrev_parser),
     )
@@ -862,7 +856,7 @@ fn basic_sequence_expr_parser<'s>(
         token(Token::FirstMatch),
         token(Token::Paren),
         sequence_expr_parser,
-        repeat(0.., (token(Token::Comma), sequence_match_item_parser)),
+        repeat_strict((token(Token::Comma), sequence_match_item_parser)),
         token(Token::EParen),
     )
         .map(|(a, b, c, d, e)| {
@@ -950,10 +944,10 @@ fn sequence_expr_bp_parser<'s>(
         lhs = match op {
             SequencePrattOp::CycleDelayRange(cycle_delay_range) => {
                 let next_sequence_expr = sequence_expr_parser(input)?;
-                let later_delays = repeat(
-                    0..,
-                    (cycle_delay_range_parser, sequence_expr_parser),
-                )
+                let later_delays = repeat_strict((
+                    cycle_delay_range_parser,
+                    sequence_expr_parser,
+                ))
                 .parse_next(input)?;
                 SequenceExpr::Delay(Box::new((
                     lhs,
@@ -1095,18 +1089,15 @@ pub fn sequence_list_of_arguments_parser<'s>(
 ) -> ModalResult<SequenceListOfArguments<'s>, VerboseError<'s>> {
     let _partial_identifier_parser = (
         opt(sequence_actual_arg_parser),
-        repeat(0.., (token(Token::Comma), opt(sequence_actual_arg_parser))),
-        repeat(
-            0..,
-            (
-                token(Token::Comma),
-                token(Token::Period),
-                identifier_parser,
-                token(Token::Paren),
-                opt(sequence_actual_arg_parser),
-                token(Token::EParen),
-            ),
-        ),
+        repeat_strict((token(Token::Comma), opt(sequence_actual_arg_parser))),
+        repeat_strict((
+            token(Token::Comma),
+            token(Token::Period),
+            identifier_parser,
+            token(Token::Paren),
+            opt(sequence_actual_arg_parser),
+            token(Token::EParen),
+        )),
     )
         .map(|(a, b, c)| {
             SequenceListOfArguments::PartialIdentifier(Box::new((a, b, c)))
@@ -1117,17 +1108,14 @@ pub fn sequence_list_of_arguments_parser<'s>(
         token(Token::Paren),
         opt(sequence_actual_arg_parser),
         token(Token::EParen),
-        repeat(
-            0..,
-            (
-                token(Token::Comma),
-                token(Token::Period),
-                identifier_parser,
-                token(Token::Paren),
-                opt(sequence_actual_arg_parser),
-                token(Token::EParen),
-            ),
-        ),
+        repeat_strict((
+            token(Token::Comma),
+            token(Token::Period),
+            identifier_parser,
+            token(Token::Paren),
+            opt(sequence_actual_arg_parser),
+            token(Token::EParen),
+        )),
     )
         .map(|(a, b, c, d, e, f)| {
             SequenceListOfArguments::Identifier(Box::new((a, b, c, d, e, f)))

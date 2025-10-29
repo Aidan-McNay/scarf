@@ -644,18 +644,15 @@ pub fn ps_parameter_identifier_parser<'s>(
     )
         .map(|(a, b)| PsParameterIdentifier::Scoped(a, b));
     let _generated_parser = (
-        repeat(
-            0..,
-            (
-                generate_block_identifier_parser,
-                opt((
-                    token(Token::Bracket),
-                    constant_expression_parser,
-                    token(Token::EBracket),
-                )),
-                token(Token::Period),
-            ),
-        ),
+        repeat_strict((
+            generate_block_identifier_parser,
+            opt((
+                token(Token::Bracket),
+                constant_expression_parser,
+                token(Token::EBracket),
+            )),
+            token(Token::Period),
+        )),
         parameter_identifier_parser,
     )
         .map(|(a, b)| PsParameterIdentifier::Generated(a, b));

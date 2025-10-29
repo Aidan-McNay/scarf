@@ -8,7 +8,7 @@ use lexer::Span;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, opt, repeat};
+use winnow::combinator::{alt, opt};
 use winnow::token::any;
 
 pub fn constant_primary_parser<'s>(
@@ -208,7 +208,7 @@ pub fn primary_parser<'s>(
     .parse_next(input)
 }
 
-fn class_qualifier_or_package_scope_parser<'s>(
+pub fn class_qualifier_or_package_scope_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<ClassQualifierOrPackageScope<'s>, VerboseError<'s>> {
     alt((
@@ -383,14 +383,11 @@ pub fn implicit_class_handle_parser<'s>(
 pub fn bit_select_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<BitSelect<'s>, VerboseError<'s>> {
-    repeat(
-        0..,
-        (
-            token(Token::Bracket),
-            expression_parser,
-            token(Token::EBracket),
-        ),
-    )
+    repeat_strict((
+        token(Token::Bracket),
+        expression_parser,
+        token(Token::EBracket),
+    ))
     .map(|a| BitSelect(a))
     .parse_next(input)
 }
@@ -463,14 +460,11 @@ pub fn nonrange_select_parser<'s>(
 pub fn constant_bit_select_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<ConstantBitSelect<'s>, VerboseError<'s>> {
-    repeat(
-        0..,
-        (
-            token(Token::Bracket),
-            constant_expression_parser,
-            token(Token::EBracket),
-        ),
-    )
+    repeat_strict((
+        token(Token::Bracket),
+        constant_expression_parser,
+        token(Token::EBracket),
+    ))
     .map(|a| ConstantBitSelect(a))
     .parse_next(input)
 }

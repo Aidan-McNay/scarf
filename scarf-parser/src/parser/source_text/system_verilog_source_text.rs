@@ -7,12 +7,12 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, opt, repeat};
+use winnow::combinator::{alt, opt};
 
 pub(crate) fn attribute_instance_vec_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<Vec<AttributeInstance<'s>>, VerboseError<'s>> {
-    repeat(0.., attribute_instance_parser).parse_next(input)
+    repeat_strict(attribute_instance_parser).parse_next(input)
 }
 
 pub fn source_text_parser<'s>(
@@ -86,7 +86,7 @@ pub fn module_declaration_nonansi_parser<'s>(
     (
         module_nonansi_header_parser,
         opt(timeunits_declaration_parser),
-        repeat(0.., module_item_parser),
+        repeat_strict(module_item_parser),
         token(Token::Endmodule),
         opt((token(Token::Colon), module_identifier_parser)),
     )
@@ -100,7 +100,7 @@ pub fn module_declaration_ansi_parser<'s>(
     (
         module_ansi_header_parser,
         opt(timeunits_declaration_parser),
-        repeat(0.., non_port_module_item_parser),
+        repeat_strict(non_port_module_item_parser),
         token(Token::Endmodule),
         opt((token(Token::Colon), module_identifier_parser)),
     )
@@ -116,7 +116,7 @@ pub fn module_nonansi_header_parser<'s>(
         module_keyword_parser,
         opt(lifetime_parser),
         module_identifier_parser,
-        repeat(0.., package_import_declaration_parser),
+        repeat_strict(package_import_declaration_parser),
         opt(parameter_port_list_parser),
         list_of_ports_parser,
         token(Token::SColon),
@@ -135,7 +135,7 @@ pub fn module_ansi_header_parser<'s>(
         module_keyword_parser,
         opt(lifetime_parser),
         module_identifier_parser,
-        repeat(0.., package_import_declaration_parser),
+        repeat_strict(package_import_declaration_parser),
         opt(parameter_port_list_parser),
         opt(list_of_port_declarations_parser),
         token(Token::SColon),
@@ -160,7 +160,7 @@ pub fn module_declaration_wildcard_parser<'s>(
         token(Token::EParen),
         token(Token::SColon),
         opt(timeunits_declaration_parser),
-        repeat(0.., module_item_parser),
+        repeat_strict(module_item_parser),
         token(Token::Endmodule),
         opt((token(Token::Colon), module_identifier_parser)),
     )
@@ -220,7 +220,7 @@ pub fn interface_declaration_nonansi_parser<'s>(
     (
         interface_nonansi_header_parser,
         opt(timeunits_declaration_parser),
-        repeat(0.., interface_item_parser),
+        repeat_strict(interface_item_parser),
         token(Token::Endinterface),
         opt((token(Token::Colon), interface_identifier_parser)),
     )
@@ -234,7 +234,7 @@ pub fn interface_declaration_ansi_parser<'s>(
     (
         interface_ansi_header_parser,
         opt(timeunits_declaration_parser),
-        repeat(0.., non_port_interface_item_parser),
+        repeat_strict(non_port_interface_item_parser),
         token(Token::Endinterface),
         opt((token(Token::Colon), interface_identifier_parser)),
     )
@@ -255,7 +255,7 @@ pub fn interface_declaration_wildcard_parser<'s>(
         token(Token::EParen),
         token(Token::SColon),
         opt(timeunits_declaration_parser),
-        repeat(0.., interface_item_parser),
+        repeat_strict(interface_item_parser),
         token(Token::Endinterface),
         opt((token(Token::Colon), interface_identifier_parser)),
     )
@@ -289,7 +289,7 @@ pub fn interface_nonansi_header_parser<'s>(
         token(Token::Interface),
         opt(lifetime_parser),
         interface_identifier_parser,
-        repeat(0.., package_import_declaration_parser),
+        repeat_strict(package_import_declaration_parser),
         opt(parameter_port_list_parser),
         list_of_ports_parser,
         token(Token::SColon),
@@ -308,7 +308,7 @@ pub fn interface_ansi_header_parser<'s>(
         token(Token::Interface),
         opt(lifetime_parser),
         interface_identifier_parser,
-        repeat(0.., package_import_declaration_parser),
+        repeat_strict(package_import_declaration_parser),
         opt(parameter_port_list_parser),
         opt(list_of_port_declarations_parser),
         token(Token::SColon),
@@ -343,7 +343,7 @@ pub fn program_declaration_nonansi_parser<'s>(
     (
         program_nonansi_header_parser,
         opt(timeunits_declaration_parser),
-        repeat(0.., program_item_parser),
+        repeat_strict(program_item_parser),
         token(Token::Endprogram),
         opt((token(Token::Colon), program_identifier_parser)),
     )
@@ -357,7 +357,7 @@ pub fn program_declaration_ansi_parser<'s>(
     (
         program_ansi_header_parser,
         opt(timeunits_declaration_parser),
-        repeat(0.., non_port_program_item_parser),
+        repeat_strict(non_port_program_item_parser),
         token(Token::Endprogram),
         opt((token(Token::Colon), program_identifier_parser)),
     )
@@ -378,7 +378,7 @@ pub fn program_declaration_wildcard_parser<'s>(
         token(Token::EParen),
         token(Token::SColon),
         opt(timeunits_declaration_parser),
-        repeat(0.., program_item_parser),
+        repeat_strict(program_item_parser),
         token(Token::Endprogram),
         opt((token(Token::Colon), program_identifier_parser)),
     )
@@ -412,7 +412,7 @@ pub fn program_nonansi_header_parser<'s>(
         token(Token::Program),
         opt(lifetime_parser),
         program_identifier_parser,
-        repeat(0.., package_import_declaration_parser),
+        repeat_strict(package_import_declaration_parser),
         opt(parameter_port_list_parser),
         list_of_ports_parser,
         token(Token::SColon),
@@ -431,7 +431,7 @@ pub fn program_ansi_header_parser<'s>(
         token(Token::Program),
         opt(lifetime_parser),
         program_identifier_parser,
-        repeat(0.., package_import_declaration_parser),
+        repeat_strict(package_import_declaration_parser),
         opt(parameter_port_list_parser),
         opt(list_of_port_declarations_parser),
         token(Token::SColon),
@@ -450,13 +450,10 @@ pub fn checker_declaration_parser<'s>(
         checker_port_list_parser,
         token(Token::EParen),
     );
-    let checker_declaration_item_parser = repeat(
-        0..,
-        (
-            attribute_instance_vec_parser,
-            checker_or_generate_item_parser,
-        ),
-    );
+    let checker_declaration_item_parser = repeat_strict((
+        attribute_instance_vec_parser,
+        checker_or_generate_item_parser,
+    ));
     (
         token(Token::Checker),
         checker_identifier_parser,
@@ -494,7 +491,7 @@ pub fn class_declaration_parser<'s>(
     let class_declaration_implementation_parser = (
         token(Token::Implements),
         interface_class_type_parser,
-        repeat(0.., (token(Token::Comma), interface_class_type_parser)),
+        repeat_strict((token(Token::Comma), interface_class_type_parser)),
     );
     (
         opt(token(Token::Virtual)),
@@ -505,7 +502,7 @@ pub fn class_declaration_parser<'s>(
         opt(class_declaration_extension_parser),
         opt(class_declaration_implementation_parser),
         token(Token::SColon),
-        repeat(0.., class_item_parser),
+        repeat_strict(class_item_parser),
         token(Token::Endclass),
         opt((token(Token::Colon), class_identifier_parser)),
     )
@@ -521,7 +518,7 @@ pub fn interface_class_declaration_parser<'s>(
     let interface_class_declaration_extension_parser = (
         token(Token::Extends),
         interface_class_type_parser,
-        repeat(0.., (token(Token::Comma), interface_class_type_parser)),
+        repeat_strict((token(Token::Comma), interface_class_type_parser)),
     );
     (
         token(Token::Interface),
@@ -530,7 +527,7 @@ pub fn interface_class_declaration_parser<'s>(
         opt(parameter_port_list_parser),
         opt(interface_class_declaration_extension_parser),
         token(Token::SColon),
-        repeat(0.., interface_class_item_parser),
+        repeat_strict(interface_class_item_parser),
         token(Token::Endclass),
         opt((token(Token::Colon), class_identifier_parser)),
     )
@@ -544,7 +541,7 @@ pub fn package_declaration_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<PackageDeclaration<'s>, VerboseError<'s>> {
     let attribute_package_items_parser =
-        repeat(0.., (attribute_instance_vec_parser, package_item_parser));
+        repeat_strict((attribute_instance_vec_parser, package_item_parser));
     (
         attribute_instance_vec_parser,
         token(Token::Package),

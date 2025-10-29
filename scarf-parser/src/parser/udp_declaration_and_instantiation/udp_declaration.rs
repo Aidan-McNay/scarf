@@ -6,7 +6,7 @@
 use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
-use winnow::combinator::{alt, opt, repeat};
+use winnow::combinator::{alt, opt};
 
 pub fn udp_nonansi_declaration_parser<'s>(
     input: &mut Tokens<'s>,
@@ -46,7 +46,7 @@ pub fn udp_declaration_parser<'s>(
     let _nonansi_parser = (
         udp_nonansi_declaration_parser,
         udp_port_declaration_parser,
-        repeat(0.., udp_port_declaration_parser),
+        repeat_strict( udp_port_declaration_parser),
         udp_body_parser,
         token(Token::Endprimitive),
         opt((token(Token::Colon), udp_identifier_parser)),
@@ -76,7 +76,7 @@ pub fn udp_declaration_parser<'s>(
         token(Token::Star),
         token(Token::EParen),
         token(Token::SColon),
-        repeat(0.., udp_port_declaration_parser),
+        repeat_strict( udp_port_declaration_parser),
         udp_body_parser,
         token(Token::Endprimitive),
         opt((token(Token::Colon), udp_identifier_parser)),

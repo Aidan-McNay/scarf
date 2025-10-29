@@ -7,20 +7,17 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, opt, repeat};
+use winnow::combinator::{alt, opt};
 
 pub fn list_of_path_inputs_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<ListOfPathInputs<'s>, VerboseError<'s>> {
     (
         specify_input_terminal_descriptor_parser,
-        repeat(
-            0..,
-            (
-                token(Token::Comma),
-                specify_input_terminal_descriptor_parser,
-            ),
-        ),
+        repeat_strict((
+            token(Token::Comma),
+            specify_input_terminal_descriptor_parser,
+        )),
     )
         .map(|(a, b)| ListOfPathInputs(a, b))
         .parse_next(input)
@@ -31,13 +28,10 @@ pub fn list_of_path_outputs_parser<'s>(
 ) -> ModalResult<ListOfPathOutputs<'s>, VerboseError<'s>> {
     (
         specify_output_terminal_descriptor_parser,
-        repeat(
-            0..,
-            (
-                token(Token::Comma),
-                specify_output_terminal_descriptor_parser,
-            ),
-        ),
+        repeat_strict((
+            token(Token::Comma),
+            specify_output_terminal_descriptor_parser,
+        )),
     )
         .map(|(a, b)| ListOfPathOutputs(a, b))
         .parse_next(input)
