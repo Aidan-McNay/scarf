@@ -7,7 +7,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, opt};
+use winnow::combinator::alt;
 use winnow::token::any;
 
 pub fn function_data_type_or_implicit_parser<'s>(
@@ -28,7 +28,7 @@ pub fn function_declaration_parser<'s>(
     (
         token(Token::Function),
         opt_dynamic_override_specifiers_parser,
-        opt(lifetime_parser),
+        opt_note(lifetime_parser),
         function_body_declaration_parser,
     )
         .map(|(a, b, c, d)| FunctionDeclaration(a, b, c, d))
@@ -40,29 +40,29 @@ pub fn function_body_declaration_parser<'s>(
 ) -> ModalResult<FunctionBodyDeclaration<'s>, VerboseError<'s>> {
     let _tf_parser = (
         function_data_type_or_implicit_parser,
-        opt(interface_identifier_or_class_scope_parser),
+        opt_note(interface_identifier_or_class_scope_parser),
         function_identifier_parser,
         token(Token::SColon),
-        repeat_strict(tf_item_declaration_parser),
-        repeat_strict(function_statement_or_null_parser),
+        repeat_note(tf_item_declaration_parser),
+        repeat_note(function_statement_or_null_parser),
         token(Token::Endfunction),
-        opt((token(Token::Colon), function_identifier_parser)),
+        opt_note((token(Token::Colon), function_identifier_parser)),
     )
         .map(|(a, b, c, d, e, f, g, h)| {
             FunctionBodyDeclaration::Tf(Box::new((a, b, c, d, e, f, g, h)))
         });
     let _block_parser = (
         function_data_type_or_implicit_parser,
-        opt(interface_identifier_or_class_scope_parser),
+        opt_note(interface_identifier_or_class_scope_parser),
         function_identifier_parser,
         token(Token::Paren),
-        opt(tf_port_list_parser),
+        opt_note(tf_port_list_parser),
         token(Token::EParen),
         token(Token::SColon),
-        repeat_strict(block_item_declaration_parser),
-        repeat_strict(function_statement_or_null_parser),
+        repeat_note(block_item_declaration_parser),
+        repeat_note(function_statement_or_null_parser),
         token(Token::Endfunction),
-        opt((token(Token::Colon), function_identifier_parser)),
+        opt_note((token(Token::Colon), function_identifier_parser)),
     )
         .map(|(a, b, c, d, e, f, g, h, i, j, k)| {
             FunctionBodyDeclaration::Block(Box::new((
@@ -80,9 +80,9 @@ pub fn function_prototype_parser<'s>(
         opt_dynamic_override_specifiers_parser,
         data_type_or_void_parser,
         function_identifier_parser,
-        opt((
+        opt_note((
             token(Token::Paren),
-            opt(tf_port_list_parser),
+            opt_note(tf_port_list_parser),
             token(Token::EParen),
         )),
     )
@@ -96,8 +96,8 @@ pub fn dpi_import_export_parser<'s>(
     let _function_import_parser = (
         token(Token::Import),
         dpi_spec_string_parser,
-        opt(dpi_function_import_property_parser),
-        opt((c_identifier_parser, token(Token::Eq))),
+        opt_note(dpi_function_import_property_parser),
+        opt_note((c_identifier_parser, token(Token::Eq))),
         dpi_function_proto_parser,
         token(Token::SColon),
     )
@@ -107,8 +107,8 @@ pub fn dpi_import_export_parser<'s>(
     let _task_import_parser = (
         token(Token::Import),
         dpi_spec_string_parser,
-        opt(dpi_task_import_property_parser),
-        opt((c_identifier_parser, token(Token::Eq))),
+        opt_note(dpi_task_import_property_parser),
+        opt_note((c_identifier_parser, token(Token::Eq))),
         dpi_task_proto_parser,
         token(Token::SColon),
     )
@@ -118,7 +118,7 @@ pub fn dpi_import_export_parser<'s>(
     let _function_export_parser = (
         token(Token::Export),
         dpi_spec_string_parser,
-        opt((c_identifier_parser, token(Token::Eq))),
+        opt_note((c_identifier_parser, token(Token::Eq))),
         token(Token::Function),
         function_identifier_parser,
         token(Token::SColon),
@@ -129,7 +129,7 @@ pub fn dpi_import_export_parser<'s>(
     let _task_export_parser = (
         token(Token::Export),
         dpi_spec_string_parser,
-        opt((c_identifier_parser, token(Token::Eq))),
+        opt_note((c_identifier_parser, token(Token::Eq))),
         token(Token::Task),
         task_identifier_parser,
         token(Token::SColon),

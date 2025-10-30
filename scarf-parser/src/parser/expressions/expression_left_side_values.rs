@@ -7,7 +7,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, opt};
+use winnow::combinator::alt;
 
 pub fn net_lvalue_parser<'s>(
     input: &mut Tokens<'s>,
@@ -20,14 +20,14 @@ pub fn net_lvalue_parser<'s>(
     let _nested_net_lvalue_parser = (
         token(Token::Brace),
         net_lvalue_parser,
-        repeat_strict( (token(Token::Comma), net_lvalue_parser)),
+        repeat_note((token(Token::Comma), net_lvalue_parser)),
         token(Token::EBrace),
     )
         .map(|(a, b, c, d)| {
             NetLvalue::Nested(Box::new(NestedNetLvalue(a, b, c, d)))
         });
     let _assignment_net_lvalue_parser = (
-        opt(assignment_pattern_expression_type_parser),
+        opt_note(assignment_pattern_expression_type_parser),
         assignment_pattern_net_lvalue_parser,
     )
         .map(|(a, b)| {
@@ -73,14 +73,14 @@ pub fn variable_lvalue_parser<'s>(
     let _nested_variable_lvalue_parser = (
         token(Token::Brace),
         variable_lvalue_parser,
-        repeat_strict( (token(Token::Comma), variable_lvalue_parser)),
+        repeat_note((token(Token::Comma), variable_lvalue_parser)),
         token(Token::EBrace),
     )
         .map(|(a, b, c, d)| {
             VariableLvalue::Nested(Box::new(NestedVariableLvalue(a, b, c, d)))
         });
     let _assignment_variable_lvalue_parser = (
-        opt(assignment_pattern_expression_type_parser),
+        opt_note(assignment_pattern_expression_type_parser),
         assignment_pattern_variable_lvalue_parser,
     )
         .map(|(a, b)| {

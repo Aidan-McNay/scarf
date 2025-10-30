@@ -7,7 +7,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, opt};
+use winnow::combinator::alt;
 
 pub fn statement_or_null_parser<'s>(
     input: &mut Tokens<'s>,
@@ -24,7 +24,7 @@ pub fn statement_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<Statement<'s>, VerboseError<'s>> {
     (
-        opt((block_identifier_parser, token(Token::Colon))),
+        opt_note((block_identifier_parser, token(Token::Colon))),
         attribute_instance_vec_parser,
         statement_item_parser,
     )

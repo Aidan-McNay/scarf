@@ -7,7 +7,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, opt};
+use winnow::combinator::alt;
 
 pub fn procedural_timing_control_statement_parser<'s>(
     input: &mut Tokens<'s>,
@@ -96,14 +96,14 @@ fn basic_event_expression_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<EventExpression<'s>, VerboseError<'s>> {
     let _trigger_event_parser = (
-        opt(edge_identifier_parser),
+        opt_note(edge_identifier_parser),
         expression_parser,
-        opt((token(Token::Iff), expression_parser)),
+        opt_note((token(Token::Iff), expression_parser)),
     )
         .map(|(a, b, c)| EventExpression::Trigger(Box::new((a, b, c))));
     let _sequence_event_parser = (
         sequence_instance_parser,
-        opt((token(Token::Iff), expression_parser)),
+        opt_note((token(Token::Iff), expression_parser)),
     )
         .map(|(a, b)| EventExpression::Sequence(Box::new((a, b))));
     let _paren_event_parser = (
@@ -161,7 +161,7 @@ pub fn jump_statement_parser<'s>(
 ) -> ModalResult<JumpStatement<'s>, VerboseError<'s>> {
     let _return_parser = (
         token(Token::Return),
-        opt(expression_parser),
+        opt_note(expression_parser),
         token(Token::SColon),
     )
         .map(|(a, b, c)| JumpStatement::Return(Box::new((a, b, c))));
@@ -192,7 +192,7 @@ pub fn wait_statement_parser<'s>(
         token(Token::WaitOrder),
         token(Token::Paren),
         hierarchical_identifier_parser,
-        repeat_strict( (token(Token::Comma), hierarchical_identifier_parser)),
+        repeat_note((token(Token::Comma), hierarchical_identifier_parser)),
         token(Token::EParen),
         action_block_parser,
     )
@@ -214,7 +214,7 @@ pub fn event_trigger_parser<'s>(
         .map(|(a, b, c, d)| EventTrigger::Blocking(Box::new((a, b, c, d))));
     let _nonblocking_parser = (
         token(Token::MinusGtGt),
-        opt(delay_or_event_control_parser),
+        opt_note(delay_or_event_control_parser),
         hierarchical_event_identifier_parser,
         nonrange_select_parser,
         token(Token::SColon),

@@ -7,7 +7,6 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::opt;
 
 pub fn controlled_reference_event_parser<'s>(
     input: &mut Tokens<'s>,
@@ -30,7 +29,7 @@ pub fn delayed_data_parser<'s>(
 ) -> ModalResult<DelayedData<'s>, VerboseError<'s>> {
     (
         terminal_identifier_parser,
-        opt((
+        opt_note((
             token(Token::Bracket),
             constant_mintypmax_expression_parser,
             token(Token::EBracket),
@@ -48,7 +47,7 @@ pub fn delayed_reference_parser<'s>(
 ) -> ModalResult<DelayedReference<'s>, VerboseError<'s>> {
     (
         terminal_identifier_parser,
-        opt((
+        opt_note((
             token(Token::Bracket),
             constant_mintypmax_expression_parser,
             token(Token::EBracket),

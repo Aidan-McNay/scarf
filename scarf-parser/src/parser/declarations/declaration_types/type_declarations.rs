@@ -7,15 +7,15 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, opt};
+use winnow::combinator::alt;
 
 pub fn data_declaration_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<DataDeclaration<'s>, VerboseError<'s>> {
     let _variable_data_declaration_parser = (
-        opt(token(Token::Const)),
-        opt(token(Token::Var)),
-        opt(lifetime_parser),
+        opt_note(token(Token::Const)),
+        opt_note(token(Token::Var)),
+        opt_note(lifetime_parser),
         data_type_or_implicit_parser,
         list_of_variable_decl_assignments_parser,
         token(Token::SColon),
@@ -40,7 +40,7 @@ pub fn package_import_declaration_parser<'s>(
     (
         token(Token::Import),
         package_import_item_parser,
-        repeat_strict( (token(Token::Comma), package_import_item_parser)),
+        repeat_note((token(Token::Comma), package_import_item_parser)),
         token(Token::SColon),
     )
         .map(|(a, b, c, d)| PackageImportDeclaration(a, b, c, d))
@@ -53,7 +53,7 @@ pub fn package_export_declaration_parser<'s>(
     let _import_parser = (
         token(Token::Import),
         package_import_item_parser,
-        repeat_strict( (token(Token::Comma), package_import_item_parser)),
+        repeat_note((token(Token::Comma), package_import_item_parser)),
         token(Token::SColon),
     )
         .map(|(a, b, c, d)| {
@@ -123,10 +123,10 @@ pub fn net_declaration_parser<'s>(
     ));
     let _net_type_parser = (
         net_type_parser,
-        opt(_drive_or_charge_strength_parser),
-        opt(_vectored_or_scalared_parser),
+        opt_note(_drive_or_charge_strength_parser),
+        opt_note(_vectored_or_scalared_parser),
         data_type_or_implicit_parser,
-        opt(delay3_parser),
+        opt_note(delay3_parser),
         list_of_net_decl_assignments_parser,
         token(Token::SColon),
     )
@@ -135,7 +135,7 @@ pub fn net_declaration_parser<'s>(
         });
     let _nettype_identifier_parser = (
         nettype_identifier_parser,
-        opt(delay_control_parser),
+        opt_note(delay_control_parser),
         list_of_net_decl_assignments_parser,
         token(Token::SColon),
     )
@@ -145,13 +145,13 @@ pub fn net_declaration_parser<'s>(
     let _interconnect_parser = (
         token(Token::Interconnect),
         implicit_data_type_parser,
-        opt((token(Token::Pound), delay_value_parser)),
+        opt_note((token(Token::Pound), delay_value_parser)),
         net_identifier_parser,
-        repeat_strict( unpacked_dimension_parser),
-        opt((
+        repeat_note(unpacked_dimension_parser),
+        opt_note((
             token(Token::Comma),
             net_identifier_parser,
-            repeat_strict( unpacked_dimension_parser),
+            repeat_note(unpacked_dimension_parser),
         )),
     )
         .map(|(a, b, c, d, e, f)| {
@@ -172,7 +172,7 @@ pub fn type_declaration_parser<'s>(
         token(Token::Typedef),
         data_type_or_incomplete_class_scoped_type_parser,
         type_identifier_parser,
-        repeat_strict( variable_dimension_parser),
+        repeat_note(variable_dimension_parser),
         token(Token::SColon),
     )
         .map(|(a, b, c, d, e)| {
@@ -194,7 +194,7 @@ pub fn type_declaration_parser<'s>(
         });
     let _forward_type_parser = (
         token(Token::Typedef),
-        opt(forward_type_parser),
+        opt_note(forward_type_parser),
         type_identifier_parser,
         token(Token::SColon),
     )
@@ -230,9 +230,9 @@ pub fn nettype_declaration_parser<'s>(
         token(Token::Nettype),
         data_type_parser,
         nettype_identifier_parser,
-        opt((
+        opt_note((
             token(Token::With),
-            opt(package_or_class_scope_parser),
+            opt_note(package_or_class_scope_parser),
             tf_identifier_parser,
         )),
         token(Token::SColon),
@@ -242,7 +242,7 @@ pub fn nettype_declaration_parser<'s>(
         });
     let _scoped_parser = (
         token(Token::Nettype),
-        opt(package_or_class_scope_parser),
+        opt_note(package_or_class_scope_parser),
         nettype_identifier_parser,
         nettype_identifier_parser,
         token(Token::SColon),

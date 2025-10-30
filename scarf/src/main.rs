@@ -57,7 +57,7 @@ fn format(args: &FormatArgs) {
             }
             return;
         }
-        println!("{:?}", parsed_src);
+        println!("{:#?}", parsed_src);
     }
 }
 

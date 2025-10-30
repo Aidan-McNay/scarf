@@ -7,20 +7,20 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, opt};
+use winnow::combinator::alt;
 
 pub fn clocking_declaration_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<ClockingDeclaration<'s>, VerboseError<'s>> {
     let _local_parser = (
-        opt(token(Token::Default)),
+        opt_note(token(Token::Default)),
         token(Token::Clocking),
-        opt(clocking_identifier_parser),
+        opt_note(clocking_identifier_parser),
         clocking_event_parser,
         token(Token::SColon),
-        repeat_strict(clocking_item_parser),
+        repeat_note(clocking_item_parser),
         token(Token::Endclocking),
-        opt((token(Token::Colon), clocking_identifier_parser)),
+        opt_note((token(Token::Colon), clocking_identifier_parser)),
     )
         .map(|(a, b, c, d, e, f, g, h)| {
             ClockingDeclaration::Local(Box::new((a, b, c, d, e, f, g, h)))
@@ -28,12 +28,12 @@ pub fn clocking_declaration_parser<'s>(
     let _global_parser = (
         token(Token::Global),
         token(Token::Clocking),
-        opt(clocking_identifier_parser),
+        opt_note(clocking_identifier_parser),
         clocking_event_parser,
         token(Token::SColon),
-        repeat_strict(clocking_item_parser),
+        repeat_note(clocking_item_parser),
         token(Token::Endclocking),
-        opt((token(Token::Colon), clocking_identifier_parser)),
+        opt_note((token(Token::Colon), clocking_identifier_parser)),
     )
         .map(|(a, b, c, d, e, f, g, h)| {
             ClockingDeclaration::Global(Box::new((a, b, c, d, e, f, g, h)))
@@ -70,7 +70,7 @@ pub fn default_skew_parser<'s>(
     let _input_parser = (token(Token::Input), clocking_skew_parser);
     let _input_or_input_output_parser = (
         _input_parser,
-        opt((token(Token::Output), clocking_skew_parser)),
+        opt_note((token(Token::Output), clocking_skew_parser)),
     )
         .map(|((a, b), c)| match c {
             Some((c, d)) => DefaultSkew::InputOutput(Box::new((a, b, c, d))),
@@ -84,10 +84,10 @@ pub fn default_skew_parser<'s>(
 pub fn clocking_direction_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<ClockingDirection<'s>, VerboseError<'s>> {
-    let _input_parser = (token(Token::Input), opt(clocking_skew_parser));
+    let _input_parser = (token(Token::Input), opt_note(clocking_skew_parser));
     let _input_or_input_output_parser = (
         _input_parser,
-        opt((token(Token::Output), opt(clocking_skew_parser))),
+        opt_note((token(Token::Output), opt_note(clocking_skew_parser))),
     )
         .map(|((a, b), c)| match c {
             Some((c, d)) => {
@@ -95,7 +95,7 @@ pub fn clocking_direction_parser<'s>(
             }
             None => ClockingDirection::Input(Box::new((a, b))),
         });
-    let _output_parser = (token(Token::Output), opt(clocking_skew_parser))
+    let _output_parser = (token(Token::Output), opt_note(clocking_skew_parser))
         .map(|(a, b)| ClockingDirection::Output(Box::new((a, b))));
     let _inout_parser =
         token(Token::Inout).map(|a| ClockingDirection::Inout(Box::new(a)));
@@ -108,7 +108,7 @@ pub fn list_of_clocking_decl_assign_parser<'s>(
 ) -> ModalResult<ListOfClockingDeclAssign<'s>, VerboseError<'s>> {
     (
         clocking_decl_assign_parser,
-        repeat_strict((token(Token::Comma), clocking_decl_assign_parser)),
+        repeat_note((token(Token::Comma), clocking_decl_assign_parser)),
     )
         .map(|(a, b)| ListOfClockingDeclAssign(a, b))
         .parse_next(input)
@@ -119,7 +119,7 @@ pub fn clocking_decl_assign_parser<'s>(
 ) -> ModalResult<ClockingDeclAssign<'s>, VerboseError<'s>> {
     (
         signal_identifier_parser,
-        opt((token(Token::Eq), expression_parser)),
+        opt_note((token(Token::Eq), expression_parser)),
     )
         .map(|(a, b)| ClockingDeclAssign(a, b))
         .parse_next(input)
@@ -128,7 +128,7 @@ pub fn clocking_decl_assign_parser<'s>(
 pub fn clocking_skew_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<ClockingSkew<'s>, VerboseError<'s>> {
-    let _edge_parser = (edge_identifier_parser, opt(delay_control_parser))
+    let _edge_parser = (edge_identifier_parser, opt_note(delay_control_parser))
         .map(|(a, b)| ClockingSkew::Edge(Box::new((a, b))));
     let _delay_parser =
         delay_control_parser.map(|a| ClockingSkew::Delay(Box::new(a)));
@@ -141,7 +141,7 @@ pub fn clocking_drive_parser<'s>(
     (
         clockvar_expression_parser,
         token(Token::LtEq),
-        opt(cycle_delay_parser),
+        opt_note(cycle_delay_parser),
         expression_parser,
     )
         .map(|(a, b, c, d)| ClockingDrive(a, b, c, d))

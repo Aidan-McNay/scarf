@@ -7,15 +7,15 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, opt};
+use winnow::combinator::alt;
 
 pub fn continuous_assign_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<ContinuousAssign<'s>, VerboseError<'s>> {
     let _net_assignments_parser = (
         token(Token::Assign),
-        opt(drive_strength_parser),
-        opt(delay3_parser),
+        opt_note(drive_strength_parser),
+        opt_note(delay3_parser),
         list_of_net_assignments_parser,
         token(Token::SColon),
     )
@@ -24,7 +24,7 @@ pub fn continuous_assign_parser<'s>(
         });
     let _variable_assignments_parser = (
         token(Token::Assign),
-        opt(delay_control_parser),
+        opt_note(delay_control_parser),
         list_of_variable_assignments_parser,
         token(Token::SColon),
     )
@@ -40,7 +40,7 @@ pub fn list_of_net_assignments_parser<'s>(
 ) -> ModalResult<ListOfNetAssignments<'s>, VerboseError<'s>> {
     (
         net_assignment_parser,
-        repeat_strict( (token(Token::Comma), net_assignment_parser)),
+        repeat_note((token(Token::Comma), net_assignment_parser)),
     )
         .map(|(a, b)| ListOfNetAssignments(a, b))
         .parse_next(input)
@@ -51,7 +51,7 @@ pub fn list_of_variable_assignments_parser<'s>(
 ) -> ModalResult<ListOfVariableAssignments<'s>, VerboseError<'s>> {
     (
         variable_assignment_parser,
-        repeat_strict( (token(Token::Comma), variable_assignment_parser)),
+        repeat_note((token(Token::Comma), variable_assignment_parser)),
     )
         .map(|(a, b)| ListOfVariableAssignments(a, b))
         .parse_next(input)
@@ -65,7 +65,7 @@ pub fn net_alias_parser<'s>(
         net_lvalue_parser,
         token(Token::Eq),
         net_lvalue_parser,
-        repeat_strict( (token(Token::Eq), net_lvalue_parser)),
+        repeat_note((token(Token::Eq), net_lvalue_parser)),
         token(Token::SColon),
     )
         .map(|(a, b, c, d, e, f)| NetAlias(a, b, c, d, e, f))

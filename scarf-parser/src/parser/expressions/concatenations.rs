@@ -7,7 +7,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, opt};
+use winnow::combinator::alt;
 
 pub fn concatenation_parser<'s>(
     input: &mut Tokens<'s>,
@@ -15,7 +15,7 @@ pub fn concatenation_parser<'s>(
     (
         token(Token::Brace),
         expression_parser,
-        repeat_strict( (token(Token::Comma), expression_parser)),
+        repeat_note((token(Token::Comma), expression_parser)),
         token(Token::EBrace),
     )
         .map(|(a, b, c, d)| Concatenation(a, b, c, d))
@@ -28,7 +28,7 @@ pub fn constant_concatenation_parser<'s>(
     (
         token(Token::Brace),
         constant_expression_parser,
-        repeat_strict( (token(Token::Comma), constant_expression_parser)),
+        repeat_note((token(Token::Comma), constant_expression_parser)),
         token(Token::EBrace),
     )
         .map(|(a, b, c, d)| ConstantConcatenation(a, b, c, d))
@@ -54,7 +54,7 @@ pub fn module_path_concatenation_parser<'s>(
     (
         token(Token::Brace),
         module_path_expression_parser,
-        repeat_strict( (token(Token::Comma), module_path_expression_parser)),
+        repeat_note((token(Token::Comma), module_path_expression_parser)),
         token(Token::EBrace),
     )
         .map(|(a, b, c, d)| ModulePathConcatenation(a, b, c, d))
@@ -93,7 +93,7 @@ pub fn streaming_concatenation_parser<'s>(
     (
         token(Token::Brace),
         stream_operator_parser,
-        opt(slice_size_parser),
+        opt_note(slice_size_parser),
         stream_concatenation_parser,
         token(Token::EBrace),
     )
@@ -127,7 +127,7 @@ pub fn stream_concatenation_parser<'s>(
     (
         token(Token::Brace),
         stream_expression_parser,
-        repeat_strict( (token(Token::Comma), stream_expression_parser)),
+        repeat_note((token(Token::Comma), stream_expression_parser)),
         token(Token::EBrace),
     )
         .map(|(a, b, c, d)| StreamConcatenation(a, b, c, d))
@@ -139,7 +139,7 @@ pub fn stream_expression_parser<'s>(
 ) -> ModalResult<StreamExpression<'s>, VerboseError<'s>> {
     (
         expression_parser,
-        opt((
+        opt_note((
             token(Token::With),
             token(Token::Bracket),
             array_range_expression_parser,
@@ -167,7 +167,7 @@ pub fn array_range_expression_parser<'s>(
         (token(Token::MinusColon), expression_parser)
             .map(|(a, b)| ArrayExtraRange::MinusRange((a, b))),
     ));
-    (expression_parser, opt(_extra_range_parser))
+    (expression_parser, opt_note(_extra_range_parser))
         .map(|(start_range, b)| match b {
             Some(ArrayExtraRange::Range((op, end_range))) => {
                 ArrayRangeExpression::Range(Box::new((

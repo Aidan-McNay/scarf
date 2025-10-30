@@ -7,7 +7,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, opt};
+use winnow::combinator::alt;
 
 pub fn covergroup_declaration_parser<'s>(
     input: &mut Tokens<'s>,
@@ -15,16 +15,16 @@ pub fn covergroup_declaration_parser<'s>(
     let _initial_parser = (
         token(Token::Covergroup),
         covergroup_identifier_parser,
-        opt((
+        opt_note((
             token(Token::Paren),
-            opt(tf_port_list_parser),
+            opt_note(tf_port_list_parser),
             token(Token::EParen),
         )),
-        opt(coverage_event_parser),
+        opt_note(coverage_event_parser),
         token(Token::SColon),
-        repeat_strict(coverage_spec_or_option_parser),
+        repeat_note(coverage_spec_or_option_parser),
         token(Token::Endgroup),
-        opt((token(Token::Colon), covergroup_identifier_parser)),
+        opt_note((token(Token::Colon), covergroup_identifier_parser)),
     )
         .map(|(a, b, c, d, e, f, g, h)| {
             CovergroupDeclaration::Initial(Box::new((a, b, c, d, e, f, g, h)))
@@ -34,9 +34,9 @@ pub fn covergroup_declaration_parser<'s>(
         token(Token::Extends),
         covergroup_identifier_parser,
         token(Token::SColon),
-        repeat_strict(coverage_spec_or_option_parser),
+        repeat_note(coverage_spec_or_option_parser),
         token(Token::Endgroup),
-        opt((token(Token::Colon), covergroup_identifier_parser)),
+        opt_note((token(Token::Colon), covergroup_identifier_parser)),
     )
         .map(|(a, b, c, d, e, f, g)| {
             CovergroupDeclaration::Extends(Box::new((a, b, c, d, e, f, g)))
@@ -106,7 +106,7 @@ pub fn coverage_event_parser<'s>(
         token(Token::Function),
         token(Token::Sample),
         token(Token::Paren),
-        opt(tf_port_list_parser),
+        opt_note(tf_port_list_parser),
         token(Token::EParen),
     )
         .map(|(a, b, c, d, e, f)| {
@@ -166,7 +166,7 @@ pub fn hierarchical_btf_identifier_parser<'s>(
 ) -> ModalResult<HierarchicalBtfIdentifier<'s>, VerboseError<'s>> {
     alt((
         (
-            opt(hierarchical_identifier_or_class_scope_parser),
+            opt_note(hierarchical_identifier_or_class_scope_parser),
             method_identifier_parser,
         )
             .map(|(a, b)| HierarchicalBtfIdentifier::Method(Box::new((a, b)))),
@@ -182,14 +182,14 @@ pub fn cover_point_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<CoverPoint<'s>, VerboseError<'s>> {
     (
-        opt((
-            opt(data_type_or_implicit_parser),
+        opt_note((
+            opt_note(data_type_or_implicit_parser),
             cover_point_identifier_parser,
             token(Token::Colon),
         )),
         token(Token::Coverpoint),
         expression_parser,
-        opt((
+        opt_note((
             token(Token::Iff),
             token(Token::Paren),
             expression_parser,
@@ -207,7 +207,7 @@ pub fn bins_or_empty_parser<'s>(
     let _bins_parser = (
         token(Token::Brace),
         attribute_instance_vec_parser,
-        repeat_strict((bins_or_options_parser, token(Token::SColon))),
+        repeat_note((bins_or_options_parser, token(Token::SColon))),
         token(Token::EBrace),
     )
         .map(|(a, b, c, d)| BinsOrEmpty::Bins(Box::new((a, b, c, d))));
@@ -242,12 +242,12 @@ pub fn bins_or_options_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<BinsOrOptions<'s>, VerboseError<'s>> {
     let _bins_parser = (
-        opt(token(Token::Wildcard)),
+        opt_note(token(Token::Wildcard)),
         bins_keyword_parser,
         bin_identifier_parser,
-        opt((
+        opt_note((
             token(Token::Bracket),
-            opt(covergroup_expression_parser),
+            opt_note(covergroup_expression_parser),
             token(Token::EBrace),
         )),
         token(Token::Eq),
@@ -265,13 +265,13 @@ pub fn bins_or_options_parser<'s>(
                 .map(|(a, b)| BinsOrOptionsOp::DefaultSequence((a, b))),
             token(Token::Default).map(|a| BinsOrOptionsOp::Default(a)),
         )),
-        opt((
+        opt_note((
             token(Token::With),
             token(Token::Paren),
             with_covergroup_expression_parser,
             token(Token::EParen),
         )),
-        opt((
+        opt_note((
             token(Token::Iff),
             token(Token::Paren),
             expression_parser,
@@ -411,7 +411,7 @@ pub fn trans_list_parser<'s>(
         token(Token::Paren),
         trans_set_parser,
         token(Token::EParen),
-        repeat_strict((
+        repeat_note((
             token(Token::Comma),
             token(Token::Paren),
             trans_set_parser,
@@ -427,7 +427,7 @@ pub fn trans_set_parser<'s>(
 ) -> ModalResult<TransSet<'s>, VerboseError<'s>> {
     (
         trans_range_list_parser,
-        repeat_strict((token(Token::EqGt), trans_range_list_parser)),
+        repeat_note((token(Token::EqGt), trans_range_list_parser)),
     )
         .map(|(a, b)| TransSet(a, b))
         .parse_next(input)
@@ -444,7 +444,7 @@ pub fn trans_range_list_parser<'s>(
 ) -> ModalResult<TransRangeList<'s>, VerboseError<'s>> {
     (
         trans_item_parser,
-        opt((
+        opt_note((
             token(Token::Bracket),
             alt((
                 token(Token::Star).map(|a| TransRangeListOp::Repeat(a)),
@@ -499,7 +499,7 @@ pub fn repeat_range_parser<'s>(
 ) -> ModalResult<RepeatRange<'s>, VerboseError<'s>> {
     (
         covergroup_expression_parser,
-        opt((token(Token::Colon), covergroup_expression_parser)),
+        opt_note((token(Token::Colon), covergroup_expression_parser)),
     )
         .map(|(a, b)| match b {
             None => RepeatRange::Expr(Box::new(a)),
@@ -512,10 +512,10 @@ pub fn cover_cross_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<CoverCross<'s>, VerboseError<'s>> {
     (
-        opt((cross_identifier_parser, token(Token::Colon))),
+        opt_note((cross_identifier_parser, token(Token::Colon))),
         token(Token::Cross),
         list_of_cross_items_parser,
-        opt((
+        opt_note((
             token(Token::Iff),
             token(Token::Paren),
             expression_parser,
@@ -534,7 +534,7 @@ pub fn list_of_cross_items_parser<'s>(
         cross_item_parser,
         token(Token::Comma),
         cross_item_parser,
-        repeat_strict((token(Token::Comma), cross_item_parser)),
+        repeat_note((token(Token::Comma), cross_item_parser)),
     )
         .map(|(a, b, c, d)| ListOfCrossItems(a, b, c, d))
         .parse_next(input)
@@ -556,7 +556,7 @@ pub fn cross_body_parser<'s>(
 ) -> ModalResult<CrossBody<'s>, VerboseError<'s>> {
     let _items_parser = (
         token(Token::Brace),
-        repeat_strict(cross_body_item_parser),
+        repeat_note(cross_body_item_parser),
         token(Token::EBrace),
     )
         .map(|(a, b, c)| CrossBody::Items(Box::new((a, b, c))));
@@ -596,7 +596,7 @@ pub fn bins_selection_parser<'s>(
         bin_identifier_parser,
         token(Token::Eq),
         select_expression_parser,
-        opt((
+        opt_note((
             token(Token::Iff),
             token(Token::Paren),
             expression_parser,
@@ -645,7 +645,7 @@ fn basic_select_expression_parser<'s>(
         .map(|a| SelectExpression::CrossIdentifier(Box::new(a)));
     let _cross_set_parser = (
         cross_set_expression_parser,
-        opt((token(Token::Matches), integer_covergroup_expression_parser)),
+        opt_note((token(Token::Matches), integer_covergroup_expression_parser)),
     )
         .map(|(a, b)| SelectExpression::CrossSet(Box::new((a, b))));
     alt((
@@ -704,7 +704,7 @@ fn select_expression_bp_parser<'s>(
                 let with_covergroup_expression =
                     with_covergroup_expression_parser(input)?;
                 let eparen = token(Token::EParen)(input)?;
-                let matches_section = opt((
+                let matches_section = opt_note((
                     token(Token::Matches),
                     integer_covergroup_expression_parser,
                 ))
@@ -736,7 +736,7 @@ pub fn select_condition_parser<'s>(
         token(Token::Paren),
         bins_expression_parser,
         token(Token::EParen),
-        opt((
+        opt_note((
             token(Token::Intersect),
             token(Token::Brace),
             covergroup_range_list_parser,
@@ -753,7 +753,7 @@ pub fn bins_expression_parser<'s>(
     alt((
         (
             cover_point_identifier_parser,
-            opt((token(Token::Period), bin_identifier_parser)),
+            opt_note((token(Token::Period), bin_identifier_parser)),
         )
             .map(|(a, b)| BinsExpression::CoverPoint(Box::new((a, b)))),
         variable_identifier_parser
@@ -767,7 +767,7 @@ pub fn covergroup_range_list_parser<'s>(
 ) -> ModalResult<CovergroupRangeList<'s>, VerboseError<'s>> {
     (
         covergroup_value_range_parser,
-        repeat_strict((token(Token::Comma), covergroup_value_range_parser)),
+        repeat_note((token(Token::Comma), covergroup_value_range_parser)),
     )
         .map(|(a, b)| CovergroupRangeList(a, b))
         .parse_next(input)

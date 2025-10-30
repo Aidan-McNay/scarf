@@ -8,7 +8,7 @@ use lexer::Span;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, opt};
+use winnow::combinator::alt;
 use winnow::token::any;
 
 pub fn constant_primary_parser<'s>(
@@ -21,7 +21,7 @@ pub fn constant_primary_parser<'s>(
             .map(|(a, b)| ConstantPrimary::PsParameter(Box::new((a, b))));
     let _specparam_parser = (
         specparam_identifier_parser,
-        opt((
+        opt_note((
             token(Token::Bracket),
             constant_range_expression_parser,
             token(Token::EBracket),
@@ -31,7 +31,7 @@ pub fn constant_primary_parser<'s>(
     let _genvar_parser =
         genvar_identifier_parser.map(|a| ConstantPrimary::Genvar(Box::new(a)));
     let _enum_parser =
-        (opt(package_or_class_scope_parser), enum_identifier_parser)
+        (opt_note(package_or_class_scope_parser), enum_identifier_parser)
             .map(|(a, b)| ConstantPrimary::Enum(Box::new((a, b))));
     let _empty_unpacked_array_concatenation_parser =
         empty_unpacked_array_concatenation_parser.map(|a| {
@@ -39,7 +39,7 @@ pub fn constant_primary_parser<'s>(
         });
     let _concatenation_parser = (
         constant_concatenation_parser,
-        opt((
+        opt_note((
             token(Token::Bracket),
             constant_range_expression_parser,
             token(Token::EBracket),
@@ -48,7 +48,7 @@ pub fn constant_primary_parser<'s>(
         .map(|(a, b)| ConstantPrimary::Concatenation(Box::new((a, b))));
     let _multiple_concatenation_parser = (
         constant_multiple_concatenation_parser,
-        opt((
+        opt_note((
             token(Token::Bracket),
             constant_range_expression_parser,
             token(Token::EBracket),
@@ -57,7 +57,7 @@ pub fn constant_primary_parser<'s>(
         .map(|(a, b)| ConstantPrimary::MultipleConcatenation(Box::new((a, b))));
     let _function_call_parser = (
         constant_function_call_parser,
-        opt((
+        opt_note((
             token(Token::Bracket),
             constant_range_expression_parser,
             token(Token::EBracket),
@@ -133,7 +133,7 @@ pub fn primary_parser<'s>(
     let _primary_literal_parser =
         primary_literal_parser.map(|a| Primary::PrimaryLiteral(Box::new(a)));
     let _hierarchical_identifier_parser = (
-        opt(class_qualifier_or_package_scope_parser),
+        opt_note(class_qualifier_or_package_scope_parser),
         hierarchical_identifier_parser,
         select_parser,
     )
@@ -143,7 +143,7 @@ pub fn primary_parser<'s>(
             .map(|a| Primary::EmptyUnpackedArrayConcatenation(Box::new(a)));
     let _concatenation_parser = (
         concatenation_parser,
-        opt((
+        opt_note((
             token(Token::Bracket),
             range_expression_parser,
             token(Token::EBracket),
@@ -152,7 +152,7 @@ pub fn primary_parser<'s>(
         .map(|(a, b)| Primary::Concatenation(Box::new((a, b))));
     let _multiple_concatenation_parser = (
         multiple_concatenation_parser,
-        opt((
+        opt_note((
             token(Token::Bracket),
             range_expression_parser,
             token(Token::EBracket),
@@ -161,7 +161,7 @@ pub fn primary_parser<'s>(
         .map(|(a, b)| Primary::MultipleConcatenation(Box::new((a, b))));
     let _function_subroutine_call_parser = (
         function_subroutine_call_parser,
-        opt((
+        opt_note((
             token(Token::Bracket),
             range_expression_parser,
             token(Token::EBracket),
@@ -239,8 +239,8 @@ pub fn class_qualifier_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<ClassQualifier<'s>, VerboseError<'s>> {
     (
-        opt((token(Token::Local), token(Token::ColonColon))),
-        opt(implicit_class_handle_or_class_scope_parser),
+        opt_note((token(Token::Local), token(Token::ColonColon))),
+        opt_note(implicit_class_handle_or_class_scope_parser),
     )
         .map(|(a, b)| ClassQualifier(a, b))
         .parse_next(input)
@@ -383,7 +383,7 @@ pub fn implicit_class_handle_parser<'s>(
 pub fn bit_select_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<BitSelect<'s>, VerboseError<'s>> {
-    repeat_strict((
+    repeat_note((
         token(Token::Bracket),
         expression_parser,
         token(Token::EBracket),
@@ -428,7 +428,7 @@ pub fn select_parser<'s>(
 ) -> ModalResult<Select<'s>, VerboseError<'s>> {
     let _member_select_parser = (
         member_select_parser,
-        opt((
+        opt_note((
             token(Token::Bracket),
             part_select_range_parser,
             token(Token::EBracket),
@@ -437,7 +437,7 @@ pub fn select_parser<'s>(
         .map(|((a, b), c)| Select(Some(a), b, c));
     let _no_member_select_parser = (
         bit_select_parser,
-        opt((
+        opt_note((
             token(Token::Bracket),
             part_select_range_parser,
             token(Token::EBracket),
@@ -460,7 +460,7 @@ pub fn nonrange_select_parser<'s>(
 pub fn constant_bit_select_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<ConstantBitSelect<'s>, VerboseError<'s>> {
-    repeat_strict((
+    repeat_note((
         token(Token::Bracket),
         constant_expression_parser,
         token(Token::EBracket),
@@ -505,7 +505,7 @@ pub fn constant_select_parser<'s>(
 ) -> ModalResult<ConstantSelect<'s>, VerboseError<'s>> {
     let _member_select_parser = (
         constant_member_select_parser,
-        opt((
+        opt_note((
             token(Token::Bracket),
             constant_part_select_range_parser,
             token(Token::EBracket),
@@ -514,7 +514,7 @@ pub fn constant_select_parser<'s>(
         .map(|((a, b), c)| ConstantSelect(Some(a), b, c));
     let _no_member_select_parser = (
         constant_bit_select_parser,
-        opt((
+        opt_note((
             token(Token::Bracket),
             constant_part_select_range_parser,
             token(Token::EBracket),

@@ -6,7 +6,7 @@
 use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
-use winnow::combinator::{alt, opt};
+use winnow::combinator::alt;
 
 pub fn udp_nonansi_declaration_parser<'s>(
     input: &mut Tokens<'s>,
@@ -46,10 +46,10 @@ pub fn udp_declaration_parser<'s>(
     let _nonansi_parser = (
         udp_nonansi_declaration_parser,
         udp_port_declaration_parser,
-        repeat_strict( udp_port_declaration_parser),
+        repeat_note(udp_port_declaration_parser),
         udp_body_parser,
         token(Token::Endprimitive),
-        opt((token(Token::Colon), udp_identifier_parser)),
+        opt_note((token(Token::Colon), udp_identifier_parser)),
     )
         .map(|(a, b, c, d, e, f)| {
             UdpDeclaration::Nonansi(Box::new((a, b, c, d, e, f)))
@@ -58,7 +58,7 @@ pub fn udp_declaration_parser<'s>(
         udp_ansi_declaration_parser,
         udp_body_parser,
         token(Token::Endprimitive),
-        opt((token(Token::Colon), udp_identifier_parser)),
+        opt_note((token(Token::Colon), udp_identifier_parser)),
     )
         .map(|(a, b, c, d)| UdpDeclaration::Ansi(Box::new((a, b, c, d))));
     let _extern_nonansi_parser =
@@ -76,10 +76,10 @@ pub fn udp_declaration_parser<'s>(
         token(Token::Star),
         token(Token::EParen),
         token(Token::SColon),
-        repeat_strict( udp_port_declaration_parser),
+        repeat_note(udp_port_declaration_parser),
         udp_body_parser,
         token(Token::Endprimitive),
-        opt((token(Token::Colon), udp_identifier_parser)),
+        opt_note((token(Token::Colon), udp_identifier_parser)),
     )
         .map(|(a, b, c, d, e, f, g, h, i, j, k, l)| {
             UdpDeclaration::Wildcard(Box::new((

@@ -1,8 +1,7 @@
 // =======================================================================
-// repeat.rs
+// combinators.rs
 // =======================================================================
-// A custom combinator to repeat a parser zero or more times, propagating
-// the error if some input was consumed
+// Custom combinators that note errors that may not be needed
 
 use crate::*;
 use winnow::Parser;
@@ -10,14 +9,14 @@ use winnow::combinator::trace;
 use winnow::error::{ErrMode, ParserError};
 use winnow::stream::{Accumulate, Stream};
 
-pub fn repeat_strict<'s, Output, Accumulator, ParseNext>(
+pub fn repeat_note<'s, Output, Accumulator, ParseNext>(
     parser: ParseNext,
-) -> RepeatStrict<'s, ParseNext, Output, Accumulator>
+) -> RepeatNote<'s, ParseNext, Output, Accumulator>
 where
     Accumulator: Accumulate<Output>,
     ParseNext: Parser<Tokens<'s>, Output, ErrMode<VerboseError<'s>>>,
 {
-    RepeatStrict {
+    RepeatNote {
         parser,
         i: Default::default(),
         o: Default::default(),
@@ -25,7 +24,7 @@ where
     }
 }
 
-pub struct RepeatStrict<'s, P, O, C>
+pub struct RepeatNote<'s, P, O, C>
 where
     P: Parser<Tokens<'s>, O, ErrMode<VerboseError<'s>>>,
     C: Accumulate<O>,
@@ -37,7 +36,7 @@ where
 }
 
 impl<'s, P, O, C> Parser<Tokens<'s>, C, ErrMode<VerboseError<'s>>>
-    for RepeatStrict<'s, P, O, C>
+    for RepeatNote<'s, P, O, C>
 where
     P: Parser<Tokens<'s>, O, ErrMode<VerboseError<'s>>>,
     C: Accumulate<O>,
@@ -93,13 +92,7 @@ where
             Err(err) => match err {
                 ErrMode::Backtrack(verbose_error) => {
                     input.reset(&start);
-                    let made_progress = match input.peek_token() {
-                        Some(token) => token.1 != verbose_error.span,
-                        None => false,
-                    };
-                    if made_progress {
-                        return Err(ErrMode::Backtrack(verbose_error));
-                    }
+                    input.state.or_in_place(verbose_error);
                     return Ok(res);
                 }
                 _ => return Err(err),
@@ -108,7 +101,7 @@ where
     }
 }
 
-pub fn opt_strict<'s, Output, ParseNext>(
+pub fn opt_note<'s, Output, ParseNext>(
     mut parser: ParseNext,
 ) -> impl Parser<Tokens<'s>, Option<Output>, ErrMode<VerboseError<'s>>>
 where
@@ -121,13 +114,7 @@ where
             Err(err) => match err {
                 ErrMode::Backtrack(verbose_error) => {
                     input.reset(&start);
-                    let made_progress = match input.peek_token() {
-                        Some(token) => token.1 != verbose_error.span,
-                        None => false,
-                    };
-                    if made_progress {
-                        return Err(ErrMode::Backtrack(verbose_error));
-                    }
+                    input.state.or_in_place(verbose_error);
                     return Ok(None);
                 }
                 _ => return Err(err),

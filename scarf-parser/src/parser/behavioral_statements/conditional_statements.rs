@@ -7,19 +7,19 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, opt};
+use winnow::combinator::alt;
 
 pub fn conditional_statement_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<ConditionalStatement<'s>, VerboseError<'s>> {
     (
-        opt(unique_priority_parser),
+        opt_note(unique_priority_parser),
         token(Token::If),
         token(Token::Paren),
         cond_predicate_parser,
         token(Token::EParen),
         statement_or_null_parser,
-        repeat_strict((
+        repeat_note((
             token(Token::Else),
             token(Token::If),
             token(Token::Paren),
@@ -27,7 +27,7 @@ pub fn conditional_statement_parser<'s>(
             token(Token::EParen),
             statement_or_null_parser,
         )),
-        opt((token(Token::Else), statement_or_null_parser)),
+        opt_note((token(Token::Else), statement_or_null_parser)),
     )
         .map(|(a, b, c, d, e, f, g, h)| {
             ConditionalStatement(a, b, c, d, e, f, g, h)
@@ -51,7 +51,7 @@ pub fn cond_predicate_parser<'s>(
 ) -> ModalResult<CondPredicate<'s>, VerboseError<'s>> {
     (
         expression_or_cond_pattern_parser,
-        repeat_strict((
+        repeat_note((
             token(Token::AmpAmpAmp),
             expression_or_cond_pattern_parser,
         )),
@@ -65,7 +65,7 @@ pub fn expression_or_cond_pattern_parser<'s>(
 ) -> ModalResult<ExpressionOrCondPattern<'s>, VerboseError<'s>> {
     (
         gen_expression_parser(matches_operator_binding_power() + 1),
-        opt((
+        opt_note((
             token(Token::Matches),
             gen_pattern_parser(matches_operator_binding_power() + 1),
         )),

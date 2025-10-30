@@ -7,7 +7,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, opt, repeat};
+use winnow::combinator::{alt, repeat};
 use winnow::token::any;
 
 pub fn array_identifier_parser<'s>(
@@ -254,7 +254,7 @@ pub fn hierarchical_identifier_parser<'s>(
         ),
     );
     (
-        opt((token(Token::DollarRoot), token(Token::Period))),
+        opt_note((token(Token::DollarRoot), token(Token::Period))),
         identifiers_parser,
         identifier_parser,
     )
@@ -529,7 +529,7 @@ pub fn property_identifier_parser<'s>(
 pub fn ps_class_identifier_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<PsClassIdentifier<'s>, VerboseError<'s>> {
-    (opt(package_scope_parser), class_identifier_parser)
+    (opt_note(package_scope_parser), class_identifier_parser)
         .map(|(a, b)| PsClassIdentifier(a, b))
         .parse_next(input)
 }
@@ -537,7 +537,7 @@ pub fn ps_class_identifier_parser<'s>(
 pub fn ps_covergroup_identifier_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<PsCovergroupIdentifier<'s>, VerboseError<'s>> {
-    (opt(package_scope_parser), covergroup_identifier_parser)
+    (opt_note(package_scope_parser), covergroup_identifier_parser)
         .map(|(a, b)| PsCovergroupIdentifier(a, b))
         .parse_next(input)
 }
@@ -545,7 +545,7 @@ pub fn ps_covergroup_identifier_parser<'s>(
 pub fn ps_checker_identifier_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<PsCheckerIdentifier<'s>, VerboseError<'s>> {
-    (opt(package_scope_parser), checker_identifier_parser)
+    (opt_note(package_scope_parser), checker_identifier_parser)
         .map(|(a, b)| PsCheckerIdentifier(a, b))
         .parse_next(input)
 }
@@ -553,7 +553,7 @@ pub fn ps_checker_identifier_parser<'s>(
 pub fn ps_identifier_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<PsIdentifier<'s>, VerboseError<'s>> {
-    (opt(package_scope_parser), identifier_parser)
+    (opt_note(package_scope_parser), identifier_parser)
         .map(|(a, b)| PsIdentifier(a, b))
         .parse_next(input)
 }
@@ -570,7 +570,7 @@ pub fn ps_or_hierarchical_array_identifier_parser<'s>(
         package_scope_parser
             .map(|a| PsOrHierarchicalArrayIdentifierScope::PackageScope(a)),
     ));
-    (opt(_scope_parser), hierarchical_array_identifier_parser)
+    (opt_note(_scope_parser), hierarchical_array_identifier_parser)
         .map(|(a, b)| PsOrHierarchicalArrayIdentifier(a, b))
         .parse_next(input)
 }
@@ -579,7 +579,7 @@ pub fn ps_or_hierarchical_net_identifier_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<PsOrHierarchicalNetIdentifier<'s>, VerboseError<'s>> {
     alt((
-        (opt(package_scope_parser), net_identifier_parser)
+        (opt_note(package_scope_parser), net_identifier_parser)
             .map(|(a, b)| PsOrHierarchicalNetIdentifier::PackageScope(a, b)),
         hierarchical_net_identifier_parser
             .map(|a| PsOrHierarchicalNetIdentifier::Hierarchical(a)),
@@ -591,7 +591,7 @@ pub fn ps_or_hierarchical_property_identifier_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<PsOrHierarchicalPropertyIdentifier<'s>, VerboseError<'s>> {
     alt((
-        (opt(package_scope_parser), property_identifier_parser).map(
+        (opt_note(package_scope_parser), property_identifier_parser).map(
             |(a, b)| PsOrHierarchicalPropertyIdentifier::PackageScope(a, b),
         ),
         hierarchical_property_identifier_parser
@@ -604,7 +604,7 @@ pub fn ps_or_hierarchical_sequence_identifier_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<PsOrHierarchicalSequenceIdentifier<'s>, VerboseError<'s>> {
     alt((
-        (opt(package_scope_parser), sequence_identifier_parser).map(
+        (opt_note(package_scope_parser), sequence_identifier_parser).map(
             |(a, b)| PsOrHierarchicalSequenceIdentifier::PackageScope(a, b),
         ),
         hierarchical_sequence_identifier_parser
@@ -617,7 +617,7 @@ pub fn ps_or_hierarchical_tf_identifier_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<PsOrHierarchicalTfIdentifier<'s>, VerboseError<'s>> {
     alt((
-        (opt(package_scope_parser), tf_identifier_parser)
+        (opt_note(package_scope_parser), tf_identifier_parser)
             .map(|(a, b)| PsOrHierarchicalTfIdentifier::PackageScope(a, b)),
         hierarchical_tf_identifier_parser
             .map(|a| PsOrHierarchicalTfIdentifier::Hierarchical(a)),
@@ -639,14 +639,14 @@ pub fn ps_parameter_identifier_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<PsParameterIdentifier<'s>, VerboseError<'s>> {
     let _scoped_parser = (
-        opt(package_or_class_scope_parser),
+        opt_note(package_or_class_scope_parser),
         parameter_identifier_parser,
     )
         .map(|(a, b)| PsParameterIdentifier::Scoped(a, b));
     let _generated_parser = (
-        repeat_strict((
+        repeat_note((
             generate_block_identifier_parser,
-            opt((
+            opt_note((
                 token(Token::Bracket),
                 constant_expression_parser,
                 token(Token::EBracket),
@@ -668,7 +668,7 @@ pub fn ps_type_identifier_parser<'s>(
         package_scope_parser.map(|a| PsTypeIdentifierScope::PackageScope(a)),
         class_scope_parser.map(|a| PsTypeIdentifierScope::ClassScope(a)),
     ));
-    (opt(_scope_parser), type_identifier_parser)
+    (opt_note(_scope_parser), type_identifier_parser)
         .map(|(a, b)| PsTypeIdentifier(a, b))
         .parse_next(input)
 }

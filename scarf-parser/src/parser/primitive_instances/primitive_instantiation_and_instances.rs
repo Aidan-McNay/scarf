@@ -7,16 +7,16 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, opt};
+use winnow::combinator::alt;
 
 pub fn gate_instantiation_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<GateInstantiation<'s>, VerboseError<'s>> {
     let _cmos_parser = (
         cmos_switchtype_parser,
-        opt(delay3_parser),
+        opt_note(delay3_parser),
         cmos_switch_instance_parser,
-        repeat_strict((token(Token::Comma), cmos_switch_instance_parser)),
+        repeat_note((token(Token::Comma), cmos_switch_instance_parser)),
         token(Token::SColon),
     )
         .map(|(a, b, c, d, e)| {
@@ -24,9 +24,9 @@ pub fn gate_instantiation_parser<'s>(
         });
     let _mos_parser = (
         mos_switchtype_parser,
-        opt(delay3_parser),
+        opt_note(delay3_parser),
         mos_switch_instance_parser,
-        repeat_strict((token(Token::Comma), mos_switch_instance_parser)),
+        repeat_note((token(Token::Comma), mos_switch_instance_parser)),
         token(Token::SColon),
     )
         .map(|(a, b, c, d, e)| {
@@ -34,10 +34,10 @@ pub fn gate_instantiation_parser<'s>(
         });
     let _enable_parser = (
         enable_gatetype_parser,
-        opt(drive_strength_parser),
-        opt(delay3_parser),
+        opt_note(drive_strength_parser),
+        opt_note(delay3_parser),
         enable_gate_instance_parser,
-        repeat_strict((token(Token::Comma), enable_gate_instance_parser)),
+        repeat_note((token(Token::Comma), enable_gate_instance_parser)),
         token(Token::SColon),
     )
         .map(|(a, b, c, d, e, f)| {
@@ -45,10 +45,10 @@ pub fn gate_instantiation_parser<'s>(
         });
     let _n_input_parser = (
         n_input_gatetype_parser,
-        opt(drive_strength_parser),
-        opt(delay2_parser),
+        opt_note(drive_strength_parser),
+        opt_note(delay2_parser),
         n_input_gate_instance_parser,
-        repeat_strict((token(Token::Comma), n_input_gate_instance_parser)),
+        repeat_note((token(Token::Comma), n_input_gate_instance_parser)),
         token(Token::SColon),
     )
         .map(|(a, b, c, d, e, f)| {
@@ -56,10 +56,10 @@ pub fn gate_instantiation_parser<'s>(
         });
     let _n_output_parser = (
         n_output_gatetype_parser,
-        opt(drive_strength_parser),
-        opt(delay2_parser),
+        opt_note(drive_strength_parser),
+        opt_note(delay2_parser),
         n_output_gate_instance_parser,
-        repeat_strict((token(Token::Comma), n_output_gate_instance_parser)),
+        repeat_note((token(Token::Comma), n_output_gate_instance_parser)),
         token(Token::SColon),
     )
         .map(|(a, b, c, d, e, f)| {
@@ -67,9 +67,12 @@ pub fn gate_instantiation_parser<'s>(
         });
     let _pass_en_parser = (
         pass_en_switchtype_parser,
-        opt(delay2_parser),
+        opt_note(delay2_parser),
         pass_enable_switch_instance_parser,
-        repeat_strict((token(Token::Comma), pass_enable_switch_instance_parser)),
+        repeat_note((
+            token(Token::Comma),
+            pass_enable_switch_instance_parser,
+        )),
         token(Token::SColon),
     )
         .map(|(a, b, c, d, e)| {
@@ -78,15 +81,15 @@ pub fn gate_instantiation_parser<'s>(
     let _pass_parser = (
         pass_switchtype_parser,
         pass_switch_instance_parser,
-        repeat_strict((token(Token::Comma), pass_switch_instance_parser)),
+        repeat_note((token(Token::Comma), pass_switch_instance_parser)),
         token(Token::SColon),
     )
         .map(|(a, b, c, d)| GateInstantiation::Pass(Box::new((a, b, c, d))));
     let _pulldown_parser = (
         token(Token::Pulldown),
-        opt(pulldown_strength_parser),
+        opt_note(pulldown_strength_parser),
         pull_gate_instance_parser,
-        repeat_strict((token(Token::Comma), pull_gate_instance_parser)),
+        repeat_note((token(Token::Comma), pull_gate_instance_parser)),
         token(Token::SColon),
     )
         .map(|(a, b, c, d, e)| {
@@ -94,9 +97,9 @@ pub fn gate_instantiation_parser<'s>(
         });
     let _pullup_parser = (
         token(Token::Pullup),
-        opt(pullup_strength_parser),
+        opt_note(pullup_strength_parser),
         pull_gate_instance_parser,
-        repeat_strict((token(Token::Comma), pull_gate_instance_parser)),
+        repeat_note((token(Token::Comma), pull_gate_instance_parser)),
         token(Token::SColon),
     )
         .map(|(a, b, c, d, e)| {
@@ -120,7 +123,7 @@ pub fn cmos_switch_instance_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<CmosSwitchInstance<'s>, VerboseError<'s>> {
     (
-        opt(name_of_instance_parser),
+        opt_note(name_of_instance_parser),
         token(Token::Paren),
         output_terminal_parser,
         token(Token::Comma),
@@ -141,7 +144,7 @@ pub fn enable_gate_instance_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<EnableGateInstance<'s>, VerboseError<'s>> {
     (
-        opt(name_of_instance_parser),
+        opt_note(name_of_instance_parser),
         token(Token::Paren),
         output_terminal_parser,
         token(Token::Comma),
@@ -160,7 +163,7 @@ pub fn mos_switch_instance_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<MosSwitchInstance<'s>, VerboseError<'s>> {
     (
-        opt(name_of_instance_parser),
+        opt_note(name_of_instance_parser),
         token(Token::Paren),
         output_terminal_parser,
         token(Token::Comma),
@@ -179,12 +182,12 @@ pub fn n_input_gate_instance_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<NInputGateInstance<'s>, VerboseError<'s>> {
     (
-        opt(name_of_instance_parser),
+        opt_note(name_of_instance_parser),
         token(Token::Paren),
         output_terminal_parser,
         token(Token::Comma),
         input_terminal_parser,
-        repeat_strict((token(Token::Comma), input_terminal_parser)),
+        repeat_note((token(Token::Comma), input_terminal_parser)),
         token(Token::EParen),
     )
         .map(|(a, b, c, d, e, f, g)| NInputGateInstance(a, b, c, d, e, f, g))
@@ -195,10 +198,10 @@ pub fn n_output_gate_instance_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<NOutputGateInstance<'s>, VerboseError<'s>> {
     (
-        opt(name_of_instance_parser),
+        opt_note(name_of_instance_parser),
         token(Token::Paren),
         output_terminal_parser,
-        repeat_strict((token(Token::Comma), output_terminal_parser)),
+        repeat_note((token(Token::Comma), output_terminal_parser)),
         token(Token::Comma),
         input_terminal_parser,
         token(Token::EParen),
@@ -211,7 +214,7 @@ pub fn pass_switch_instance_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<PassSwitchInstance<'s>, VerboseError<'s>> {
     (
-        opt(name_of_instance_parser),
+        opt_note(name_of_instance_parser),
         token(Token::Paren),
         inout_terminal_parser,
         token(Token::Comma),
@@ -226,7 +229,7 @@ pub fn pass_enable_switch_instance_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<PassEnableSwitchInstance<'s>, VerboseError<'s>> {
     (
-        opt(name_of_instance_parser),
+        opt_note(name_of_instance_parser),
         token(Token::Paren),
         inout_terminal_parser,
         token(Token::Comma),
@@ -245,7 +248,7 @@ pub fn pull_gate_instance_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<PullGateInstance<'s>, VerboseError<'s>> {
     (
-        opt(name_of_instance_parser),
+        opt_note(name_of_instance_parser),
         token(Token::Paren),
         output_terminal_parser,
         token(Token::EParen),

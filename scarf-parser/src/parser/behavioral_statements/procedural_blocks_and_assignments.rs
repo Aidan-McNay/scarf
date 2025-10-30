@@ -7,7 +7,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, opt};
+use winnow::combinator::alt;
 
 pub fn initial_construct_parser<'s>(
     input: &mut Tokens<'s>,
@@ -139,7 +139,7 @@ pub fn nonblocking_assignment_parser<'s>(
     (
         variable_lvalue_parser,
         token(Token::LtEq),
-        opt(delay_or_event_control_parser),
+        opt_note(delay_or_event_control_parser),
         expression_parser,
     )
         .map(|(a, b, c, d)| NonblockingAssignment(a, b, c, d))

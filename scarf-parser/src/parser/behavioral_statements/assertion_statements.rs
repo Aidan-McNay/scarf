@@ -7,7 +7,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, opt};
+use winnow::combinator::alt;
 
 pub fn assertion_item_parser<'s>(
     input: &mut Tokens<'s>,
@@ -25,7 +25,7 @@ pub fn deferred_immediate_assertion_item_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<DeferredImmediateAssertionItem<'s>, VerboseError<'s>> {
     (
-        opt((block_identifier_parser, token(Token::Colon))),
+        opt_note((block_identifier_parser, token(Token::Colon))),
         deferred_immediate_assertion_statement_parser,
     )
         .map(|(a, b)| DeferredImmediateAssertionItem(a, b))

@@ -7,7 +7,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, opt};
+use winnow::combinator::alt;
 
 pub fn local_parameter_declaration_parser<'s>(
     input: &mut Tokens<'s>,
@@ -44,7 +44,7 @@ pub fn type_parameter_declaration_parser<'s>(
 ) -> ModalResult<TypeParameterDeclaration<'s>, VerboseError<'s>> {
     (
         token(Token::Type),
-        opt(forward_type_parser),
+        opt_note(forward_type_parser),
         list_of_type_assignments_parser,
     )
         .map(|(a, b, c)| TypeParameterDeclaration(a, b, c))
@@ -56,7 +56,7 @@ pub fn specparam_declaration_parser<'s>(
 ) -> ModalResult<SpecparamDeclaration<'s>, VerboseError<'s>> {
     (
         token(Token::Specparam),
-        opt(packed_dimension_parser),
+        opt_note(packed_dimension_parser),
         list_of_specparam_assignments_parser,
         token(Token::SColon),
     )

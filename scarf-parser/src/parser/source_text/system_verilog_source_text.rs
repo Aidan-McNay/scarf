@@ -7,12 +7,12 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, opt};
+use winnow::combinator::alt;
 
 pub(crate) fn attribute_instance_vec_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<Vec<AttributeInstance<'s>>, VerboseError<'s>> {
-    repeat_strict(attribute_instance_parser).parse_next(input)
+    repeat_note(attribute_instance_parser).parse_next(input)
 }
 
 pub fn source_text_parser<'s>(
@@ -20,7 +20,7 @@ pub fn source_text_parser<'s>(
 ) -> ModalResult<SourceText<'s>, VerboseError<'s>> {
     let extra_nodes = extra_node_parser(input)?;
     let timeunits_declaration =
-        opt(timeunits_declaration_parser).parse_next(input)?;
+        opt_note(timeunits_declaration_parser).parse_next(input)?;
     let mut descriptions: Vec<Description<'s>> = vec![];
     loop {
         if input.is_empty() {
@@ -85,10 +85,10 @@ pub fn module_declaration_nonansi_parser<'s>(
 ) -> ModalResult<ModuleDeclarationNonansi<'s>, VerboseError<'s>> {
     (
         module_nonansi_header_parser,
-        opt(timeunits_declaration_parser),
-        repeat_strict(module_item_parser),
+        opt_note(timeunits_declaration_parser),
+        repeat_note(module_item_parser),
         token(Token::Endmodule),
-        opt((token(Token::Colon), module_identifier_parser)),
+        opt_note((token(Token::Colon), module_identifier_parser)),
     )
         .map(|(a, b, c, d, e)| ModuleDeclarationNonansi(a, b, c, d, e))
         .parse_next(input)
@@ -99,10 +99,10 @@ pub fn module_declaration_ansi_parser<'s>(
 ) -> ModalResult<ModuleDeclarationAnsi<'s>, VerboseError<'s>> {
     (
         module_ansi_header_parser,
-        opt(timeunits_declaration_parser),
-        repeat_strict(non_port_module_item_parser),
+        opt_note(timeunits_declaration_parser),
+        repeat_note(non_port_module_item_parser),
         token(Token::Endmodule),
-        opt((token(Token::Colon), module_identifier_parser)),
+        opt_note((token(Token::Colon), module_identifier_parser)),
     )
         .map(|(a, b, c, d, e)| ModuleDeclarationAnsi(a, b, c, d, e))
         .parse_next(input)
@@ -114,10 +114,10 @@ pub fn module_nonansi_header_parser<'s>(
     (
         attribute_instance_vec_parser,
         module_keyword_parser,
-        opt(lifetime_parser),
+        opt_note(lifetime_parser),
         module_identifier_parser,
-        repeat_strict(package_import_declaration_parser),
-        opt(parameter_port_list_parser),
+        repeat_note(package_import_declaration_parser),
+        opt_note(parameter_port_list_parser),
         list_of_ports_parser,
         token(Token::SColon),
     )
@@ -133,11 +133,11 @@ pub fn module_ansi_header_parser<'s>(
     (
         attribute_instance_vec_parser,
         module_keyword_parser,
-        opt(lifetime_parser),
+        opt_note(lifetime_parser),
         module_identifier_parser,
-        repeat_strict(package_import_declaration_parser),
-        opt(parameter_port_list_parser),
-        opt(list_of_port_declarations_parser),
+        repeat_note(package_import_declaration_parser),
+        opt_note(parameter_port_list_parser),
+        opt_note(list_of_port_declarations_parser),
         token(Token::SColon),
     )
         .map(|(a, b, c, d, e, f, g, h)| {
@@ -152,17 +152,17 @@ pub fn module_declaration_wildcard_parser<'s>(
     (
         attribute_instance_vec_parser,
         module_keyword_parser,
-        opt(lifetime_parser),
+        opt_note(lifetime_parser),
         module_identifier_parser,
         token(Token::Paren),
         token(Token::Period),
         token(Token::Star),
         token(Token::EParen),
         token(Token::SColon),
-        opt(timeunits_declaration_parser),
-        repeat_strict(module_item_parser),
+        opt_note(timeunits_declaration_parser),
+        repeat_note(module_item_parser),
         token(Token::Endmodule),
-        opt((token(Token::Colon), module_identifier_parser)),
+        opt_note((token(Token::Colon), module_identifier_parser)),
     )
         .map(|(a, b, c, d, e, f, g, h, i, j, k, l, m)| {
             ModuleDeclarationWildcard(a, b, c, d, e, f, g, h, i, j, k, l, m)
@@ -219,10 +219,10 @@ pub fn interface_declaration_nonansi_parser<'s>(
 ) -> ModalResult<InterfaceDeclarationNonansi<'s>, VerboseError<'s>> {
     (
         interface_nonansi_header_parser,
-        opt(timeunits_declaration_parser),
-        repeat_strict(interface_item_parser),
+        opt_note(timeunits_declaration_parser),
+        repeat_note(interface_item_parser),
         token(Token::Endinterface),
-        opt((token(Token::Colon), interface_identifier_parser)),
+        opt_note((token(Token::Colon), interface_identifier_parser)),
     )
         .map(|(a, b, c, d, e)| InterfaceDeclarationNonansi(a, b, c, d, e))
         .parse_next(input)
@@ -233,10 +233,10 @@ pub fn interface_declaration_ansi_parser<'s>(
 ) -> ModalResult<InterfaceDeclarationAnsi<'s>, VerboseError<'s>> {
     (
         interface_ansi_header_parser,
-        opt(timeunits_declaration_parser),
-        repeat_strict(non_port_interface_item_parser),
+        opt_note(timeunits_declaration_parser),
+        repeat_note(non_port_interface_item_parser),
         token(Token::Endinterface),
-        opt((token(Token::Colon), interface_identifier_parser)),
+        opt_note((token(Token::Colon), interface_identifier_parser)),
     )
         .map(|(a, b, c, d, e)| InterfaceDeclarationAnsi(a, b, c, d, e))
         .parse_next(input)
@@ -254,10 +254,10 @@ pub fn interface_declaration_wildcard_parser<'s>(
         token(Token::Star),
         token(Token::EParen),
         token(Token::SColon),
-        opt(timeunits_declaration_parser),
-        repeat_strict(interface_item_parser),
+        opt_note(timeunits_declaration_parser),
+        repeat_note(interface_item_parser),
         token(Token::Endinterface),
-        opt((token(Token::Colon), interface_identifier_parser)),
+        opt_note((token(Token::Colon), interface_identifier_parser)),
     )
         .map(|(a, b, c, d, e, f, g, h, i, j, k, l)| {
             InterfaceDeclarationWildcard(a, b, c, d, e, f, g, h, i, j, k, l)
@@ -287,10 +287,10 @@ pub fn interface_nonansi_header_parser<'s>(
     (
         attribute_instance_vec_parser,
         token(Token::Interface),
-        opt(lifetime_parser),
+        opt_note(lifetime_parser),
         interface_identifier_parser,
-        repeat_strict(package_import_declaration_parser),
-        opt(parameter_port_list_parser),
+        repeat_note(package_import_declaration_parser),
+        opt_note(parameter_port_list_parser),
         list_of_ports_parser,
         token(Token::SColon),
     )
@@ -306,11 +306,11 @@ pub fn interface_ansi_header_parser<'s>(
     (
         attribute_instance_vec_parser,
         token(Token::Interface),
-        opt(lifetime_parser),
+        opt_note(lifetime_parser),
         interface_identifier_parser,
-        repeat_strict(package_import_declaration_parser),
-        opt(parameter_port_list_parser),
-        opt(list_of_port_declarations_parser),
+        repeat_note(package_import_declaration_parser),
+        opt_note(parameter_port_list_parser),
+        opt_note(list_of_port_declarations_parser),
         token(Token::SColon),
     )
         .map(|(a, b, c, d, e, f, g, h)| {
@@ -342,10 +342,10 @@ pub fn program_declaration_nonansi_parser<'s>(
 ) -> ModalResult<ProgramDeclarationNonansi<'s>, VerboseError<'s>> {
     (
         program_nonansi_header_parser,
-        opt(timeunits_declaration_parser),
-        repeat_strict(program_item_parser),
+        opt_note(timeunits_declaration_parser),
+        repeat_note(program_item_parser),
         token(Token::Endprogram),
-        opt((token(Token::Colon), program_identifier_parser)),
+        opt_note((token(Token::Colon), program_identifier_parser)),
     )
         .map(|(a, b, c, d, e)| ProgramDeclarationNonansi(a, b, c, d, e))
         .parse_next(input)
@@ -356,10 +356,10 @@ pub fn program_declaration_ansi_parser<'s>(
 ) -> ModalResult<ProgramDeclarationAnsi<'s>, VerboseError<'s>> {
     (
         program_ansi_header_parser,
-        opt(timeunits_declaration_parser),
-        repeat_strict(non_port_program_item_parser),
+        opt_note(timeunits_declaration_parser),
+        repeat_note(non_port_program_item_parser),
         token(Token::Endprogram),
-        opt((token(Token::Colon), program_identifier_parser)),
+        opt_note((token(Token::Colon), program_identifier_parser)),
     )
         .map(|(a, b, c, d, e)| ProgramDeclarationAnsi(a, b, c, d, e))
         .parse_next(input)
@@ -377,10 +377,10 @@ pub fn program_declaration_wildcard_parser<'s>(
         token(Token::Star),
         token(Token::EParen),
         token(Token::SColon),
-        opt(timeunits_declaration_parser),
-        repeat_strict(program_item_parser),
+        opt_note(timeunits_declaration_parser),
+        repeat_note(program_item_parser),
         token(Token::Endprogram),
-        opt((token(Token::Colon), program_identifier_parser)),
+        opt_note((token(Token::Colon), program_identifier_parser)),
     )
         .map(|(a, b, c, d, e, f, g, h, i, j, k, l)| {
             ProgramDeclarationWildcard(a, b, c, d, e, f, g, h, i, j, k, l)
@@ -410,10 +410,10 @@ pub fn program_nonansi_header_parser<'s>(
     (
         attribute_instance_vec_parser,
         token(Token::Program),
-        opt(lifetime_parser),
+        opt_note(lifetime_parser),
         program_identifier_parser,
-        repeat_strict(package_import_declaration_parser),
-        opt(parameter_port_list_parser),
+        repeat_note(package_import_declaration_parser),
+        opt_note(parameter_port_list_parser),
         list_of_ports_parser,
         token(Token::SColon),
     )
@@ -429,11 +429,11 @@ pub fn program_ansi_header_parser<'s>(
     (
         attribute_instance_vec_parser,
         token(Token::Program),
-        opt(lifetime_parser),
+        opt_note(lifetime_parser),
         program_identifier_parser,
-        repeat_strict(package_import_declaration_parser),
-        opt(parameter_port_list_parser),
-        opt(list_of_port_declarations_parser),
+        repeat_note(package_import_declaration_parser),
+        opt_note(parameter_port_list_parser),
+        opt_note(list_of_port_declarations_parser),
         token(Token::SColon),
     )
         .map(|(a, b, c, d, e, f, g, h)| {
@@ -450,18 +450,18 @@ pub fn checker_declaration_parser<'s>(
         checker_port_list_parser,
         token(Token::EParen),
     );
-    let checker_declaration_item_parser = repeat_strict((
+    let checker_declaration_item_parser = repeat_note((
         attribute_instance_vec_parser,
         checker_or_generate_item_parser,
     ));
     (
         token(Token::Checker),
         checker_identifier_parser,
-        opt(checker_declaration_port_list_parser),
+        opt_note(checker_declaration_port_list_parser),
         token(Token::SColon),
         checker_declaration_item_parser,
         token(Token::Endchecker),
-        opt((token(Token::Colon), checker_identifier_parser)),
+        opt_note((token(Token::Colon), checker_identifier_parser)),
     )
         .map(|(a, b, c, d, e, f, g)| CheckerDeclaration(a, b, c, d, e, f, g))
         .parse_next(input)
@@ -473,7 +473,7 @@ pub fn class_declaration_parser<'s>(
     let class_declaration_extension_parser = (
         token(Token::Extends),
         class_type_parser,
-        opt((
+        opt_note((
             token(Token::Paren),
             alt((
                 list_of_arguments_parser.map(|a| {
@@ -491,20 +491,20 @@ pub fn class_declaration_parser<'s>(
     let class_declaration_implementation_parser = (
         token(Token::Implements),
         interface_class_type_parser,
-        repeat_strict((token(Token::Comma), interface_class_type_parser)),
+        repeat_note((token(Token::Comma), interface_class_type_parser)),
     );
     (
-        opt(token(Token::Virtual)),
+        opt_note(token(Token::Virtual)),
         token(Token::Class),
-        opt(final_specifier_parser),
+        opt_note(final_specifier_parser),
         class_identifier_parser,
-        opt(parameter_port_list_parser),
-        opt(class_declaration_extension_parser),
-        opt(class_declaration_implementation_parser),
+        opt_note(parameter_port_list_parser),
+        opt_note(class_declaration_extension_parser),
+        opt_note(class_declaration_implementation_parser),
         token(Token::SColon),
-        repeat_strict(class_item_parser),
+        repeat_note(class_item_parser),
         token(Token::Endclass),
-        opt((token(Token::Colon), class_identifier_parser)),
+        opt_note((token(Token::Colon), class_identifier_parser)),
     )
         .map(|(a, b, c, d, e, f, g, h, i, j, k)| {
             ClassDeclaration(a, b, c, d, e, f, g, h, i, j, k)
@@ -518,18 +518,18 @@ pub fn interface_class_declaration_parser<'s>(
     let interface_class_declaration_extension_parser = (
         token(Token::Extends),
         interface_class_type_parser,
-        repeat_strict((token(Token::Comma), interface_class_type_parser)),
+        repeat_note((token(Token::Comma), interface_class_type_parser)),
     );
     (
         token(Token::Interface),
         token(Token::Class),
         class_identifier_parser,
-        opt(parameter_port_list_parser),
-        opt(interface_class_declaration_extension_parser),
+        opt_note(parameter_port_list_parser),
+        opt_note(interface_class_declaration_extension_parser),
         token(Token::SColon),
-        repeat_strict(interface_class_item_parser),
+        repeat_note(interface_class_item_parser),
         token(Token::Endclass),
-        opt((token(Token::Colon), class_identifier_parser)),
+        opt_note((token(Token::Colon), class_identifier_parser)),
     )
         .map(|(a, b, c, d, e, f, g, h, i)| {
             InterfaceClassDeclaration(a, b, c, d, e, f, g, h, i)
@@ -541,17 +541,17 @@ pub fn package_declaration_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<PackageDeclaration<'s>, VerboseError<'s>> {
     let attribute_package_items_parser =
-        repeat_strict((attribute_instance_vec_parser, package_item_parser));
+        repeat_note((attribute_instance_vec_parser, package_item_parser));
     (
         attribute_instance_vec_parser,
         token(Token::Package),
-        opt(lifetime_parser),
+        opt_note(lifetime_parser),
         package_identifier_parser,
         token(Token::SColon),
-        opt(timeunits_declaration_parser),
+        opt_note(timeunits_declaration_parser),
         attribute_package_items_parser,
         token(Token::Endpackage),
-        opt((token(Token::Colon), package_identifier_parser)),
+        opt_note((token(Token::Colon), package_identifier_parser)),
     )
         .map(|(a, b, c, d, e, f, g, h, i)| {
             PackageDeclaration(a, b, c, d, e, f, g, h, i)
@@ -565,7 +565,7 @@ pub fn timeunits_declaration_parser<'s>(
     let timeunit_parser = (
         token(Token::Timeunit),
         time_literal_parser,
-        opt((token(Token::Slash), time_literal_parser)),
+        opt_note((token(Token::Slash), time_literal_parser)),
         token(Token::SColon),
     )
         .map(|(a, b, c, d)| TimeunitsDeclaration::Timeunit(a, b, c, d));

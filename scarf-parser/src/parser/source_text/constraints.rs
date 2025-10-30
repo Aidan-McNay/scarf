@@ -6,13 +6,13 @@
 use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
-use winnow::combinator::{alt, opt};
+use winnow::combinator::alt;
 
 pub fn constraint_declaration_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<ConstraintDeclaration<'s>, VerboseError<'s>> {
     (
-        opt(token(Token::Static)),
+        opt_note(token(Token::Static)),
         token(Token::Constraint),
         opt_dynamic_override_specifiers_parser,
         constraint_identifier_parser,
@@ -27,7 +27,7 @@ pub fn constraint_block_parser<'s>(
 ) -> ModalResult<ConstraintBlock<'s>, VerboseError<'s>> {
     (
         token(Token::Brace),
-        repeat_strict( constraint_block_item_parser),
+        repeat_note(constraint_block_item_parser),
         token(Token::EBrace),
     )
         .map(|(a, b, c)| ConstraintBlock(a, b, c))
@@ -57,7 +57,7 @@ pub fn solve_before_list_parser<'s>(
 ) -> ModalResult<SolveBeforeList<'s>, VerboseError<'s>> {
     (
         constraint_primary_parser,
-        repeat_strict( (token(Token::Comma), constraint_primary_parser)),
+        repeat_note((token(Token::Comma), constraint_primary_parser)),
     )
         .map(|(a, b)| SolveBeforeList(a, b))
         .parse_next(input)
@@ -70,7 +70,7 @@ pub fn constraint_primary_parser<'s>(
         implicit_class_handle_or_class_scope_parser,
         hierarchical_identifier_parser,
         select_parser,
-        opt((token(Token::Paren), token(Token::EParen))),
+        opt_note((token(Token::Paren), token(Token::EParen))),
     )
         .map(|(a, b, c, d)| ConstraintPrimary(a, b, c, d))
         .parse_next(input)
@@ -80,7 +80,7 @@ pub fn constraint_expression_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<ConstraintExpression<'s>, VerboseError<'s>> {
     let _expression_parser = (
-        opt(token(Token::Soft)),
+        opt_note(token(Token::Soft)),
         expression_or_dist_parser,
         token(Token::SColon),
     )
@@ -102,7 +102,7 @@ pub fn constraint_expression_parser<'s>(
         expression_parser,
         token(Token::EParen),
         constraint_set_parser,
-        opt((token(Token::Else), constraint_set_parser)),
+        opt_note((token(Token::Else), constraint_set_parser)),
     )
         .map(|(a, b, c, d, e, f)| {
             ConstraintExpression::Conditional(Box::new((a, b, c, d, e, f)))
@@ -160,7 +160,7 @@ pub fn constraint_set_parser<'s>(
         .map(|a| ConstraintSet::Single(Box::new(a)));
     let _multi_parser = (
         token(Token::Brace),
-        repeat_strict( constraint_expression_parser),
+        repeat_note(constraint_expression_parser),
         token(Token::EBrace),
     )
         .map(|(a, b, c)| ConstraintSet::Multi(Box::new((a, b, c))));
@@ -172,7 +172,7 @@ pub fn expression_or_dist_parser<'s>(
 ) -> ModalResult<ExpressionOrDist<'s>, VerboseError<'s>> {
     (
         expression_parser,
-        opt((
+        opt_note((
             token(Token::Dist),
             token(Token::Brace),
             dist_list_parser,
@@ -188,7 +188,7 @@ pub fn dist_list_parser<'s>(
 ) -> ModalResult<DistList<'s>, VerboseError<'s>> {
     (
         dist_item_parser,
-        repeat_strict( (token(Token::Comma), dist_item_parser)),
+        repeat_note((token(Token::Comma), dist_item_parser)),
     )
         .map(|(a, b)| DistList(a, b))
         .parse_next(input)
@@ -197,7 +197,7 @@ pub fn dist_list_parser<'s>(
 pub fn dist_item_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<DistItem<'s>, VerboseError<'s>> {
-    let _value_parser = (value_range_parser, opt(dist_weight_parser))
+    let _value_parser = (value_range_parser, opt_note(dist_weight_parser))
         .map(|(a, b)| DistItem::Value(Box::new((a, b))));
     let _default_parser = (
         token(Token::Default),
@@ -222,8 +222,8 @@ pub fn constraint_prototype_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<ConstraintPrototype<'s>, VerboseError<'s>> {
     (
-        opt(constraint_prototype_qualifier_parser),
-        opt(token(Token::Static)),
+        opt_note(constraint_prototype_qualifier_parser),
+        opt_note(token(Token::Static)),
         token(Token::Constraint),
         opt_dynamic_override_specifiers_parser,
         constraint_identifier_parser,
@@ -247,7 +247,7 @@ pub fn extern_constraint_declaration_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<ExternConstraintDeclaration<'s>, VerboseError<'s>> {
     (
-        opt(token(Token::Static)),
+        opt_note(token(Token::Static)),
         token(Token::Constraint),
         opt_dynamic_override_specifiers_parser,
         class_scope_parser,

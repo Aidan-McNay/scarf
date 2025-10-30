@@ -6,7 +6,7 @@
 use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
-use winnow::combinator::{alt, opt};
+use winnow::combinator::alt;
 
 enum ClassItemBody<'a> {
     Property(ClassProperty<'a>),
@@ -70,16 +70,16 @@ pub fn class_property_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<ClassProperty<'s>, VerboseError<'s>> {
     let _data_parser = (
-        repeat_strict( property_qualifier_parser),
+        repeat_note(property_qualifier_parser),
         data_declaration_parser,
     )
         .map(|(a, b)| ClassProperty::Data(Box::new((a, b))));
     let _const_parser = (
         token(Token::Const),
-        repeat_strict( class_item_qualifier_parser),
+        repeat_note(class_item_qualifier_parser),
         data_type_parser,
         const_identifier_parser,
-        opt((token(Token::Eq), constant_expression_parser)),
+        opt_note((token(Token::Eq), constant_expression_parser)),
         token(Token::SColon),
     )
         .map(|(a, b, c, d, e, f)| {
@@ -92,19 +92,19 @@ pub fn class_method_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<ClassMethod<'s>, VerboseError<'s>> {
     let _task_parser = (
-        repeat_strict( method_qualifier_parser),
+        repeat_note(method_qualifier_parser),
         task_declaration_parser,
     )
         .map(|(a, b)| ClassMethod::Task(Box::new((a, b))));
     let _function_parser = (
-        repeat_strict( method_qualifier_parser),
+        repeat_note(method_qualifier_parser),
         function_declaration_parser,
     )
         .map(|(a, b)| ClassMethod::Function(Box::new((a, b))));
     let _pure_virtual_method_parser = (
         token(Token::Pure),
         token(Token::Virtual),
-        repeat_strict( class_item_qualifier_parser),
+        repeat_note(class_item_qualifier_parser),
         method_prototype_parser,
         token(Token::SColon),
     )
@@ -113,19 +113,19 @@ pub fn class_method_parser<'s>(
         });
     let _extern_method_parser = (
         token(Token::Extern),
-        repeat_strict( method_qualifier_parser),
+        repeat_note(method_qualifier_parser),
         method_prototype_parser,
         token(Token::SColon),
     )
         .map(|(a, b, c, d)| ClassMethod::ExternMethod(Box::new((a, b, c, d))));
     let _constructor_declaration_parser = (
-        repeat_strict( method_qualifier_parser),
+        repeat_note(method_qualifier_parser),
         class_constructor_declaration_parser,
     )
         .map(|(a, b)| ClassMethod::ConstructorDeclaration(Box::new((a, b))));
     let _constructor_prototype_parser = (
         token(Token::Extern),
-        repeat_strict( method_qualifier_parser),
+        repeat_note(method_qualifier_parser),
         class_constructor_prototype_parser,
     )
         .map(|(a, b, c)| {
@@ -159,29 +159,29 @@ pub fn class_constructor_declaration_parser<'s>(
 ) -> ModalResult<ClassConstructorDeclaration<'s>, VerboseError<'s>> {
     (
         token(Token::Function),
-        opt(class_scope_parser),
+        opt_note(class_scope_parser),
         token(Token::New),
-        opt((
+        opt_note((
             token(Token::Paren),
-            opt(class_constructor_arg_list_parser),
+            opt_note(class_constructor_arg_list_parser),
             token(Token::EParen),
         )),
         token(Token::SColon),
-        repeat_strict( block_item_declaration_parser),
-        opt((
+        repeat_note(block_item_declaration_parser),
+        opt_note((
             token(Token::Super),
             token(Token::Period),
             token(Token::New),
-            opt((
+            opt_note((
                 token(Token::Paren),
-                opt(list_of_arguments_or_default_parser),
+                opt_note(list_of_arguments_or_default_parser),
                 token(Token::EParen),
             )),
             token(Token::SColon),
         )),
-        repeat_strict( function_statement_or_null_parser),
+        repeat_note(function_statement_or_null_parser),
         token(Token::Endfunction),
-        opt((token(Token::Colon), token(Token::New))),
+        opt_note((token(Token::Colon), token(Token::New))),
     )
         .map(|(a, b, c, d, e, f, g, h, i, j)| {
             ClassConstructorDeclaration(a, b, c, d, e, f, g, h, i, j)
@@ -195,9 +195,9 @@ pub fn class_constructor_prototype_parser<'s>(
     (
         token(Token::Function),
         token(Token::New),
-        opt((
+        opt_note((
             token(Token::Paren),
-            opt(class_constructor_arg_list_parser),
+            opt_note(class_constructor_arg_list_parser),
             token(Token::EParen),
         )),
         token(Token::SColon),
@@ -211,7 +211,7 @@ pub fn class_constructor_arg_list_parser<'s>(
 ) -> ModalResult<ClassConstructorArgList<'s>, VerboseError<'s>> {
     (
         class_constructor_arg_parser,
-        repeat_strict( (token(Token::Comma), class_constructor_arg_parser)),
+        repeat_note((token(Token::Comma), class_constructor_arg_parser)),
     )
         .map(|(a, b)| ClassConstructorArgList(a, b))
         .parse_next(input)
@@ -314,7 +314,7 @@ pub fn random_qualifier_parser<'s>(
 pub fn method_qualifier_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<MethodQualifier<'s>, VerboseError<'s>> {
-    let _pure_virtual_parser = (opt(token(Token::Pure)), token(Token::Virtual))
+    let _pure_virtual_parser = (opt_note(token(Token::Pure)), token(Token::Virtual))
         .map(|(a, b)| MethodQualifier::PureVirtual(Box::new((a, b))));
     let _class_item_parser = class_item_qualifier_parser
         .map(|a| MethodQualifier::ClassItem(Box::new(a)));

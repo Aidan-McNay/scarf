@@ -6,7 +6,7 @@
 use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
-use winnow::combinator::{alt, opt};
+use winnow::combinator::alt;
 
 pub fn udp_port_list_parser<'s>(
     input: &mut Tokens<'s>,
@@ -15,7 +15,7 @@ pub fn udp_port_list_parser<'s>(
         output_port_identifier_parser,
         token(Token::Comma),
         input_port_identifier_parser,
-        repeat_strict( (token(Token::Comma), input_port_identifier_parser)),
+        repeat_note((token(Token::Comma), input_port_identifier_parser)),
     )
         .map(|(a, b, c, d)| UdpPortList(a, b, c, d))
         .parse_next(input)
@@ -28,7 +28,7 @@ pub fn udp_declaration_port_list_parser<'s>(
         udp_output_declaration_parser,
         token(Token::Comma),
         udp_input_declaration_parser,
-        repeat_strict( (token(Token::Comma), udp_input_declaration_parser)),
+        repeat_note((token(Token::Comma), udp_input_declaration_parser)),
     )
         .map(|(a, b, c, d)| UdpDeclarationPortList(a, b, c, d))
         .parse_next(input)
@@ -64,7 +64,7 @@ pub fn udp_output_declaration_parser<'s>(
         token(Token::Output),
         token(Token::Reg),
         port_identifier_parser,
-        opt((token(Token::Eq), constant_expression_parser)),
+        opt_note((token(Token::Eq), constant_expression_parser)),
     )
         .map(|(a, b, c, d, e)| {
             UdpOutputDeclaration::Sequential(Box::new((a, b, c, d, e)))

@@ -7,7 +7,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, opt};
+use winnow::combinator::alt;
 
 pub fn path_declaration_parser<'s>(
     input: &mut Tokens<'s>,
@@ -54,7 +54,7 @@ pub fn parallel_path_description_parser<'s>(
     (
         token(Token::Paren),
         specify_input_terminal_descriptor_parser,
-        opt(polarity_operator_parser),
+        opt_note(polarity_operator_parser),
         token(Token::EqGt),
         specify_output_terminal_descriptor_parser,
         token(Token::EParen),
@@ -69,7 +69,7 @@ pub fn full_path_description_parser<'s>(
     (
         token(Token::Paren),
         list_of_path_inputs_parser,
-        opt(polarity_operator_parser),
+        opt_note(polarity_operator_parser),
         token(Token::StarGt),
         list_of_path_outputs_parser,
         token(Token::EParen),
@@ -107,13 +107,13 @@ pub fn parallel_edge_sensitive_path_description_parser<'s>(
 ) -> ModalResult<ParallelEdgeSensitivePathDescription<'s>, VerboseError<'s>> {
     let _data_source_parser = (
         token(Token::Paren),
-        opt(edge_identifier_parser),
+        opt_note(edge_identifier_parser),
         specify_input_terminal_descriptor_parser,
-        opt(polarity_operator_parser),
+        opt_note(polarity_operator_parser),
         token(Token::EqGt),
         token(Token::Paren),
         specify_output_terminal_descriptor_parser,
-        opt(polarity_operator_parser),
+        opt_note(polarity_operator_parser),
         token(Token::Colon),
         data_source_expression_parser,
         token(Token::EParen),
@@ -126,9 +126,9 @@ pub fn parallel_edge_sensitive_path_description_parser<'s>(
         });
     let _no_data_source_parser = (
         token(Token::Paren),
-        opt(edge_identifier_parser),
+        opt_note(edge_identifier_parser),
         specify_input_terminal_descriptor_parser,
-        opt(polarity_operator_parser),
+        opt_note(polarity_operator_parser),
         token(Token::EqGt),
         specify_output_terminal_descriptor_parser,
         token(Token::EParen),
@@ -146,13 +146,13 @@ pub fn full_edge_sensitive_path_description_parser<'s>(
 ) -> ModalResult<FullEdgeSensitivePathDescription<'s>, VerboseError<'s>> {
     let _data_source_parser = (
         token(Token::Paren),
-        opt(edge_identifier_parser),
+        opt_note(edge_identifier_parser),
         list_of_path_inputs_parser,
-        opt(polarity_operator_parser),
+        opt_note(polarity_operator_parser),
         token(Token::StarGt),
         token(Token::Paren),
         list_of_path_outputs_parser,
-        opt(polarity_operator_parser),
+        opt_note(polarity_operator_parser),
         token(Token::Colon),
         data_source_expression_parser,
         token(Token::EParen),
@@ -165,9 +165,9 @@ pub fn full_edge_sensitive_path_description_parser<'s>(
         });
     let _no_data_source_parser = (
         token(Token::Paren),
-        opt(edge_identifier_parser),
+        opt_note(edge_identifier_parser),
         list_of_path_inputs_parser,
-        opt(polarity_operator_parser),
+        opt_note(polarity_operator_parser),
         token(Token::StarGt),
         list_of_path_outputs_parser,
         token(Token::EParen),

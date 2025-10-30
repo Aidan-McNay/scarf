@@ -7,7 +7,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, opt};
+use winnow::combinator::alt;
 
 pub fn loop_statement_parser<'s>(
     input: &mut Tokens<'s>,
@@ -35,11 +35,11 @@ pub fn loop_statement_parser<'s>(
     let _for_parser = (
         token(Token::For),
         token(Token::Paren),
-        opt(for_initialization_parser),
+        opt_note(for_initialization_parser),
         token(Token::SColon),
-        opt(expression_parser),
+        opt_note(expression_parser),
         token(Token::SColon),
-        opt(for_step_parser),
+        opt_note(for_step_parser),
         token(Token::EParen),
         statement_or_null_parser,
     )
@@ -90,7 +90,10 @@ pub fn for_initialization_parser<'s>(
             .map(|a| ForInitialization::VariableAssignment(Box::new(a))),
         (
             for_variable_declaration_parser,
-            repeat_strict((token(Token::Comma), for_variable_declaration_parser)),
+            repeat_note((
+                token(Token::Comma),
+                for_variable_declaration_parser,
+            )),
         )
             .map(|(a, b)| {
                 ForInitialization::VariableDeclarations(Box::new((a, b)))
@@ -103,12 +106,12 @@ pub fn for_variable_declaration_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<ForVariableDeclaration<'s>, VerboseError<'s>> {
     (
-        opt(token(Token::Var)),
+        opt_note(token(Token::Var)),
         data_type_parser,
         variable_identifier_parser,
         token(Token::Eq),
         expression_parser,
-        repeat_strict((
+        repeat_note((
             token(Token::Comma),
             variable_identifier_parser,
             token(Token::Eq),
@@ -124,7 +127,7 @@ pub fn for_step_parser<'s>(
 ) -> ModalResult<ForStep<'s>, VerboseError<'s>> {
     (
         for_step_assignment_parser,
-        repeat_strict((token(Token::Comma), for_step_assignment_parser)),
+        repeat_note((token(Token::Comma), for_step_assignment_parser)),
     )
         .map(|(a, b)| ForStep(a, b))
         .parse_next(input)
@@ -148,10 +151,10 @@ pub fn loop_variables_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<LoopVariables<'s>, VerboseError<'s>> {
     (
-        opt(index_variable_identifier_parser),
-        repeat_strict((
+        opt_note(index_variable_identifier_parser),
+        repeat_note((
             token(Token::Comma),
-            opt(index_variable_identifier_parser),
+            opt_note(index_variable_identifier_parser),
         )),
     )
         .map(|(a, b)| LoopVariables(a, b))

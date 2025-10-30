@@ -7,7 +7,6 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{opt};
 
 pub fn attribute_instance_parser<'s>(
     input: &mut Tokens<'s>,
@@ -16,7 +15,7 @@ pub fn attribute_instance_parser<'s>(
         token(Token::Paren),
         token(Token::Star),
         attr_spec_parser,
-        repeat_strict( (token(Token::Comma), attr_spec_parser)),
+        repeat_note((token(Token::Comma), attr_spec_parser)),
         token(Token::Star),
         token(Token::EParen),
     )
@@ -29,7 +28,7 @@ pub fn attr_spec_parser<'s>(
 ) -> ModalResult<AttrSpec<'s>, VerboseError<'s>> {
     (
         attr_name_parser,
-        opt((token(Token::Eq), constant_expression_parser)),
+        opt_note((token(Token::Eq), constant_expression_parser)),
     )
         .map(|(a, b)| AttrSpec(a, b))
         .parse_next(input)

@@ -7,7 +7,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, opt};
+use winnow::combinator::alt;
 use winnow::token::any;
 
 pub fn system_severity_task_parser<'s>(
@@ -31,10 +31,10 @@ pub fn fatal_system_severity_task_parser<'s>(
 ) -> ModalResult<FatalSeveritySystemTask<'s>, VerboseError<'s>> {
     (
         token(Token::DollarFatal),
-        opt((
+        opt_note((
             token(Token::Paren),
             finish_number_parser,
-            opt((token(Token::Comma), list_of_arguments_parser)),
+            opt_note((token(Token::Comma), list_of_arguments_parser)),
             token(Token::EParen),
         )),
         token(Token::SColon),
@@ -48,9 +48,9 @@ pub fn error_system_severity_task_parser<'s>(
 ) -> ModalResult<ErrorSeveritySystemTask<'s>, VerboseError<'s>> {
     (
         token(Token::DollarError),
-        opt((
+        opt_note((
             token(Token::Paren),
-            opt(list_of_arguments_parser),
+            opt_note(list_of_arguments_parser),
             token(Token::EParen),
         )),
         token(Token::SColon),
@@ -64,9 +64,9 @@ pub fn warning_system_severity_task_parser<'s>(
 ) -> ModalResult<WarningSeveritySystemTask<'s>, VerboseError<'s>> {
     (
         token(Token::DollarWarning),
-        opt((
+        opt_note((
             token(Token::Paren),
-            opt(list_of_arguments_parser),
+            opt_note(list_of_arguments_parser),
             token(Token::EParen),
         )),
         token(Token::SColon),
@@ -80,9 +80,9 @@ pub fn info_system_severity_task_parser<'s>(
 ) -> ModalResult<InfoSeveritySystemTask<'s>, VerboseError<'s>> {
     (
         token(Token::DollarInfo),
-        opt((
+        opt_note((
             token(Token::Paren),
-            opt(list_of_arguments_parser),
+            opt_note(list_of_arguments_parser),
             token(Token::EParen),
         )),
         token(Token::SColon),

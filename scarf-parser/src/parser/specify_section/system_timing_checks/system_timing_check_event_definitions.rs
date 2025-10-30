@@ -7,15 +7,15 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, opt};
+use winnow::combinator::alt;
 
 pub fn timing_check_event_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<TimingCheckEvent<'s>, VerboseError<'s>> {
     (
-        opt(timing_check_event_control_parser),
+        opt_note(timing_check_event_control_parser),
         specify_terminal_descriptor_parser,
-        opt((token(Token::AmpAmpAmp), timing_check_condition_parser)),
+        opt_note((token(Token::AmpAmpAmp), timing_check_condition_parser)),
     )
         .map(|(a, b, c)| TimingCheckEvent(a, b, c))
         .parse_next(input)
@@ -27,7 +27,7 @@ pub fn controlled_timing_check_event_parser<'s>(
     (
         timing_check_event_control_parser,
         specify_terminal_descriptor_parser,
-        opt((token(Token::AmpAmpAmp), timing_check_condition_parser)),
+        opt_note((token(Token::AmpAmpAmp), timing_check_condition_parser)),
     )
         .map(|(a, b, c)| ControlledTimingCheckEvent(a, b, c))
         .parse_next(input)
@@ -67,7 +67,7 @@ pub fn edge_control_specifier_parser<'s>(
         token(Token::Edge),
         token(Token::Bracket),
         edge_descriptor_parser,
-        repeat_strict( (token(Token::Comma), edge_descriptor_parser)),
+        repeat_note((token(Token::Comma), edge_descriptor_parser)),
         token(Token::EBracket),
     )
         .map(|(a, b, c, d, e)| EdgeControlSpecifier(a, b, c, d, e))

@@ -7,14 +7,14 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, opt};
+use winnow::combinator::alt;
 
 pub fn list_of_path_inputs_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<ListOfPathInputs<'s>, VerboseError<'s>> {
     (
         specify_input_terminal_descriptor_parser,
-        repeat_strict((
+        repeat_note((
             token(Token::Comma),
             specify_input_terminal_descriptor_parser,
         )),
@@ -28,7 +28,7 @@ pub fn list_of_path_outputs_parser<'s>(
 ) -> ModalResult<ListOfPathOutputs<'s>, VerboseError<'s>> {
     (
         specify_output_terminal_descriptor_parser,
-        repeat_strict((
+        repeat_note((
             token(Token::Comma),
             specify_output_terminal_descriptor_parser,
         )),
@@ -42,7 +42,7 @@ pub fn specify_input_terminal_descriptor_parser<'s>(
 ) -> ModalResult<SpecifyInputTerminalDescriptor<'s>, VerboseError<'s>> {
     (
         input_identifier_parser,
-        opt((
+        opt_note((
             token(Token::Bracket),
             constant_range_expression_parser,
             token(Token::EBracket),
@@ -57,7 +57,7 @@ pub fn specify_output_terminal_descriptor_parser<'s>(
 ) -> ModalResult<SpecifyOutputTerminalDescriptor<'s>, VerboseError<'s>> {
     (
         output_identifier_parser,
-        opt((
+        opt_note((
             token(Token::Bracket),
             constant_range_expression_parser,
             token(Token::EBracket),

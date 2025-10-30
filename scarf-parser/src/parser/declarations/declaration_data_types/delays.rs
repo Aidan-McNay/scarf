@@ -6,7 +6,7 @@
 use crate::*;
 use scarf_syntax::*;
 use winnow::Parser;
-use winnow::combinator::{alt, opt};
+use winnow::combinator::alt;
 use winnow::error::ModalResult;
 
 pub fn delay2_parser<'s>(
@@ -18,7 +18,7 @@ pub fn delay2_parser<'s>(
         token(Token::Pound),
         token(Token::Paren),
         mintypmax_expression_parser,
-        opt((token(Token::Comma), mintypmax_expression_parser)),
+        opt_note((token(Token::Comma), mintypmax_expression_parser)),
         token(Token::EParen),
     )
         .map(|(a, b, c, d, e)| Delay2::Mintypmax(Box::new((a, b, c, d, e))));
@@ -34,10 +34,10 @@ pub fn delay3_parser<'s>(
         token(Token::Pound),
         token(Token::Paren),
         mintypmax_expression_parser,
-        opt((
+        opt_note((
             token(Token::Comma),
             mintypmax_expression_parser,
-            opt((token(Token::Comma), mintypmax_expression_parser)),
+            opt_note((token(Token::Comma), mintypmax_expression_parser)),
         )),
         token(Token::EParen),
     )

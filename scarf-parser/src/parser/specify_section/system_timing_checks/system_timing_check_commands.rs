@@ -7,7 +7,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, opt};
+use winnow::combinator::alt;
 
 pub fn system_timing_check_parser<'s>(
     input: &mut Tokens<'s>,
@@ -52,7 +52,7 @@ pub fn dollar_setup_timing_check_parser<'s>(
         reference_event_parser,
         token(Token::Comma),
         timing_check_limit_parser,
-        opt((token(Token::Comma), opt(notifier_parser))),
+        opt_note((token(Token::Comma), opt_note(notifier_parser))),
         token(Token::EParen),
         token(Token::SColon),
     )
@@ -73,7 +73,7 @@ pub fn dollar_hold_timing_check_parser<'s>(
         data_event_parser,
         token(Token::Comma),
         timing_check_limit_parser,
-        opt((token(Token::Comma), opt(notifier_parser))),
+        opt_note((token(Token::Comma), opt_note(notifier_parser))),
         token(Token::EParen),
         token(Token::SColon),
     )
@@ -96,19 +96,19 @@ pub fn dollar_setuphold_timing_check_parser<'s>(
         timing_check_limit_parser,
         token(Token::Comma),
         timing_check_limit_parser,
-        opt((
+        opt_note((
             token(Token::Comma),
-            opt(notifier_parser),
-            opt((
+            opt_note(notifier_parser),
+            opt_note((
                 token(Token::Comma),
-                opt(timestamp_condition_parser),
-                opt((
+                opt_note(timestamp_condition_parser),
+                opt_note((
                     token(Token::Comma),
-                    opt(timecheck_condition_parser),
-                    opt((
+                    opt_note(timecheck_condition_parser),
+                    opt_note((
                         token(Token::Comma),
-                        opt(delayed_reference_parser),
-                        opt((token(Token::Comma), opt(delayed_data_parser))),
+                        opt_note(delayed_reference_parser),
+                        opt_note((token(Token::Comma), opt_note(delayed_data_parser))),
                     )),
                 )),
             )),
@@ -133,7 +133,7 @@ pub fn dollar_recovery_timing_check_parser<'s>(
         data_event_parser,
         token(Token::Comma),
         timing_check_limit_parser,
-        opt((token(Token::Comma), opt(notifier_parser))),
+        opt_note((token(Token::Comma), opt_note(notifier_parser))),
         token(Token::EParen),
         token(Token::SColon),
     )
@@ -154,7 +154,7 @@ pub fn dollar_removal_timing_check_parser<'s>(
         data_event_parser,
         token(Token::Comma),
         timing_check_limit_parser,
-        opt((token(Token::Comma), opt(notifier_parser))),
+        opt_note((token(Token::Comma), opt_note(notifier_parser))),
         token(Token::EParen),
         token(Token::SColon),
     )
@@ -177,19 +177,19 @@ pub fn dollar_recrem_timing_check_parser<'s>(
         timing_check_limit_parser,
         token(Token::Comma),
         timing_check_limit_parser,
-        opt((
+        opt_note((
             token(Token::Comma),
-            opt(notifier_parser),
-            opt((
+            opt_note(notifier_parser),
+            opt_note((
                 token(Token::Comma),
-                opt(timestamp_condition_parser),
-                opt((
+                opt_note(timestamp_condition_parser),
+                opt_note((
                     token(Token::Comma),
-                    opt(timecheck_condition_parser),
-                    opt((
+                    opt_note(timecheck_condition_parser),
+                    opt_note((
                         token(Token::Comma),
-                        opt(delayed_reference_parser),
-                        opt((token(Token::Comma), opt(delayed_data_parser))),
+                        opt_note(delayed_reference_parser),
+                        opt_note((token(Token::Comma), opt_note(delayed_data_parser))),
                     )),
                 )),
             )),
@@ -214,7 +214,7 @@ pub fn dollar_skew_timing_check_parser<'s>(
         data_event_parser,
         token(Token::Comma),
         timing_check_limit_parser,
-        opt((token(Token::Comma), opt(notifier_parser))),
+        opt_note((token(Token::Comma), opt_note(notifier_parser))),
         token(Token::EParen),
         token(Token::SColon),
     )
@@ -235,13 +235,13 @@ pub fn dollar_timeskew_timing_check_parser<'s>(
         data_event_parser,
         token(Token::Comma),
         timing_check_limit_parser,
-        opt((
+        opt_note((
             token(Token::Comma),
-            opt(notifier_parser),
-            opt((
+            opt_note(notifier_parser),
+            opt_note((
                 token(Token::Comma),
-                opt(event_based_flag_parser),
-                opt((token(Token::Comma), opt(remain_active_flag_parser))),
+                opt_note(event_based_flag_parser),
+                opt_note((token(Token::Comma), opt_note(remain_active_flag_parser))),
             )),
         )),
         token(Token::EParen),
@@ -264,13 +264,13 @@ pub fn dollar_fullskew_timing_check_parser<'s>(
         data_event_parser,
         token(Token::Comma),
         timing_check_limit_parser,
-        opt((
+        opt_note((
             token(Token::Comma),
-            opt(notifier_parser),
-            opt((
+            opt_note(notifier_parser),
+            opt_note((
                 token(Token::Comma),
-                opt(event_based_flag_parser),
-                opt((token(Token::Comma), opt(remain_active_flag_parser))),
+                opt_note(event_based_flag_parser),
+                opt_note((token(Token::Comma), opt_note(remain_active_flag_parser))),
             )),
         )),
         token(Token::EParen),
@@ -291,7 +291,7 @@ pub fn dollar_period_timing_check_parser<'s>(
         controlled_reference_event_parser,
         token(Token::Comma),
         timing_check_limit_parser,
-        opt((token(Token::Comma), opt(notifier_parser))),
+        opt_note((token(Token::Comma), opt_note(notifier_parser))),
         token(Token::EParen),
         token(Token::SColon),
     )
@@ -312,7 +312,7 @@ pub fn dollar_width_timing_check_parser<'s>(
         timing_check_limit_parser,
         token(Token::Comma),
         threshold_parser,
-        opt((token(Token::Comma), opt(notifier_parser))),
+        opt_note((token(Token::Comma), opt_note(notifier_parser))),
         token(Token::EParen),
         token(Token::SColon),
     )
@@ -335,7 +335,7 @@ pub fn dollar_nochange_timing_check_parser<'s>(
         start_edge_offset_parser,
         token(Token::Comma),
         end_edge_offset_parser,
-        opt((token(Token::Comma), opt(notifier_parser))),
+        opt_note((token(Token::Comma), opt_note(notifier_parser))),
         token(Token::EParen),
         token(Token::SColon),
     )

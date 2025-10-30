@@ -7,16 +7,16 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, opt};
+use winnow::combinator::alt;
 
 pub fn module_instantiation_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<ModuleInstantiation<'s>, VerboseError<'s>> {
     (
         module_identifier_parser,
-        opt(parameter_value_assignment_parser),
+        opt_note(parameter_value_assignment_parser),
         hierarchical_instance_parser,
-        repeat_strict((token(Token::Comma), hierarchical_instance_parser)),
+        repeat_note((token(Token::Comma), hierarchical_instance_parser)),
         token(Token::SColon),
     )
         .map(|(a, b, c, d, e)| ModuleInstantiation(a, b, c, d, e))
@@ -41,14 +41,17 @@ pub fn list_of_parameter_value_assignments_parser<'s>(
 ) -> ModalResult<ListOfParameterValueAssignments<'s>, VerboseError<'s>> {
     let _ordered_ports_parser = (
         ordered_parameter_assignment_parser,
-        repeat_strict((token(Token::Comma), ordered_parameter_assignment_parser)),
+        repeat_note((
+            token(Token::Comma),
+            ordered_parameter_assignment_parser,
+        )),
     )
         .map(|(a, b)| {
             ListOfParameterValueAssignments::Ordered(Box::new((a, b)))
         });
     let _named_ports_parser = (
         named_parameter_assignment_parser,
-        repeat_strict((token(Token::Comma), named_parameter_assignment_parser)),
+        repeat_note((token(Token::Comma), named_parameter_assignment_parser)),
     )
         .map(|(a, b)| ListOfParameterValueAssignments::Named(Box::new((a, b))));
     alt((_ordered_ports_parser, _named_ports_parser)).parse_next(input)
@@ -69,7 +72,7 @@ pub fn named_parameter_assignment_parser<'s>(
         token(Token::Period),
         parameter_identifier_parser,
         token(Token::Paren),
-        opt(param_expression_parser),
+        opt_note(param_expression_parser),
         token(Token::EParen),
     )
         .map(|(a, b, c, d, e)| NamedParameterAssignment(a, b, c, d, e))
@@ -82,7 +85,7 @@ pub fn hierarchical_instance_parser<'s>(
     (
         name_of_instance_parser,
         token(Token::Paren),
-        opt(list_of_port_connections_parser),
+        opt_note(list_of_port_connections_parser),
         token(Token::EParen),
     )
         .map(|(a, b, c, d)| HierarchicalInstance(a, b, c, d))
@@ -94,7 +97,7 @@ pub fn name_of_instance_parser<'s>(
 ) -> ModalResult<NameOfInstance<'s>, VerboseError<'s>> {
     (
         instance_identifier_parser,
-        repeat_strict(unpacked_dimension_parser),
+        repeat_note(unpacked_dimension_parser),
     )
         .map(|(a, b)| NameOfInstance(a, b))
         .parse_next(input)
@@ -105,12 +108,12 @@ pub fn list_of_port_connections_parser<'s>(
 ) -> ModalResult<ListOfPortConnections<'s>, VerboseError<'s>> {
     let _ordered_ports_parser = (
         ordered_port_connection_parser,
-        repeat_strict((token(Token::Comma), ordered_port_connection_parser)),
+        repeat_note((token(Token::Comma), ordered_port_connection_parser)),
     )
         .map(|(a, b)| ListOfPortConnections::Ordered(Box::new((a, b))));
     let _named_ports_parser = (
         named_port_connection_parser,
-        repeat_strict((token(Token::Comma), named_port_connection_parser)),
+        repeat_note((token(Token::Comma), named_port_connection_parser)),
     )
         .map(|(a, b)| ListOfPortConnections::Named(Box::new((a, b))));
     alt((_ordered_ports_parser, _named_ports_parser)).parse_next(input)
@@ -119,7 +122,7 @@ pub fn list_of_port_connections_parser<'s>(
 pub fn ordered_port_connection_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<OrderedPortConnection<'s>, VerboseError<'s>> {
-    (attribute_instance_vec_parser, opt(expression_parser))
+    (attribute_instance_vec_parser, opt_note(expression_parser))
         .map(|(a, b)| OrderedPortConnection(a, b))
         .parse_next(input)
 }
@@ -131,9 +134,9 @@ pub fn named_port_connection_parser<'s>(
         attribute_instance_vec_parser,
         token(Token::Period),
         port_identifier_parser,
-        opt((
+        opt_note((
             token(Token::Paren),
-            opt(expression_parser),
+            opt_note(expression_parser),
             token(Token::EParen),
         )),
     )

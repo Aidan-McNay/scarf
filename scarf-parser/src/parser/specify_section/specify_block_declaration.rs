@@ -14,7 +14,7 @@ pub fn specify_block_parser<'s>(
 ) -> ModalResult<SpecifyBlock<'s>, VerboseError<'s>> {
     (
         token(Token::Specify),
-        repeat_strict( specify_item_parser),
+        repeat_note( specify_item_parser),
         token(Token::Endspecify),
     )
         .map(|(a, b, c)| SpecifyBlock(a, b, c))

@@ -7,7 +7,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, opt};
+use winnow::combinator::alt;
 
 pub fn action_block_parser<'s>(
     input: &mut Tokens<'s>,
@@ -15,7 +15,7 @@ pub fn action_block_parser<'s>(
     alt((
         statement_or_null_parser.map(|a| ActionBlock::Basic(Box::new(a))),
         (
-            opt(statement_parser),
+            opt_note(statement_parser),
             token(Token::Else),
             statement_or_null_parser,
         )
@@ -29,11 +29,11 @@ pub fn seq_block_parser<'s>(
 ) -> ModalResult<SeqBlock<'s>, VerboseError<'s>> {
     (
         token(Token::Begin),
-        opt((token(Token::Colon), block_identifier_parser)),
-        repeat_strict( block_item_declaration_parser),
-        repeat_strict( statement_or_null_parser),
+        opt_note((token(Token::Colon), block_identifier_parser)),
+        repeat_note(block_item_declaration_parser),
+        repeat_note(statement_or_null_parser),
         token(Token::End),
-        opt((token(Token::Colon), block_identifier_parser)),
+        opt_note((token(Token::Colon), block_identifier_parser)),
     )
         .map(|(a, b, c, d, e, f)| SeqBlock(a, b, c, d, e, f))
         .parse_next(input)
@@ -44,11 +44,11 @@ pub fn par_block_parser<'s>(
 ) -> ModalResult<ParBlock<'s>, VerboseError<'s>> {
     (
         token(Token::Fork),
-        opt((token(Token::Colon), block_identifier_parser)),
-        repeat_strict( block_item_declaration_parser),
-        repeat_strict( statement_or_null_parser),
+        opt_note((token(Token::Colon), block_identifier_parser)),
+        repeat_note(block_item_declaration_parser),
+        repeat_note(statement_or_null_parser),
         join_keyword_parser,
-        opt((token(Token::Colon), block_identifier_parser)),
+        opt_note((token(Token::Colon), block_identifier_parser)),
     )
         .map(|(a, b, c, d, e, f)| ParBlock(a, b, c, d, e, f))
         .parse_next(input)

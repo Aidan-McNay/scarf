@@ -6,7 +6,7 @@
 use crate::*;
 use scarf_syntax::*;
 use winnow::Parser;
-use winnow::combinator::{alt, opt};
+use winnow::combinator::alt;
 use winnow::error::ModalResult;
 
 pub fn task_declaration_parser<'s>(
@@ -15,7 +15,7 @@ pub fn task_declaration_parser<'s>(
     (
         token(Token::Task),
         opt_dynamic_override_specifiers_parser,
-        opt(lifetime_parser),
+        opt_note(lifetime_parser),
         task_body_declaration_parser,
     )
         .map(|(a, b, c, d)| TaskDeclaration(a, b, c, d))
@@ -44,10 +44,10 @@ pub fn task_body_declaration_parser<'s>(
         interface_identifier_or_class_scope_parser,
         task_identifier_parser,
         token(Token::SColon),
-        repeat_strict( tf_item_declaration_parser),
-        repeat_strict( statement_or_null_parser),
+        repeat_note(tf_item_declaration_parser),
+        repeat_note(statement_or_null_parser),
         token(Token::Endtask),
-        opt((token(Token::Colon), task_identifier_parser)),
+        opt_note((token(Token::Colon), task_identifier_parser)),
     )
         .map(|(a, b, c, d, e, f, g)| {
             TaskBodyDeclaration::Tf(Box::new((a, b, c, d, e, f, g)))
@@ -56,13 +56,13 @@ pub fn task_body_declaration_parser<'s>(
         interface_identifier_or_class_scope_parser,
         task_identifier_parser,
         token(Token::Paren),
-        opt(tf_port_list_parser),
+        opt_note(tf_port_list_parser),
         token(Token::EParen),
         token(Token::SColon),
-        repeat_strict( block_item_declaration_parser),
-        repeat_strict( statement_or_null_parser),
+        repeat_note(block_item_declaration_parser),
+        repeat_note(statement_or_null_parser),
         token(Token::Endtask),
-        opt((token(Token::Colon), task_identifier_parser)),
+        opt_note((token(Token::Colon), task_identifier_parser)),
     )
         .map(|(a, b, c, d, e, f, g, h, i, j)| {
             TaskBodyDeclaration::Block(Box::new((a, b, c, d, e, f, g, h, i, j)))
@@ -86,7 +86,7 @@ pub fn tf_port_list_parser<'s>(
 ) -> ModalResult<TfPortList<'s>, VerboseError<'s>> {
     (
         tf_port_item_parser,
-        repeat_strict( (token(Token::Comma), tf_port_item_parser)),
+        repeat_note((token(Token::Comma), tf_port_item_parser)),
     )
         .map(|(a, b)| TfPortList(a, b))
         .parse_next(input)
@@ -97,13 +97,13 @@ pub fn tf_port_item_parser<'s>(
 ) -> ModalResult<TfPortItem<'s>, VerboseError<'s>> {
     (
         attribute_instance_vec_parser,
-        opt(tf_port_direction_parser),
-        opt(token(Token::Var)),
+        opt_note(tf_port_direction_parser),
+        opt_note(token(Token::Var)),
         data_type_or_implicit_parser,
-        opt((
+        opt_note((
             port_identifier_parser,
-            repeat_strict( variable_dimension_parser),
-            opt((token(Token::Eq), expression_parser)),
+            repeat_note(variable_dimension_parser),
+            opt_note((token(Token::Eq), expression_parser)),
         )),
     )
         .map(|(a, b, c, d, e)| TfPortItem(a, b, c, d, e))
@@ -116,9 +116,9 @@ pub fn tf_port_direction_parser<'s>(
     alt((
         port_direction_parser.map(|a| TfPortDirection::Port(Box::new(a))),
         (
-            opt(token(Token::Const)),
+            opt_note(token(Token::Const)),
             token(Token::Ref),
-            opt(token(Token::Static)),
+            opt_note(token(Token::Static)),
         )
             .map(|(a, b, c)| TfPortDirection::Ref(Box::new((a, b, c)))),
     ))
@@ -131,7 +131,7 @@ pub fn tf_port_declaration_parser<'s>(
     (
         attribute_instance_vec_parser,
         tf_port_direction_parser,
-        opt(token(Token::Var)),
+        opt_note(token(Token::Var)),
         data_type_or_implicit_parser,
         list_of_tf_variable_identifiers_parser,
         token(Token::SColon),
@@ -147,9 +147,9 @@ pub fn task_prototype_parser<'s>(
         token(Token::Task),
         opt_dynamic_override_specifiers_parser,
         task_identifier_parser,
-        opt((
+        opt_note((
             token(Token::Paren),
-            opt(tf_port_list_parser),
+            opt_note(tf_port_list_parser),
             token(Token::EParen),
         )),
     )
@@ -160,7 +160,7 @@ pub fn task_prototype_parser<'s>(
 pub fn opt_dynamic_override_specifiers_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<Option<DynamicOverrideSpecifiers<'s>>, VerboseError<'s>> {
-    opt(dynamic_override_specifiers_parser)
+    opt_note(dynamic_override_specifiers_parser)
         .map(|a| match a {
             Some(DynamicOverrideSpecifiers(None, None)) => None,
             other_expr => other_expr,
@@ -172,8 +172,8 @@ pub fn dynamic_override_specifiers_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<DynamicOverrideSpecifiers<'s>, VerboseError<'s>> {
     (
-        opt(initial_or_extends_specifier_parser),
-        opt(final_specifier_parser),
+        opt_note(initial_or_extends_specifier_parser),
+        opt_note(final_specifier_parser),
     )
         .map(|(a, b)| DynamicOverrideSpecifiers(a, b))
         .parse_next(input)

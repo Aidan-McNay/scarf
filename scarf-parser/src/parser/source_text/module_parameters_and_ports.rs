@@ -7,7 +7,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, opt};
+use winnow::combinator::alt;
 
 pub fn parameter_port_list_parser<'s>(
     input: &mut Tokens<'s>,
@@ -16,7 +16,7 @@ pub fn parameter_port_list_parser<'s>(
         token(Token::Pound),
         token(Token::Paren),
         list_of_param_assignments_parser,
-        repeat_strict((token(Token::Comma), parameter_port_declaration_parser)),
+        repeat_note((token(Token::Comma), parameter_port_declaration_parser)),
         token(Token::EParen),
     )
         .map(|(a, b, c, d, e)| ParameterPortList::Defaults(a, b, c, d, e));
@@ -24,7 +24,7 @@ pub fn parameter_port_list_parser<'s>(
         token(Token::Pound),
         token(Token::Paren),
         parameter_port_declaration_parser,
-        repeat_strict((token(Token::Comma), parameter_port_declaration_parser)),
+        repeat_note((token(Token::Comma), parameter_port_declaration_parser)),
         token(Token::EParen),
     )
         .map(|(a, b, c, d, e)| ParameterPortList::NoDefaults(a, b, c, d, e));
@@ -63,7 +63,7 @@ pub fn list_of_ports_parser<'s>(
     (
         token(Token::Paren),
         port_parser,
-        repeat_strict((token(Token::Comma), port_parser)),
+        repeat_note((token(Token::Comma), port_parser)),
         token(Token::EParen),
     )
         .map(|(a, b, c, d)| ListOfPorts(a, b, c, d))
@@ -75,10 +75,10 @@ pub fn list_of_port_declarations_parser<'s>(
 ) -> ModalResult<ListOfPortDeclarations<'s>, VerboseError<'s>> {
     (
         token(Token::Paren),
-        opt((
+        opt_note((
             attribute_instance_vec_parser,
             ansi_port_declaration_parser,
-            repeat_strict((
+            repeat_note((
                 token(Token::Comma),
                 attribute_instance_vec_parser,
                 ansi_port_declaration_parser,
@@ -126,12 +126,12 @@ pub fn port_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<Port<'s>, VerboseError<'s>> {
     let _port_expression_parser =
-        opt(port_expression_parser).map(|a| Port::PortExpression(Box::new(a)));
+        opt_note(port_expression_parser).map(|a| Port::PortExpression(Box::new(a)));
     let _port_identifier_parser = (
         token(Token::Period),
         port_identifier_parser,
         token(Token::Paren),
-        opt(port_expression_parser),
+        opt_note(port_expression_parser),
         token(Token::EParen),
     )
         .map(|(a, b, c, d, e)| Port::PortIdentifier(Box::new((a, b, c, d, e))));
@@ -146,7 +146,7 @@ pub fn port_expression_parser<'s>(
     let multi_port_reference_parser = (
         token(Token::Brace),
         port_reference_parser,
-        repeat_strict((token(Token::Comma), port_reference_parser)),
+        repeat_note((token(Token::Comma), port_reference_parser)),
         token(Token::EBrace),
     )
         .map(|(a, b, c, d)| {
@@ -179,7 +179,7 @@ pub fn port_direction_parser<'s>(
 pub fn net_port_header_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<NetPortHeader<'s>, VerboseError<'s>> {
-    (opt(port_direction_parser), net_port_type_parser)
+    (opt_note(port_direction_parser), net_port_type_parser)
         .map(|(a, b)| NetPortHeader(a, b))
         .parse_next(input)
 }
@@ -187,7 +187,7 @@ pub fn net_port_header_parser<'s>(
 pub fn variable_port_header_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<VariablePortHeader<'s>, VerboseError<'s>> {
-    (opt(port_direction_parser), variable_port_type_parser)
+    (opt_note(port_direction_parser), variable_port_type_parser)
         .map(|(a, b)| VariablePortHeader(a, b))
         .parse_next(input)
 }
@@ -197,12 +197,12 @@ pub fn interface_port_header_parser<'s>(
 ) -> ModalResult<InterfacePortHeader<'s>, VerboseError<'s>> {
     let _interface_identifier_parser = (
         interface_identifier_parser,
-        opt((token(Token::Period), modport_identifier_parser)),
+        opt_note((token(Token::Period), modport_identifier_parser)),
     )
         .map(|(a, b)| InterfacePortHeader::InterfaceIdentifier((a, b)));
     let _interface_parser = (
         token(Token::Interface),
-        opt((token(Token::Period), modport_identifier_parser)),
+        opt_note((token(Token::Period), modport_identifier_parser)),
     )
         .map(|(a, b)| InterfacePortHeader::Interface((a, b)));
     alt((_interface_identifier_parser, _interface_parser)).parse_next(input)
@@ -233,10 +233,10 @@ pub fn ansi_net_port_declaration_parser<'s>(
         }),
     ));
     (
-        opt(net_or_interface_port_header_parser),
+        opt_note(net_or_interface_port_header_parser),
         port_identifier_parser,
-        repeat_strict(unpacked_dimension_parser),
-        opt((token(Token::Eq), constant_expression_parser)),
+        repeat_note(unpacked_dimension_parser),
+        opt_note((token(Token::Eq), constant_expression_parser)),
     )
         .map(|(a, b, c, d)| AnsiNetPortDeclaration(a, b, c, d))
         .parse_next(input)
@@ -246,10 +246,10 @@ pub fn ansi_variable_port_declaration_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<AnsiVariablePortDeclaration<'s>, VerboseError<'s>> {
     (
-        opt(variable_port_header_parser),
+        opt_note(variable_port_header_parser),
         port_identifier_parser,
-        repeat_strict(variable_dimension_parser),
-        opt((token(Token::Eq), constant_expression_parser)),
+        repeat_note(variable_dimension_parser),
+        opt_note((token(Token::Eq), constant_expression_parser)),
     )
         .map(|(a, b, c, d)| AnsiVariablePortDeclaration(a, b, c, d))
         .parse_next(input)
@@ -259,11 +259,11 @@ pub fn ansi_constant_port_declaration_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<AnsiConstantPortDeclaration<'s>, VerboseError<'s>> {
     (
-        opt(port_direction_parser),
+        opt_note(port_direction_parser),
         token(Token::Period),
         port_identifier_parser,
         token(Token::Paren),
-        opt(expression_parser),
+        opt_note(expression_parser),
         token(Token::EParen),
     )
         .map(|(a, b, c, d, e, f)| AnsiConstantPortDeclaration(a, b, c, d, e, f))

@@ -7,7 +7,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, opt};
+use winnow::combinator::alt;
 
 pub fn casting_type_parser<'s>(
     input: &mut Tokens<'s>,
@@ -38,34 +38,34 @@ pub fn data_type_parser<'s>(
 ) -> ModalResult<DataType<'s>, VerboseError<'s>> {
     let _vector_parser = (
         integer_vector_type_parser,
-        opt(signing_parser),
-        repeat_strict(packed_dimension_parser),
+        opt_note(signing_parser),
+        repeat_note(packed_dimension_parser),
     )
         .map(|(a, b, c)| DataType::Vector(Box::new((a, b, c))));
-    let _atom_parser = (integer_atom_type_parser, opt(signing_parser))
+    let _atom_parser = (integer_atom_type_parser, opt_note(signing_parser))
         .map(|(a, b)| DataType::Atom(Box::new((a, b))));
     let _non_integer_parser =
         non_integer_type_parser.map(|a| DataType::NonInteger(Box::new(a)));
     let _struct_union_parser = (
         struct_union_parser,
-        opt((token(Token::Packed), opt(signing_parser))),
+        opt_note((token(Token::Packed), opt_note(signing_parser))),
         token(Token::Brace),
         struct_union_member_parser,
-        repeat_strict(struct_union_member_parser),
+        repeat_note(struct_union_member_parser),
         token(Token::EBrace),
-        repeat_strict(packed_dimension_parser),
+        repeat_note(packed_dimension_parser),
     )
         .map(|(a, b, c, d, e, f, g)| {
             DataType::StructUnion(Box::new((a, b, c, d, e, f, g)))
         });
     let _enum_parser = (
         token(Token::Enum),
-        opt(enum_base_type_parser),
+        opt_note(enum_base_type_parser),
         token(Token::Brace),
         enum_name_declaration_parser,
-        repeat_strict((token(Token::Comma), enum_name_declaration_parser)),
+        repeat_note((token(Token::Comma), enum_name_declaration_parser)),
         token(Token::EBrace),
-        repeat_strict(packed_dimension_parser),
+        repeat_note(packed_dimension_parser),
     )
         .map(|(a, b, c, d, e, f, g)| {
             DataType::Enum(Box::new((a, b, c, d, e, f, g)))
@@ -76,16 +76,16 @@ pub fn data_type_parser<'s>(
         token(Token::Chandle).map(|a| DataType::Chandle(Box::new(a)));
     let _virtual_parser = (
         token(Token::Virtual),
-        opt(token(Token::Interface)),
+        opt_note(token(Token::Interface)),
         interface_identifier_parser,
-        opt(parameter_value_assignment_parser),
-        opt((token(Token::Period), modport_identifier_parser)),
+        opt_note(parameter_value_assignment_parser),
+        opt_note((token(Token::Period), modport_identifier_parser)),
     )
         .map(|(a, b, c, d, e)| DataType::Virtual(Box::new((a, b, c, d, e))));
     let _type_parser = (
         class_or_package_scope_parser,
         type_identifier_parser,
-        repeat_strict(packed_dimension_parser),
+        repeat_note(packed_dimension_parser),
     )
         .map(|(a, b, c)| DataType::Type(Box::new((a, b, c))));
     let _class_type_parser =
@@ -128,7 +128,7 @@ pub fn data_type_or_implicit_parser<'s>(
 pub fn implicit_data_type_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<ImplicitDataType<'s>, VerboseError<'s>> {
-    (opt(signing_parser), repeat_strict(packed_dimension_parser))
+    (opt_note(signing_parser), repeat_note(packed_dimension_parser))
         .map(|(a, b)| ImplicitDataType(a, b))
         .parse_next(input)
 }
@@ -136,15 +136,15 @@ pub fn implicit_data_type_parser<'s>(
 pub fn enum_base_type_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<EnumBaseType<'s>, VerboseError<'s>> {
-    let _atom_parser = (integer_atom_type_parser, opt(signing_parser))
+    let _atom_parser = (integer_atom_type_parser, opt_note(signing_parser))
         .map(|(a, b)| EnumBaseType::Atom(Box::new((a, b))));
     let _vector_parser = (
         integer_vector_type_parser,
-        opt(signing_parser),
-        opt(packed_dimension_parser),
+        opt_note(signing_parser),
+        opt_note(packed_dimension_parser),
     )
         .map(|(a, b, c)| EnumBaseType::Vector(Box::new((a, b, c))));
-    let _type_parser = (type_identifier_parser, opt(packed_dimension_parser))
+    let _type_parser = (type_identifier_parser, opt_note(packed_dimension_parser))
         .map(|(a, b)| EnumBaseType::Type(Box::new((a, b))));
     alt((_atom_parser, _vector_parser, _type_parser)).parse_next(input)
 }
@@ -154,13 +154,13 @@ pub fn enum_name_declaration_parser<'s>(
 ) -> ModalResult<EnumNameDeclaration<'s>, VerboseError<'s>> {
     (
         enum_identifier_parser,
-        opt((
+        opt_note((
             token(Token::Bracket),
             integral_number_parser,
-            opt((token(Token::Colon), integral_number_parser)),
+            opt_note((token(Token::Colon), integral_number_parser)),
             token(Token::EBracket),
         )),
-        opt((token(Token::Eq), constant_expression_parser)),
+        opt_note((token(Token::Eq), constant_expression_parser)),
     )
         .map(|(a, b, c)| EnumNameDeclaration(a, b, c))
         .parse_next(input)
@@ -179,11 +179,11 @@ pub fn class_type_parser<'s>(
 ) -> ModalResult<ClassType<'s>, VerboseError<'s>> {
     (
         ps_class_identifier_parser,
-        opt(parameter_value_assignment_parser),
-        repeat_strict((
+        opt_note(parameter_value_assignment_parser),
+        repeat_note((
             token(Token::ColonColon),
             class_identifier_parser,
-            opt(parameter_value_assignment_parser),
+            opt_note(parameter_value_assignment_parser),
         )),
     )
         .map(|(a, b, c)| ClassType(a, b, c))
@@ -195,7 +195,7 @@ pub fn interface_class_type_parser<'s>(
 ) -> ModalResult<InterfaceClassType<'s>, VerboseError<'s>> {
     (
         ps_class_identifier_parser,
-        opt(parameter_value_assignment_parser),
+        opt_note(parameter_value_assignment_parser),
     )
         .map(|(a, b)| InterfaceClassType(a, b))
         .parse_next(input)
@@ -270,7 +270,7 @@ pub fn net_type_parser<'s>(
 pub fn net_port_type_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<NetPortType<'s>, VerboseError<'s>> {
-    let _implicit_parser = (opt(net_type_parser), data_type_or_implicit_parser)
+    let _implicit_parser = (opt_note(net_type_parser), data_type_or_implicit_parser)
         .map(|(a, b)| NetPortType::Implicit(Box::new((a, b))));
     let _nettype_parser =
         nettype_identifier_parser.map(|a| NetPortType::Nettype(Box::new(a)));
@@ -332,7 +332,7 @@ pub fn struct_union_parser<'s>(
     ));
     alt((
         token(Token::Struct).map(|a| StructUnion::Struct(a)),
-        (token(Token::Union), opt(soft_or_tagged_parser))
+        (token(Token::Union), opt_note(soft_or_tagged_parser))
             .map(|(a, b)| StructUnion::Union(a, b)),
     ))
     .parse_next(input)
@@ -343,7 +343,7 @@ pub fn struct_union_member_parser<'s>(
 ) -> ModalResult<StructUnionMember<'s>, VerboseError<'s>> {
     (
         attribute_instance_vec_parser,
-        opt(random_qualifier_parser),
+        opt_note(random_qualifier_parser),
         data_type_or_void_parser,
         list_of_variable_decl_assignments_parser,
         token(Token::SColon),

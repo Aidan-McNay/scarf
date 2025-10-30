@@ -7,7 +7,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, opt};
+use winnow::combinator::alt;
 
 pub fn checker_instantiation_parser<'s>(
     input: &mut Tokens<'s>,
@@ -16,7 +16,7 @@ pub fn checker_instantiation_parser<'s>(
         ps_checker_identifier_parser,
         name_of_instance_parser,
         token(Token::Paren),
-        opt(list_of_checker_port_connections_parser),
+        opt_note(list_of_checker_port_connections_parser),
         token(Token::EParen),
         token(Token::SColon),
     )
@@ -29,7 +29,7 @@ pub fn list_of_checker_port_connections_parser<'s>(
 ) -> ModalResult<ListOfCheckerPortConnections<'s>, VerboseError<'s>> {
     let _ordered_parser = (
         ordered_checker_port_connection_parser,
-        repeat_strict((
+        repeat_note((
             token(Token::Comma),
             ordered_checker_port_connection_parser,
         )),
@@ -37,7 +37,10 @@ pub fn list_of_checker_port_connections_parser<'s>(
         .map(|(a, b)| ListOfCheckerPortConnections::Ordered(Box::new((a, b))));
     let _named_parser = (
         named_checker_port_connection_parser,
-        repeat_strict((token(Token::Comma), named_checker_port_connection_parser)),
+        repeat_note((
+            token(Token::Comma),
+            named_checker_port_connection_parser,
+        )),
     )
         .map(|(a, b)| ListOfCheckerPortConnections::Named(Box::new((a, b))));
     alt((_named_parser, _ordered_parser)).parse_next(input)
@@ -48,7 +51,7 @@ pub fn ordered_checker_port_connection_parser<'s>(
 ) -> ModalResult<OrderedCheckerPortConnection<'s>, VerboseError<'s>> {
     (
         attribute_instance_vec_parser,
-        opt(property_actual_arg_parser),
+        opt_note(property_actual_arg_parser),
     )
         .map(|(a, b)| OrderedCheckerPortConnection(a, b))
         .parse_next(input)
@@ -61,9 +64,9 @@ pub fn named_checker_port_connection_parser<'s>(
         attribute_instance_vec_parser,
         token(Token::Period),
         formal_port_identifier_parser,
-        opt((
+        opt_note((
             token(Token::Paren),
-            opt(property_actual_arg_parser),
+            opt_note(property_actual_arg_parser),
             token(Token::EParen),
         )),
     )

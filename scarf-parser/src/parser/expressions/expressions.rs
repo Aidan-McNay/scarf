@@ -9,7 +9,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, opt};
+use winnow::combinator::alt;
 
 pub fn inc_or_dec_expression_parser<'s>(
     input: &mut Tokens<'s>,
@@ -289,14 +289,14 @@ fn pattern_bp_parser<'s>(
     let _tagged_member_parser = (
         token(Token::Tagged),
         member_identifier_parser,
-        opt(pattern_parser),
+        opt_note(pattern_parser),
     )
         .map(|(a, b, c)| Pattern::TaggedMember(Box::new((a, b, c))));
     let _multi_pattern_parser = (
         token(Token::Apost),
         token(Token::Brace),
         pattern_parser,
-        repeat_strict((token(Token::Apost), pattern_parser)),
+        repeat_note((token(Token::Apost), pattern_parser)),
         token(Token::EBrace),
     )
         .map(|(a, b, c, d, e)| {
@@ -308,7 +308,7 @@ fn pattern_bp_parser<'s>(
         member_identifier_parser,
         token(Token::Colon),
         pattern_parser,
-        repeat_strict((
+        repeat_note((
             token(Token::Apost),
             member_identifier_parser,
             token(Token::Colon),
@@ -454,12 +454,12 @@ fn expression_bp_parser<'s>(
                     Metadata<'s>,
                     ExpressionOrCondPattern<'s>,
                 )> = vec![];
-                match opt(token(Token::AmpAmpAmp)).parse_next(input)? {
+                match opt_note(token(Token::AmpAmpAmp)).parse_next(input)? {
                     None => (),
                     Some(mut amp_amp_amp) => loop {
                         let next_expression =
                             expression_bp_parser(input, r_bp + 1)?;
-                        let expression_or_cond_patter = match opt((
+                        let expression_or_cond_patter = match opt_note((
                             token(Token::Matches),
                             gen_pattern_parser(r_bp + 1),
                         ))
@@ -480,7 +480,7 @@ fn expression_bp_parser<'s>(
                         };
                         cond_predicate
                             .push((amp_amp_amp, expression_or_cond_patter));
-                        match opt(token(Token::AmpAmpAmp)).parse_next(input)? {
+                        match opt_note(token(Token::AmpAmpAmp)).parse_next(input)? {
                             Some(new_amp_amp_amp) => {
                                 amp_amp_amp = new_amp_amp_amp
                             }
@@ -522,7 +522,7 @@ fn expression_bp_parser<'s>(
                         input,
                         matches_operator_binding_power() + 1,
                     )?;
-                    let expression_or_cond_patter = match opt((
+                    let expression_or_cond_patter = match opt_note((
                         token(Token::Matches),
                         gen_pattern_parser(
                             matches_operator_binding_power() + 1,
@@ -541,7 +541,7 @@ fn expression_bp_parser<'s>(
                     };
                     cond_predicate
                         .push((amp_amp_amp, expression_or_cond_patter));
-                    match opt(token(Token::AmpAmpAmp)).parse_next(input)? {
+                    match opt_note(token(Token::AmpAmpAmp)).parse_next(input)? {
                         Some(new_amp_amp_amp) => amp_amp_amp = new_amp_amp_amp,
                         None => {
                             break;
@@ -598,7 +598,7 @@ pub fn tagged_union_expression_parser<'s>(
     (
         token(Token::Tagged),
         member_identifier_parser,
-        opt(primary_parser),
+        opt_note(primary_parser),
     )
         .map(|(a, b, c)| TaggedUnionExpression(a, b, c))
         .parse_next(input)

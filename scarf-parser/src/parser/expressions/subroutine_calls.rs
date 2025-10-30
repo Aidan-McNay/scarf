@@ -6,7 +6,7 @@
 use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
-use winnow::combinator::{alt, opt};
+use winnow::combinator::alt;
 
 pub fn constant_function_call_parser<'s>(
     input: &mut Tokens<'s>,
@@ -22,7 +22,7 @@ pub fn tf_call_parser<'s>(
     (
         ps_or_hierarchical_tf_identifier_parser,
         attribute_instance_vec_parser,
-        opt((
+        opt_note((
             token(Token::Paren),
             list_of_arguments_parser,
             token(Token::EParen),
@@ -37,7 +37,7 @@ pub fn system_tf_call_parser<'s>(
 ) -> ModalResult<SystemTfCall<'s>, VerboseError<'s>> {
     let _args_parser = (
         system_tf_identifier_parser,
-        opt((
+        opt_note((
             token(Token::Paren),
             list_of_arguments_parser,
             token(Token::EParen),
@@ -48,7 +48,7 @@ pub fn system_tf_call_parser<'s>(
         system_tf_identifier_parser,
         token(Token::Paren),
         data_type_parser,
-        opt((token(Token::Comma), expression_parser)),
+        opt_note((token(Token::Comma), expression_parser)),
         token(Token::EParen),
     )
         .map(|(a, b, c, d, e)| SystemTfCall::Data(Box::new((a, b, c, d, e))));
@@ -56,8 +56,8 @@ pub fn system_tf_call_parser<'s>(
         system_tf_identifier_parser,
         token(Token::Paren),
         expression_parser,
-        repeat_strict((token(Token::Comma), opt(expression_parser))),
-        opt((token(Token::Comma), opt(clocking_event_parser))),
+        repeat_note((token(Token::Comma), opt_note(expression_parser))),
+        opt_note((token(Token::Comma), opt_note(clocking_event_parser))),
         token(Token::EParen),
     )
         .map(|(a, b, c, d, e, f)| {
@@ -74,7 +74,7 @@ pub fn subroutine_call_parser<'s>(
         system_tf_call_parser.map(|a| SubroutineCall::SystemTf(Box::new(a))),
         method_call_parser.map(|a| SubroutineCall::Method(Box::new(a))),
         (
-            opt((token(Token::Std), token(Token::ColonColon))),
+            opt_note((token(Token::Std), token(Token::ColonColon))),
             randomize_call_parser,
         )
             .map(|(a, b)| SubroutineCall::Randomize(Box::new((a, b)))),
@@ -94,14 +94,14 @@ pub fn list_of_arguments_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<ListOfArguments<'s>, VerboseError<'s>> {
     let _expressions_parser = (
-        opt(expression_parser),
-        repeat_strict((token(Token::Comma), opt(expression_parser))),
-        repeat_strict((
+        opt_note(expression_parser),
+        repeat_note((token(Token::Comma), opt_note(expression_parser))),
+        repeat_note((
             token(Token::Comma),
             token(Token::Period),
             identifier_parser,
             token(Token::Paren),
-            opt(expression_parser),
+            opt_note(expression_parser),
             token(Token::EParen),
         )),
     )
@@ -110,14 +110,14 @@ pub fn list_of_arguments_parser<'s>(
         token(Token::Period),
         identifier_parser,
         token(Token::Paren),
-        opt(expression_parser),
+        opt_note(expression_parser),
         token(Token::EParen),
-        repeat_strict((
+        repeat_note((
             token(Token::Comma),
             token(Token::Period),
             identifier_parser,
             token(Token::Paren),
-            opt(expression_parser),
+            opt_note(expression_parser),
             token(Token::EParen),
         )),
     )
@@ -145,7 +145,7 @@ pub fn method_call_body_parser<'s>(
     let _custom_parser = (
         method_identifier_parser,
         attribute_instance_vec_parser,
-        opt((
+        opt_note((
             token(Token::Paren),
             list_of_arguments_parser,
             token(Token::EParen),
@@ -175,12 +175,12 @@ pub fn array_manipulation_call_parser<'s>(
     (
         array_method_name_parser,
         attribute_instance_vec_parser,
-        opt((
+        opt_note((
             token(Token::Paren),
             list_of_arguments_parser,
             token(Token::EParen),
         )),
-        opt((
+        opt_note((
             token(Token::With),
             token(Token::Paren),
             expression_parser,
@@ -204,16 +204,16 @@ pub fn randomize_call_parser<'s>(
     (
         token(Token::Randomize),
         attribute_instance_vec_parser,
-        opt((
+        opt_note((
             token(Token::Paren),
-            opt(_variable_identifier_list_or_null_parser),
+            opt_note(_variable_identifier_list_or_null_parser),
             token(Token::EParen),
         )),
-        opt((
+        opt_note((
             token(Token::With),
-            opt((
+            opt_note((
                 token(Token::Paren),
-                opt(identifier_list_parser),
+                opt_note(identifier_list_parser),
                 token(Token::EParen),
             )),
             constraint_block_parser,
@@ -228,7 +228,7 @@ pub fn variable_identifier_list_parser<'s>(
 ) -> ModalResult<VariableIdentifierList<'s>, VerboseError<'s>> {
     (
         variable_identifier_parser,
-        repeat_strict((token(Token::Comma), variable_identifier_parser)),
+        repeat_note((token(Token::Comma), variable_identifier_parser)),
     )
         .map(|(a, b)| VariableIdentifierList(a, b))
         .parse_next(input)
@@ -239,7 +239,7 @@ pub fn identifier_list_parser<'s>(
 ) -> ModalResult<IdentifierList<'s>, VerboseError<'s>> {
     (
         identifier_parser,
-        repeat_strict((token(Token::Comma), identifier_parser)),
+        repeat_note((token(Token::Comma), identifier_parser)),
     )
         .map(|(a, b)| IdentifierList(a, b))
         .parse_next(input)
@@ -252,7 +252,7 @@ fn method_root_primary_parser<'s>(
     let _primary_literal_parser =
         primary_literal_parser.map(|a| Primary::PrimaryLiteral(Box::new(a)));
     let _hierarchical_identifier_parser = (
-        opt(class_qualifier_or_package_scope_parser),
+        opt_note(class_qualifier_or_package_scope_parser),
         hierarchical_identifier_parser,
         select_parser,
     )
@@ -262,7 +262,7 @@ fn method_root_primary_parser<'s>(
             .map(|a| Primary::EmptyUnpackedArrayConcatenation(Box::new(a)));
     let _concatenation_parser = (
         concatenation_parser,
-        opt((
+        opt_note((
             token(Token::Bracket),
             range_expression_parser,
             token(Token::EBracket),
@@ -271,7 +271,7 @@ fn method_root_primary_parser<'s>(
         .map(|(a, b)| Primary::Concatenation(Box::new((a, b))));
     let _multiple_concatenation_parser = (
         multiple_concatenation_parser,
-        opt((
+        opt_note((
             token(Token::Bracket),
             range_expression_parser,
             token(Token::EBracket),

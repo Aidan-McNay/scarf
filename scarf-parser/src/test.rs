@@ -14,7 +14,11 @@ pub fn check_parser<'s, T: std::cmp::PartialEq + std::fmt::Debug>(
     expected: T,
 ) {
     let parser_stream = lex_to_parse_stream(lex(input));
-    let result = parser.parse_next(&mut TokenSlice::new(&parser_stream[..]));
+    let mut stateful_parser_input = Tokens {
+        input: TokenSlice::new(&parser_stream[..]),
+        state: VerboseError::default(),
+    };
+    let result = parser.parse_next(&mut stateful_parser_input);
     match result {
         Ok(parsed) => assert_eq!(parsed, expected),
         Err(error) => panic!("{}", error),
@@ -28,7 +32,9 @@ pub fn apply_parser<'s, T>(
     input: &'s str,
 ) -> T {
     let parser_stream = lex_to_parse_stream(lex(input));
-    parser
-        .parse_next(&mut TokenSlice::new(&parser_stream[..]))
-        .unwrap()
+    let mut stateful_parser_input = Tokens {
+        input: TokenSlice::new(&parser_stream[..]),
+        state: VerboseError::default(),
+    };
+    parser.parse_next(&mut stateful_parser_input).unwrap()
 }

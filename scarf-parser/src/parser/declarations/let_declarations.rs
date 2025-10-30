@@ -7,7 +7,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, opt};
+use winnow::combinator::alt;
 
 pub fn let_declaration_parser<'s>(
     input: &mut Tokens<'s>,
@@ -15,9 +15,9 @@ pub fn let_declaration_parser<'s>(
     (
         token(Token::Let),
         let_identifier_parser,
-        opt((
+        opt_note((
             token(Token::Paren),
-            opt(let_port_list_parser),
+            opt_note(let_port_list_parser),
             token(Token::EParen),
         )),
         token(Token::Eq),
@@ -41,7 +41,7 @@ pub fn let_port_list_parser<'s>(
 ) -> ModalResult<LetPortList<'s>, VerboseError<'s>> {
     (
         let_port_item_parser,
-        repeat_strict((token(Token::Comma), let_port_item_parser)),
+        repeat_note((token(Token::Comma), let_port_item_parser)),
     )
         .map(|(a, b)| LetPortList(a, b))
         .parse_next(input)
@@ -54,8 +54,8 @@ pub fn let_port_item_parser<'s>(
         attribute_instance_vec_parser,
         let_formal_type_parser,
         formal_port_identifier_parser,
-        repeat_strict(variable_dimension_parser),
-        opt((token(Token::Eq), expression_parser)),
+        repeat_note(variable_dimension_parser),
+        opt_note((token(Token::Eq), expression_parser)),
     )
         .map(|(a, b, c, d, e)| LetPortItem(a, b, c, d, e))
         .parse_next(input)
@@ -76,11 +76,11 @@ pub fn let_expression_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<LetExpression<'s>, VerboseError<'s>> {
     (
-        opt(package_scope_parser),
+        opt_note(package_scope_parser),
         let_identifier_parser,
-        opt((
+        opt_note((
             token(Token::Paren),
-            opt(let_list_of_arguments_parser),
+            opt_note(let_list_of_arguments_parser),
             token(Token::EParen),
         )),
     )
@@ -92,14 +92,14 @@ pub fn let_list_of_arguments_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<LetListOfArguments<'s>, VerboseError<'s>> {
     let _partial_identifier_parser = (
-        opt(let_actual_arg_parser),
-        repeat_strict((token(Token::Comma), opt(let_actual_arg_parser))),
-        repeat_strict((
+        opt_note(let_actual_arg_parser),
+        repeat_note((token(Token::Comma), opt_note(let_actual_arg_parser))),
+        repeat_note((
             token(Token::Comma),
             token(Token::Period),
             identifier_parser,
             token(Token::Paren),
-            opt(let_actual_arg_parser),
+            opt_note(let_actual_arg_parser),
             token(Token::EParen),
         )),
     )
@@ -108,14 +108,14 @@ pub fn let_list_of_arguments_parser<'s>(
         token(Token::Period),
         identifier_parser,
         token(Token::Paren),
-        opt(let_actual_arg_parser),
+        opt_note(let_actual_arg_parser),
         token(Token::EParen),
-        repeat_strict((
+        repeat_note((
             token(Token::Comma),
             token(Token::Period),
             identifier_parser,
             token(Token::Paren),
-            opt(let_actual_arg_parser),
+            opt_note(let_actual_arg_parser),
             token(Token::EParen),
         )),
     )

@@ -7,7 +7,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, opt};
+use winnow::combinator::alt;
 
 pub fn unpacked_dimension_parser<'s>(
     input: &mut Tokens<'s>,
@@ -86,7 +86,7 @@ pub fn queue_dimension_parser<'s>(
     (
         token(Token::Bracket),
         token(Token::Dollar),
-        opt((token(Token::Colon), constant_expression_parser)),
+        opt_note((token(Token::Colon), constant_expression_parser)),
         token(Token::EBracket),
     )
         .map(|(a, b, c, d)| QueueDimension(a, b, c, d))

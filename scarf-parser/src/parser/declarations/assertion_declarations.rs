@@ -7,14 +7,14 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, opt};
+use winnow::combinator::alt;
 use winnow::stream::Stream;
 
 pub fn concurrent_assertion_item_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<ConcurrentAssertionItem<'s>, VerboseError<'s>> {
     let _assertion_parser = (
-        opt((block_identifier_parser, token(Token::Colon))),
+        opt_note((block_identifier_parser, token(Token::Colon))),
         concurrent_assertion_statement_parser,
     )
         .map(|(a, b)| ConcurrentAssertionItem::Assertion(Box::new((a, b))));
@@ -107,8 +107,8 @@ pub fn cover_sequence_statement_parser<'s>(
         token(Token::Cover),
         token(Token::Sequence),
         token(Token::Paren),
-        opt(clocking_event_parser),
-        opt((
+        opt_note(clocking_event_parser),
+        opt_note((
             token(Token::Disable),
             token(Token::Iff),
             token(Token::Paren),
@@ -145,9 +145,9 @@ pub fn property_instance_parser<'s>(
 ) -> ModalResult<PropertyInstance<'s>, VerboseError<'s>> {
     (
         ps_or_hierarchical_property_identifier_parser,
-        opt((
+        opt_note((
             token(Token::Paren),
-            opt(property_list_of_arguments_parser),
+            opt_note(property_list_of_arguments_parser),
             token(Token::EParen),
         )),
     )
@@ -159,14 +159,14 @@ pub fn property_list_of_arguments_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<PropertyListOfArguments<'s>, VerboseError<'s>> {
     let _partial_identifier_parser = (
-        opt(property_actual_arg_parser),
-        repeat_strict((token(Token::Comma), opt(property_actual_arg_parser))),
-        repeat_strict((
+        opt_note(property_actual_arg_parser),
+        repeat_note((token(Token::Comma), opt_note(property_actual_arg_parser))),
+        repeat_note((
             token(Token::Comma),
             token(Token::Period),
             identifier_parser,
             token(Token::Paren),
-            opt(property_actual_arg_parser),
+            opt_note(property_actual_arg_parser),
             token(Token::EParen),
         )),
     )
@@ -177,14 +177,14 @@ pub fn property_list_of_arguments_parser<'s>(
         token(Token::Period),
         identifier_parser,
         token(Token::Paren),
-        opt(property_actual_arg_parser),
+        opt_note(property_actual_arg_parser),
         token(Token::EParen),
-        repeat_strict((
+        repeat_note((
             token(Token::Comma),
             token(Token::Period),
             identifier_parser,
             token(Token::Paren),
-            opt(property_actual_arg_parser),
+            opt_note(property_actual_arg_parser),
             token(Token::EParen),
         )),
     )
@@ -225,17 +225,17 @@ pub fn property_declaration_parser<'s>(
     (
         token(Token::Property),
         property_identifier_parser,
-        opt((
+        opt_note((
             token(Token::Paren),
-            opt(property_port_list_parser),
+            opt_note(property_port_list_parser),
             token(Token::EParen),
         )),
         token(Token::SColon),
-        repeat_strict(assertion_variable_declaration_parser),
+        repeat_note(assertion_variable_declaration_parser),
         property_spec_parser,
-        opt(token(Token::SColon)),
+        opt_note(token(Token::SColon)),
         token(Token::Endproperty),
-        opt((token(Token::Colon), property_identifier_parser)),
+        opt_note((token(Token::Colon), property_identifier_parser)),
     )
         .map(|(a, b, c, d, e, f, g, h, i)| {
             PropertyDeclaration(a, b, c, d, e, f, g, h, i)
@@ -248,7 +248,7 @@ pub fn property_port_list_parser<'s>(
 ) -> ModalResult<PropertyPortList<'s>, VerboseError<'s>> {
     (
         property_port_item_parser,
-        repeat_strict((token(Token::Comma), property_port_item_parser)),
+        repeat_note((token(Token::Comma), property_port_item_parser)),
     )
         .map(|(a, b)| PropertyPortList(a, b))
         .parse_next(input)
@@ -259,14 +259,14 @@ pub fn property_port_item_parser<'s>(
 ) -> ModalResult<PropertyPortItem<'s>, VerboseError<'s>> {
     (
         attribute_instance_vec_parser,
-        opt((
+        opt_note((
             token(Token::Local),
-            opt(property_lvar_port_direction_parser),
+            opt_note(property_lvar_port_direction_parser),
         )),
         property_formal_type_parser,
         formal_port_identifier_parser,
-        repeat_strict(variable_dimension_parser),
-        opt((token(Token::Eq), property_actual_arg_parser)),
+        repeat_note(variable_dimension_parser),
+        opt_note((token(Token::Eq), property_actual_arg_parser)),
     )
         .map(|(a, b, c, d, e, f)| PropertyPortItem(a, b, c, d, e, f))
         .parse_next(input)
@@ -296,8 +296,8 @@ pub fn property_spec_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<PropertySpec<'s>, VerboseError<'s>> {
     (
-        opt(clocking_event_parser),
-        opt((
+        opt_note(clocking_event_parser),
+        opt_note((
             token(Token::Disable),
             token(Token::Iff),
             token(Token::Paren),
@@ -358,7 +358,7 @@ fn basic_property_expr_parser<'s>(
 ) -> ModalResult<PropertyExpr<'s>, VerboseError<'s>> {
     let mut _sequence_parser = (
         gen_sequence_expr_parser(min_bp, false),
-        opt((
+        opt_note((
             alt((
                 token(Token::PipeMinusGt)
                     .map(|a| PropertyExprSeqOp::OverlapImpl(a)),
@@ -422,7 +422,7 @@ fn basic_property_expr_parser<'s>(
         expression_or_dist_parser,
         token(Token::EParen),
         gen_property_expr_parser(property_mod_binding_power()),
-        opt((
+        opt_note((
             token(Token::Else),
             gen_property_expr_parser(property_mod_binding_power()),
         )),
@@ -436,7 +436,7 @@ fn basic_property_expr_parser<'s>(
         expression_or_dist_parser,
         token(Token::EParen),
         property_case_item_parser,
-        repeat_strict(property_case_item_parser),
+        repeat_note(property_case_item_parser),
         token(Token::Endcase),
     )
         .map(|(a, b, c, d, e, f, g)| {
@@ -444,7 +444,7 @@ fn basic_property_expr_parser<'s>(
         });
     let _nexttime_parser = (
         token(Token::Nexttime),
-        opt((
+        opt_note((
             token(Token::Bracket),
             constant_expression_parser,
             token(Token::EBracket),
@@ -459,7 +459,7 @@ fn basic_property_expr_parser<'s>(
         });
     let _s_nexttime_parser = (
         token(Token::SNexttime),
-        opt((
+        opt_note((
             token(Token::Bracket),
             constant_expression_parser,
             token(Token::EBracket),
@@ -474,7 +474,7 @@ fn basic_property_expr_parser<'s>(
         });
     let _always_parser = (
         token(Token::Always),
-        opt((
+        opt_note((
             token(Token::Bracket),
             cycle_delay_const_range_expression_parser,
             token(Token::EBracket),
@@ -509,7 +509,7 @@ fn basic_property_expr_parser<'s>(
         });
     let _s_eventually_parser = (
         token(Token::SEventually),
-        opt((
+        opt_note((
             token(Token::Bracket),
             cycle_delay_const_range_expression_parser,
             token(Token::EBracket),
@@ -723,7 +723,7 @@ pub fn property_case_item_parser<'s>(
 ) -> ModalResult<PropertyCaseItem<'s>, VerboseError<'s>> {
     let _expr_parser = (
         expression_or_dist_parser,
-        repeat_strict((token(Token::Comma), expression_or_dist_parser)),
+        repeat_note((token(Token::Comma), expression_or_dist_parser)),
         token(Token::Colon),
         property_expr_parser,
         token(Token::SColon),
@@ -733,7 +733,7 @@ pub fn property_case_item_parser<'s>(
         });
     let _default_parser = (
         token(Token::Default),
-        opt(token(Token::Colon)),
+        opt_note(token(Token::Colon)),
         property_expr_parser,
         token(Token::SColon),
     )
@@ -747,17 +747,17 @@ pub fn sequence_declaration_parser<'s>(
     (
         token(Token::Sequence),
         sequence_identifier_parser,
-        opt((
+        opt_note((
             token(Token::Paren),
-            opt(sequence_port_list_parser),
+            opt_note(sequence_port_list_parser),
             token(Token::EParen),
         )),
         token(Token::SColon),
-        repeat_strict(assertion_variable_declaration_parser),
+        repeat_note(assertion_variable_declaration_parser),
         sequence_expr_parser,
-        opt(token(Token::SColon)),
+        opt_note(token(Token::SColon)),
         token(Token::Endsequence),
-        opt((token(Token::Colon), sequence_identifier_parser)),
+        opt_note((token(Token::Colon), sequence_identifier_parser)),
     )
         .map(|(a, b, c, d, e, f, g, h, i)| {
             SequenceDeclaration(a, b, c, d, e, f, g, h, i)
@@ -770,7 +770,7 @@ pub fn sequence_port_list_parser<'s>(
 ) -> ModalResult<SequencePortList<'s>, VerboseError<'s>> {
     (
         sequence_port_item_parser,
-        repeat_strict((token(Token::Comma), sequence_port_item_parser)),
+        repeat_note((token(Token::Comma), sequence_port_item_parser)),
     )
         .map(|(a, b)| SequencePortList(a, b))
         .parse_next(input)
@@ -781,14 +781,14 @@ pub fn sequence_port_item_parser<'s>(
 ) -> ModalResult<SequencePortItem<'s>, VerboseError<'s>> {
     (
         attribute_instance_vec_parser,
-        opt((
+        opt_note((
             token(Token::Local),
-            opt(sequence_lvar_port_direction_parser),
+            opt_note(sequence_lvar_port_direction_parser),
         )),
         sequence_formal_type_parser,
         formal_port_identifier_parser,
-        repeat_strict(variable_dimension_parser),
-        opt((token(Token::Eq), sequence_actual_arg_parser)),
+        repeat_note(variable_dimension_parser),
+        opt_note((token(Token::Eq), sequence_actual_arg_parser)),
     )
         .map(|(a, b, c, d, e, f)| SequencePortItem(a, b, c, d, e, f))
         .parse_next(input)
@@ -839,24 +839,24 @@ fn basic_sequence_expr_parser<'s>(
     let _start_delay_parser = (
         cycle_delay_range_parser,
         sequence_expr_parser,
-        repeat_strict((cycle_delay_range_parser, sequence_expr_parser)),
+        repeat_note((cycle_delay_range_parser, sequence_expr_parser)),
     )
         .map(|(a, b, c)| SequenceExpr::StartDelay(Box::new((a, b, c))));
-    let _expr_parser = (expression_or_dist_parser, opt(boolean_abbrev_parser))
+    let _expr_parser = (expression_or_dist_parser, opt_note(boolean_abbrev_parser))
         .map(|(a, b)| SequenceExpr::Expr(Box::new((a, b))));
     let _paren_parser = (
         token(Token::Paren),
         sequence_expr_parser,
-        repeat_strict((token(Token::Comma), sequence_match_item_parser)),
+        repeat_note((token(Token::Comma), sequence_match_item_parser)),
         token(Token::EParen),
-        opt(sequence_abbrev_parser),
+        opt_note(sequence_abbrev_parser),
     )
         .map(|(a, b, c, d, e)| SequenceExpr::Paren(Box::new((a, b, c, d, e))));
     let _first_match_parser = (
         token(Token::FirstMatch),
         token(Token::Paren),
         sequence_expr_parser,
-        repeat_strict((token(Token::Comma), sequence_match_item_parser)),
+        repeat_note((token(Token::Comma), sequence_match_item_parser)),
         token(Token::EParen),
     )
         .map(|(a, b, c, d, e)| {
@@ -944,7 +944,7 @@ fn sequence_expr_bp_parser<'s>(
         lhs = match op {
             SequencePrattOp::CycleDelayRange(cycle_delay_range) => {
                 let next_sequence_expr = sequence_expr_parser(input)?;
-                let later_delays = repeat_strict((
+                let later_delays = repeat_note((
                     cycle_delay_range_parser,
                     sequence_expr_parser,
                 ))
@@ -1074,9 +1074,9 @@ pub fn sequence_instance_parser<'s>(
 ) -> ModalResult<SequenceInstance<'s>, VerboseError<'s>> {
     (
         ps_or_hierarchical_sequence_identifier_parser,
-        opt((
+        opt_note((
             token(Token::Paren),
-            opt(sequence_list_of_arguments_parser),
+            opt_note(sequence_list_of_arguments_parser),
             token(Token::EParen),
         )),
     )
@@ -1088,14 +1088,14 @@ pub fn sequence_list_of_arguments_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<SequenceListOfArguments<'s>, VerboseError<'s>> {
     let _partial_identifier_parser = (
-        opt(sequence_actual_arg_parser),
-        repeat_strict((token(Token::Comma), opt(sequence_actual_arg_parser))),
-        repeat_strict((
+        opt_note(sequence_actual_arg_parser),
+        repeat_note((token(Token::Comma), opt_note(sequence_actual_arg_parser))),
+        repeat_note((
             token(Token::Comma),
             token(Token::Period),
             identifier_parser,
             token(Token::Paren),
-            opt(sequence_actual_arg_parser),
+            opt_note(sequence_actual_arg_parser),
             token(Token::EParen),
         )),
     )
@@ -1106,14 +1106,14 @@ pub fn sequence_list_of_arguments_parser<'s>(
         token(Token::Period),
         identifier_parser,
         token(Token::Paren),
-        opt(sequence_actual_arg_parser),
+        opt_note(sequence_actual_arg_parser),
         token(Token::EParen),
-        repeat_strict((
+        repeat_note((
             token(Token::Comma),
             token(Token::Period),
             identifier_parser,
             token(Token::Paren),
-            opt(sequence_actual_arg_parser),
+            opt_note(sequence_actual_arg_parser),
             token(Token::EParen),
         )),
     )

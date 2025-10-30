@@ -8,7 +8,7 @@ use lexer::{Span, Token};
 use winnow::ModalResult;
 use winnow::Parser;
 use winnow::error::ErrMode;
-use winnow::stream::TokenSlice;
+use winnow::stream::{Stateful, TokenSlice};
 use winnow::token::literal;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -24,7 +24,9 @@ impl<'s> From<(Token<'s>, Span)> for SpannedToken<'s> {
     }
 }
 
-pub type Tokens<'s> = TokenSlice<'s, SpannedToken<'s>>;
+// Keep track of the largest error we've seen in repeat/opt branches
+pub type Tokens<'s> =
+    Stateful<TokenSlice<'s, SpannedToken<'s>>, VerboseError<'s>>;
 impl<'s> Parser<Tokens<'s>, &'s SpannedToken<'s>, ErrMode<VerboseError<'s>>>
     for Token<'s>
 {

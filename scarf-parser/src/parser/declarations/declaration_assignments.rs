@@ -7,7 +7,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, opt};
+use winnow::combinator::alt;
 
 pub fn defparam_assignment_parser<'s>(
     input: &mut Tokens<'s>,
@@ -26,8 +26,8 @@ pub fn net_decl_assignment_parser<'s>(
 ) -> ModalResult<NetDeclAssignment<'s>, VerboseError<'s>> {
     (
         net_identifier_parser,
-        repeat_strict( unpacked_dimension_parser),
-        opt((token(Token::Eq), expression_parser)),
+        repeat_note(unpacked_dimension_parser),
+        opt_note((token(Token::Eq), expression_parser)),
     )
         .map(|(a, b, c)| NetDeclAssignment(a, b, c))
         .parse_next(input)
@@ -38,8 +38,8 @@ pub fn param_assignment_parser<'s>(
 ) -> ModalResult<ParamAssignment<'s>, VerboseError<'s>> {
     (
         parameter_identifier_parser,
-        repeat_strict( variable_dimension_parser),
-        opt((token(Token::Eq), constant_param_expression_parser)),
+        repeat_note(variable_dimension_parser),
+        opt_note((token(Token::Eq), constant_param_expression_parser)),
     )
         .map(|(a, b, c)| ParamAssignment(a, b, c))
         .parse_next(input)
@@ -89,7 +89,7 @@ pub fn pulse_control_specparam_parser<'s>(
         token(Token::Eq),
         token(Token::Paren),
         reject_limit_value_parser,
-        opt((token(Token::Comma), error_limit_value_parser)),
+        opt_note((token(Token::Comma), error_limit_value_parser)),
         token(Token::EParen),
     )
         .map(|(a, b, c, d, e, f)| {
@@ -100,7 +100,7 @@ pub fn pulse_control_specparam_parser<'s>(
         token(Token::Eq),
         token(Token::Paren),
         reject_limit_value_parser,
-        opt((token(Token::Comma), error_limit_value_parser)),
+        opt_note((token(Token::Comma), error_limit_value_parser)),
         token(Token::EParen),
     )
         .map(|(a, b, c, d, e, f)| {
@@ -138,7 +138,7 @@ pub fn type_assignment_parser<'s>(
 ) -> ModalResult<TypeAssignment<'s>, VerboseError<'s>> {
     (
         type_identifier_parser,
-        opt((
+        opt_note((
             token(Token::Eq),
             data_type_or_incomplete_class_scoped_type_parser,
         )),
@@ -152,22 +152,22 @@ pub fn variable_decl_assignment_parser<'s>(
 ) -> ModalResult<VariableDeclAssignment<'s>, VerboseError<'s>> {
     let _variable_parser = (
         variable_identifier_parser,
-        repeat_strict( variable_dimension_parser),
-        opt((token(Token::Eq), expression_parser)),
+        repeat_note(variable_dimension_parser),
+        opt_note((token(Token::Eq), expression_parser)),
     )
         .map(|(a, b, c)| VariableDeclAssignment::Variable(Box::new((a, b, c))));
     let _dynamic_variable_parser = (
         dynamic_array_variable_identifier_parser,
         unsized_dimension_parser,
-        repeat_strict( variable_dimension_parser),
-        opt((token(Token::Eq), dynamic_array_new_parser)),
+        repeat_note(variable_dimension_parser),
+        opt_note((token(Token::Eq), dynamic_array_new_parser)),
     )
         .map(|(a, b, c, d)| {
             VariableDeclAssignment::DynamicVariable(Box::new((a, b, c, d)))
         });
     let _class_variable_parser = (
         class_variable_identifier_parser,
-        opt((token(Token::Eq), class_new_parser)),
+        opt_note((token(Token::Eq), class_new_parser)),
     )
         .map(|(a, b)| VariableDeclAssignment::ClassVariable(Box::new((a, b))));
     alt((
@@ -182,9 +182,9 @@ pub fn class_new_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<ClassNew<'s>, VerboseError<'s>> {
     let _args_parser = (
-        opt(class_scope_parser),
+        opt_note(class_scope_parser),
         token(Token::New),
-        opt((
+        opt_note((
             token(Token::Paren),
             list_of_arguments_parser,
             token(Token::EParen),
@@ -204,7 +204,7 @@ pub fn dynamic_array_new_parser<'s>(
         token(Token::Bracket),
         expression_parser,
         token(Token::EBracket),
-        opt((token(Token::Paren), expression_parser, token(Token::EParen))),
+        opt_note((token(Token::Paren), expression_parser, token(Token::EParen))),
     )
         .map(|(a, b, c, d, e)| DynamicArrayNew(a, b, c, d, e))
         .parse_next(input)
