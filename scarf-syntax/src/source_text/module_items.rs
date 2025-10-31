@@ -73,4 +73,5 @@ pub struct ElaborationSeveritySystemTask<'a>(pub SeveritySystemTask<'a>);
 
 pub type BindDirective = ();
 pub type ModuleItem = ();
+pub type ModuleOrGenerateItem = ();
 pub type NonPortModuleItem = ();

@@ -284,9 +284,9 @@ pub struct ProgramAnsiHeader<'a>(
 pub struct CheckerDeclaration<'a>(
     pub Metadata<'a>, // checker
     pub CheckerIdentifier<'a>,
-    pub Option<(Metadata<'a>, CheckerPortList, Metadata<'a>)>,
+    pub Option<(Metadata<'a>, CheckerPortList<'a>, Metadata<'a>)>,
     pub Metadata<'a>,
-    pub Vec<(Vec<AttributeInstance<'a>>, CheckerOrGenerateItem)>,
+    pub Vec<(Vec<AttributeInstance<'a>>, CheckerOrGenerateItem<'a>)>,
     pub Metadata<'a>, // endchecker
     pub Option<(Metadata<'a>, CheckerIdentifier<'a>)>,
 );

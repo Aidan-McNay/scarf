@@ -14,6 +14,12 @@ pub fn interface_item_parser<'s>(
     fail.parse_next(input)
 }
 
+pub fn interface_or_generate_item_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<InterfaceOrGenerateItem, VerboseError<'s>> {
+    fail.parse_next(input)
+}
+
 pub fn non_port_interface_item_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<NonPortInterfaceItem, VerboseError<'s>> {

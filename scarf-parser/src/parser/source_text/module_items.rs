@@ -7,7 +7,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::alt;
+use winnow::combinator::{alt, fail};
 use winnow::token::any;
 
 pub fn system_severity_task_parser<'s>(
@@ -144,6 +144,12 @@ pub fn module_item_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<ModuleItem, VerboseError<'s>> {
     token(Token::Error).value(()).parse_next(input)
+}
+
+pub fn module_or_generate_item_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<ModuleOrGenerateItem, VerboseError<'s>> {
+    fail.parse_next(input)
 }
 
 pub fn non_port_module_item_parser<'s>(
