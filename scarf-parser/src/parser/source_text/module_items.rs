@@ -152,6 +152,12 @@ pub fn module_or_generate_item_parser<'s>(
     fail.parse_next(input)
 }
 
+pub fn module_or_generate_item_declaration_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<ModuleOrGenerateItemDeclaration<'s>, VerboseError<'s>> {
+    fail.parse_next(input)
+}
+
 pub fn non_port_module_item_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<NonPortModuleItem, VerboseError<'s>> {

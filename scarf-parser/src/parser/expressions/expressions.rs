@@ -480,7 +480,9 @@ fn expression_bp_parser<'s>(
                         };
                         cond_predicate
                             .push((amp_amp_amp, expression_or_cond_patter));
-                        match opt_note(token(Token::AmpAmpAmp)).parse_next(input)? {
+                        match opt_note(token(Token::AmpAmpAmp))
+                            .parse_next(input)?
+                        {
                             Some(new_amp_amp_amp) => {
                                 amp_amp_amp = new_amp_amp_amp
                             }

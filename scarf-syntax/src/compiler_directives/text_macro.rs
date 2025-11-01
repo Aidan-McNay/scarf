@@ -41,7 +41,7 @@ pub struct FormalArgument<'a>(
 );
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct TextMacroIdentifier<'a>(pub (&'a str, Span));
+pub struct TextMacroIdentifier<'a>(pub &'a str, pub Span);
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct MacroText(pub Span);

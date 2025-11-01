@@ -214,7 +214,7 @@ pub enum ProgramDeclaration<'a> {
 pub struct ProgramDeclarationNonansi<'a>(
     pub ProgramNonansiHeader<'a>,
     pub Option<TimeunitsDeclaration<'a>>,
-    pub Vec<ProgramItem>,
+    pub Vec<ProgramItem<'a>>,
     pub Metadata<'a>, // endprogram
     pub Option<(Metadata<'a>, ProgramIdentifier<'a>)>,
 );
@@ -223,7 +223,7 @@ pub struct ProgramDeclarationNonansi<'a>(
 pub struct ProgramDeclarationAnsi<'a>(
     pub ProgramAnsiHeader<'a>,
     pub Option<TimeunitsDeclaration<'a>>,
-    pub Vec<NonPortProgramItem>,
+    pub Vec<NonPortProgramItem<'a>>,
     pub Metadata<'a>, // endprogram
     pub Option<(Metadata<'a>, ProgramIdentifier<'a>)>,
 );
@@ -239,7 +239,7 @@ pub struct ProgramDeclarationWildcard<'a>(
     pub Metadata<'a>, // )
     pub Metadata<'a>, // ;
     pub Option<TimeunitsDeclaration<'a>>,
-    pub Vec<ProgramItem>,
+    pub Vec<ProgramItem<'a>>,
     pub Metadata<'a>, // endprogram
     pub Option<(Metadata<'a>, ProgramIdentifier<'a>)>,
 );
