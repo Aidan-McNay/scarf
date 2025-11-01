@@ -1,5 +1,5 @@
 // =======================================================================
-// mod.rs
+// identifiers.rs
 // =======================================================================
 // Parsing for 1800-2023 A.9.3
 
@@ -7,7 +7,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, repeat};
+use winnow::combinator::alt;
 use winnow::token::any;
 
 pub fn array_identifier_parser<'s>(
@@ -245,14 +245,11 @@ pub fn hierarchical_event_identifier_parser<'s>(
 pub fn hierarchical_identifier_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<HierarchicalIdentifier<'s>, VerboseError<'s>> {
-    let identifiers_parser = repeat(
-        0..,
-        (
-            identifier_parser,
-            constant_bit_select_parser,
-            token(Token::Period),
-        ),
-    );
+    let identifiers_parser = repeat_note((
+        identifier_parser,
+        constant_bit_select_parser,
+        token(Token::Period),
+    ));
     (
         opt_note((token(Token::DollarRoot), token(Token::Period))),
         identifiers_parser,
@@ -570,7 +567,10 @@ pub fn ps_or_hierarchical_array_identifier_parser<'s>(
         package_scope_parser
             .map(|a| PsOrHierarchicalArrayIdentifierScope::PackageScope(a)),
     ));
-    (opt_note(_scope_parser), hierarchical_array_identifier_parser)
+    (
+        opt_note(_scope_parser),
+        hierarchical_array_identifier_parser,
+    )
         .map(|(a, b)| PsOrHierarchicalArrayIdentifier(a, b))
         .parse_next(input)
 }
