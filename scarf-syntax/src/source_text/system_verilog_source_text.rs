@@ -21,7 +21,7 @@ pub enum Description<'a> {
     PackageDeclaration(Box<PackageDeclaration<'a>>),
     DescriptionPackageItem(Box<DescriptionPackageItem<'a>>),
     DescriptionBindDirective(Box<DescriptionBindDirective<'a>>),
-    ConfigDeclaration(Box<ConfigDeclaration>),
+    ConfigDeclaration(Box<ConfigDeclaration<'a>>),
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -135,7 +135,7 @@ pub enum InterfaceDeclaration<'a> {
 pub struct InterfaceDeclarationNonansi<'a>(
     pub InterfaceNonansiHeader<'a>,
     pub Option<TimeunitsDeclaration<'a>>,
-    pub Vec<InterfaceItem>,
+    pub Vec<InterfaceItem<'a>>,
     pub Metadata<'a>, // endinterface
     pub Option<(Metadata<'a>, InterfaceIdentifier<'a>)>,
 );
@@ -144,7 +144,7 @@ pub struct InterfaceDeclarationNonansi<'a>(
 pub struct InterfaceDeclarationAnsi<'a>(
     pub InterfaceAnsiHeader<'a>,
     pub Option<TimeunitsDeclaration<'a>>,
-    pub Vec<NonPortInterfaceItem>,
+    pub Vec<NonPortInterfaceItem<'a>>,
     pub Metadata<'a>, // endinterface
     pub Option<(Metadata<'a>, InterfaceIdentifier<'a>)>,
 );
@@ -160,7 +160,7 @@ pub struct InterfaceDeclarationWildcard<'a>(
     pub Metadata<'a>, // )
     pub Metadata<'a>, // ;
     pub Option<TimeunitsDeclaration<'a>>,
-    pub Vec<InterfaceItem>,
+    pub Vec<InterfaceItem<'a>>,
     pub Metadata<'a>, // endinterface
     pub Option<(Metadata<'a>, InterfaceIdentifier<'a>)>,
 );

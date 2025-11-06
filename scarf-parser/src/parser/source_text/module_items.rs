@@ -137,13 +137,19 @@ pub fn elaboration_system_severity_task_parser<'s>(
 pub fn bind_directive_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<BindDirective, VerboseError<'s>> {
-    token(Token::Error).value(()).parse_next(input)
+    fail.parse_next(input)
 }
 
 pub fn module_item_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<ModuleItem, VerboseError<'s>> {
-    token(Token::Error).value(()).parse_next(input)
+    fail.parse_next(input)
+}
+
+pub fn module_common_item_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<ModuleCommonItem<'s>, VerboseError<'s>> {
+    fail.parse_next(input)
 }
 
 pub fn module_or_generate_item_parser<'s>(

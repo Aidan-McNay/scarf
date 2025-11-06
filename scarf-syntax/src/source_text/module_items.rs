@@ -71,6 +71,7 @@ pub enum FinishNumber<'a> {
 #[derive(Clone, Debug, PartialEq)]
 pub struct ElaborationSeveritySystemTask<'a>(pub SeveritySystemTask<'a>);
 
+pub type ModuleCommonItem<'a> = ();
 pub type BindDirective = ();
 pub type ModuleItem = ();
 pub type ModuleOrGenerateItem = ();
