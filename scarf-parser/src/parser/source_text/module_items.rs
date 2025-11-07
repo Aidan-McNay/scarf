@@ -7,7 +7,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::{alt, fail};
+use winnow::combinator::alt;
 use winnow::token::any;
 
 pub fn system_severity_task_parser<'s>(
@@ -134,38 +134,223 @@ pub fn elaboration_system_severity_task_parser<'s>(
         .parse_next(input)
 }
 
-pub fn bind_directive_parser<'s>(
+pub fn module_common_item_parser<'s>(
     input: &mut Tokens<'s>,
-) -> ModalResult<BindDirective, VerboseError<'s>> {
-    fail.parse_next(input)
+) -> ModalResult<ModuleCommonItem<'s>, VerboseError<'s>> {
+    alt((
+        continuous_assign_parser.map(|a| ModuleCommonItem::Assign(Box::new(a))),
+        always_construct_parser.map(|a| ModuleCommonItem::Always(Box::new(a))),
+        initial_construct_parser
+            .map(|a| ModuleCommonItem::Initial(Box::new(a))),
+        final_construct_parser.map(|a| ModuleCommonItem::Final(Box::new(a))),
+        interface_instantiation_parser
+            .map(|a| ModuleCommonItem::Interface(Box::new(a))),
+        program_instantiation_parser
+            .map(|a| ModuleCommonItem::Program(Box::new(a))),
+        assertion_item_parser.map(|a| ModuleCommonItem::Assertion(Box::new(a))),
+        bind_directive_parser.map(|a| ModuleCommonItem::Bind(Box::new(a))),
+        net_alias_parser.map(|a| ModuleCommonItem::Alias(Box::new(a))),
+        loop_generate_construct_parser
+            .map(|a| ModuleCommonItem::LoopGenerate(Box::new(a))),
+        conditional_generate_construct_parser.map(|a| {
+            ModuleCommonItem::ConditionalGenerateConstruct(Box::new(a))
+        }),
+        elaboration_system_severity_task_parser
+            .map(|a| ModuleCommonItem::SystemSeverity(Box::new(a))),
+        module_or_generate_item_declaration_parser.map(|a| {
+            ModuleCommonItem::ModuleOrGenerateDeclaration(Box::new(a))
+        }),
+    ))
+    .parse_next(input)
 }
 
 pub fn module_item_parser<'s>(
     input: &mut Tokens<'s>,
-) -> ModalResult<ModuleItem, VerboseError<'s>> {
-    fail.parse_next(input)
+) -> ModalResult<ModuleItem<'s>, VerboseError<'s>> {
+    alt((
+        (port_declaration_parser, token(Token::SColon))
+            .map(|(a, b)| ModuleItem::Port(Box::new((a, b)))),
+        non_port_module_item_parser.map(|a| ModuleItem::NonPort(Box::new(a))),
+    ))
+    .parse_next(input)
 }
 
-pub fn module_common_item_parser<'s>(
-    input: &mut Tokens<'s>,
-) -> ModalResult<ModuleCommonItem<'s>, VerboseError<'s>> {
-    fail.parse_next(input)
+enum ModuleOrGenerateItemBody<'a> {
+    ParameterOverride(ParameterOverride<'a>),
+    Gate(GateInstantiation<'a>),
+    Udp(UdpInstantiation<'a>),
+    Module(ModuleInstantiation<'a>),
+    ModuleCommon(ModuleCommonItem<'a>),
 }
 
 pub fn module_or_generate_item_parser<'s>(
     input: &mut Tokens<'s>,
-) -> ModalResult<ModuleOrGenerateItem, VerboseError<'s>> {
-    fail.parse_next(input)
+) -> ModalResult<ModuleOrGenerateItem<'s>, VerboseError<'s>> {
+    let _body_parser = alt((
+        parameter_override_parser
+            .map(|a| ModuleOrGenerateItemBody::ParameterOverride(a)),
+        gate_instantiation_parser.map(|a| ModuleOrGenerateItemBody::Gate(a)),
+        udp_instantiation_parser.map(|a| ModuleOrGenerateItemBody::Udp(a)),
+        module_instantiation_parser
+            .map(|a| ModuleOrGenerateItemBody::Module(a)),
+        module_common_item_parser
+            .map(|a| ModuleOrGenerateItemBody::ModuleCommon(a)),
+    ));
+    (attribute_instance_vec_parser, _body_parser)
+        .map(|(a, b)| match b {
+            ModuleOrGenerateItemBody::ParameterOverride(c) => {
+                ModuleOrGenerateItem::ParameterOverride(Box::new((a, c)))
+            }
+            ModuleOrGenerateItemBody::Gate(c) => {
+                ModuleOrGenerateItem::Gate(Box::new((a, c)))
+            }
+            ModuleOrGenerateItemBody::Udp(c) => {
+                ModuleOrGenerateItem::Udp(Box::new((a, c)))
+            }
+            ModuleOrGenerateItemBody::Module(c) => {
+                ModuleOrGenerateItem::Module(Box::new((a, c)))
+            }
+            ModuleOrGenerateItemBody::ModuleCommon(c) => {
+                ModuleOrGenerateItem::ModuleCommon(Box::new((a, c)))
+            }
+        })
+        .parse_next(input)
 }
 
 pub fn module_or_generate_item_declaration_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<ModuleOrGenerateItemDeclaration<'s>, VerboseError<'s>> {
-    fail.parse_next(input)
+    alt((
+        package_or_generate_item_declaration_parser.map(|a| {
+            ModuleOrGenerateItemDeclaration::PackageOrGenerate(Box::new(a))
+        }),
+        genvar_declaration_parser
+            .map(|a| ModuleOrGenerateItemDeclaration::Genvar(Box::new(a))),
+        clocking_declaration_parser
+            .map(|a| ModuleOrGenerateItemDeclaration::Clocking(Box::new(a))),
+        (
+            token(Token::Default),
+            token(Token::Clocking),
+            clocking_identifier_parser,
+            token(Token::SColon),
+        )
+            .map(|(a, b, c, d)| {
+                ModuleOrGenerateItemDeclaration::DefaultClocking(Box::new((
+                    a, b, c, d,
+                )))
+            }),
+        (
+            token(Token::Default),
+            token(Token::Disable),
+            token(Token::Iff),
+            expression_or_dist_parser,
+            token(Token::SColon),
+        )
+            .map(|(a, b, c, d, e)| {
+                ModuleOrGenerateItemDeclaration::DefaultDisable(Box::new((
+                    a, b, c, d, e,
+                )))
+            }),
+    ))
+    .parse_next(input)
 }
 
 pub fn non_port_module_item_parser<'s>(
     input: &mut Tokens<'s>,
-) -> ModalResult<NonPortModuleItem, VerboseError<'s>> {
-    token(Token::Error).value(()).parse_next(input)
+) -> ModalResult<NonPortModuleItem<'s>, VerboseError<'s>> {
+    alt((
+        generate_region_parser.map(|a| NonPortModuleItem::Region(Box::new(a))),
+        specify_block_parser.map(|a| NonPortModuleItem::Specify(Box::new(a))),
+        (attribute_instance_vec_parser, specparam_assignment_parser)
+            .map(|(a, b)| NonPortModuleItem::Specparam(Box::new((a, b)))),
+        program_declaration_parser
+            .map(|a| NonPortModuleItem::Program(Box::new(a))),
+        module_declaration_parser
+            .map(|a| NonPortModuleItem::Module(Box::new(a))),
+        interface_declaration_parser
+            .map(|a| NonPortModuleItem::Interface(Box::new(a))),
+        timeunits_declaration_parser
+            .map(|a| NonPortModuleItem::Timeunits(Box::new(a))),
+        module_or_generate_item_parser
+            .map(|a| NonPortModuleItem::ModuleOrGenerate(Box::new(a))),
+    ))
+    .parse_next(input)
+}
+
+pub fn parameter_override_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<ParameterOverride<'s>, VerboseError<'s>> {
+    (
+        token(Token::Defparam),
+        list_of_defparam_assignments_parser,
+        token(Token::SColon),
+    )
+        .map(|(a, b, c)| ParameterOverride(a, b, c))
+        .parse_next(input)
+}
+
+pub fn bind_directive_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<BindDirective<'s>, VerboseError<'s>> {
+    let _instance_parser = (
+        token(Token::Bind),
+        bind_target_instance_parser,
+        bind_instantiation_parser,
+        token(Token::SColon),
+    )
+        .map(|(a, b, c, d)| BindDirective::Instance(Box::new((a, b, c, d))));
+    let _scope_parser = (
+        token(Token::Bind),
+        bind_target_scope_parser,
+        opt_note((token(Token::Colon), bind_target_instance_list_parser)),
+        bind_instantiation_parser,
+        token(Token::SColon),
+    )
+        .map(|(a, b, c, d, e)| BindDirective::Scope(Box::new((a, b, c, d, e))));
+    alt((_instance_parser, _scope_parser)).parse_next(input)
+}
+
+pub fn bind_target_scope_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<BindTargetScope<'s>, VerboseError<'s>> {
+    alt((
+        module_identifier_parser.map(|a| BindTargetScope::Module(a)),
+        interface_identifier_parser.map(|a| BindTargetScope::Interface(a)),
+    ))
+    .parse_next(input)
+}
+
+pub fn bind_target_instance_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<BindTargetInstance<'s>, VerboseError<'s>> {
+    (hierarchical_identifier_parser, constant_bit_select_parser)
+        .map(|(a, b)| BindTargetInstance(a, b))
+        .parse_next(input)
+}
+
+pub fn bind_target_instance_list_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<BindTargetInstanceList<'s>, VerboseError<'s>> {
+    (
+        bind_target_instance_parser,
+        repeat_note((token(Token::Comma), bind_target_instance_parser)),
+    )
+        .map(|(a, b)| BindTargetInstanceList(a, b))
+        .parse_next(input)
+}
+
+pub fn bind_instantiation_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<BindInstantiation<'s>, VerboseError<'s>> {
+    alt((
+        program_instantiation_parser
+            .map(|a| BindInstantiation::Program(Box::new(a))),
+        module_instantiation_parser
+            .map(|a| BindInstantiation::Module(Box::new(a))),
+        interface_instantiation_parser
+            .map(|a| BindInstantiation::Interface(Box::new(a))),
+        checker_instantiation_parser
+            .map(|a| BindInstantiation::Checker(Box::new(a))),
+    ))
+    .parse_next(input)
 }

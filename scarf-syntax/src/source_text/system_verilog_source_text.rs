@@ -33,7 +33,7 @@ pub struct DescriptionPackageItem<'a>(
 #[derive(Clone, Debug, PartialEq)]
 pub struct DescriptionBindDirective<'a>(
     pub Vec<AttributeInstance<'a>>,
-    pub BindDirective,
+    pub BindDirective<'a>,
 );
 
 #[derive(Clone, Debug, PartialEq)]
@@ -73,7 +73,7 @@ pub enum ModuleDeclaration<'a> {
 pub struct ModuleDeclarationNonansi<'a>(
     pub ModuleNonansiHeader<'a>,
     pub Option<TimeunitsDeclaration<'a>>,
-    pub Vec<ModuleItem>,
+    pub Vec<ModuleItem<'a>>,
     pub Metadata<'a>,
     pub Option<(Metadata<'a>, ModuleIdentifier<'a>)>,
 );
@@ -82,7 +82,7 @@ pub struct ModuleDeclarationNonansi<'a>(
 pub struct ModuleDeclarationAnsi<'a>(
     pub ModuleAnsiHeader<'a>,
     pub Option<TimeunitsDeclaration<'a>>,
-    pub Vec<NonPortModuleItem>,
+    pub Vec<NonPortModuleItem<'a>>,
     pub Metadata<'a>,
     pub Option<(Metadata<'a>, ModuleIdentifier<'a>)>,
 );
@@ -99,7 +99,7 @@ pub struct ModuleDeclarationWildcard<'a>(
     pub Metadata<'a>, // )
     pub Metadata<'a>, // ;
     pub Option<TimeunitsDeclaration<'a>>,
-    pub Vec<ModuleItem>,
+    pub Vec<ModuleItem<'a>>,
     pub Metadata<'a>, // endmodule
     pub Option<(Metadata<'a>, ModuleIdentifier<'a>)>,
 );
