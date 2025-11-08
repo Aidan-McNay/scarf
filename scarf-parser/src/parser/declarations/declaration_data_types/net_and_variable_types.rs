@@ -7,18 +7,109 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::alt;
+use winnow::combinator::{alt, not, peek, terminated};
 
 pub fn casting_type_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<CastingType<'s>, VerboseError<'s>> {
     alt((
         simple_type_parser.map(|a| CastingType::SimpleType(Box::new(a))),
-        constant_primary_parser
+        constant_primary_parser_without_cast
             .map(|a| CastingType::ConstantPrimary(Box::new(a))),
         signing_parser.map(|a| CastingType::Signing(Box::new(a))),
         token(Token::String).map(|a| CastingType::String(Box::new(a))),
         token(Token::Const).map(|a| CastingType::Const(Box::new(a))),
+    ))
+    .parse_next(input)
+}
+
+fn constant_primary_parser_without_cast<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<ConstantPrimary<'s>, VerboseError<'s>> {
+    let _primary_literal_parser = primary_literal_parser
+        .map(|a| ConstantPrimary::PrimaryLiteral(Box::new(a)));
+    let _ps_parameter_parser =
+        (ps_parameter_identifier_parser, constant_select_parser)
+            .map(|(a, b)| ConstantPrimary::PsParameter(Box::new((a, b))));
+    let _specparam_parser = (
+        specparam_identifier_parser,
+        opt_note((
+            token(Token::Bracket),
+            constant_range_expression_parser,
+            token(Token::EBracket),
+        )),
+    )
+        .map(|(a, b)| ConstantPrimary::Specparam(Box::new((a, b))));
+    let _genvar_parser =
+        genvar_identifier_parser.map(|a| ConstantPrimary::Genvar(Box::new(a)));
+    let _enum_parser = (
+        opt_note(package_or_class_scope_parser),
+        enum_identifier_parser,
+    )
+        .map(|(a, b)| ConstantPrimary::Enum(Box::new((a, b))));
+    let _empty_unpacked_array_concatenation_parser =
+        empty_unpacked_array_concatenation_parser.map(|a| {
+            ConstantPrimary::EmptyUnpackedArrayConcatenation(Box::new(a))
+        });
+    let _concatenation_parser = (
+        constant_concatenation_parser,
+        opt_note((
+            token(Token::Bracket),
+            constant_range_expression_parser,
+            token(Token::EBracket),
+        )),
+    )
+        .map(|(a, b)| ConstantPrimary::Concatenation(Box::new((a, b))));
+    let _multiple_concatenation_parser = (
+        constant_multiple_concatenation_parser,
+        opt_note((
+            token(Token::Bracket),
+            constant_range_expression_parser,
+            token(Token::EBracket),
+        )),
+    )
+        .map(|(a, b)| ConstantPrimary::MultipleConcatenation(Box::new((a, b))));
+    let _function_call_parser = (
+        constant_function_call_parser,
+        opt_note((
+            token(Token::Bracket),
+            constant_range_expression_parser,
+            token(Token::EBracket),
+        )),
+    )
+        .map(|(a, b)| ConstantPrimary::FunctionCall(Box::new((a, b))));
+    let _let_expression_parser = constant_let_expression_parser
+        .map(|a| ConstantPrimary::LetExpression(Box::new(a)));
+    let _mintypmax_parser = (
+        token(Token::Paren),
+        constant_mintypmax_expression_parser,
+        token(Token::EParen),
+    )
+        .map(|(a, b, c)| {
+            ConstantPrimary::MintypmaxExpression(Box::new((a, b, c)))
+        });
+    let _assignment_pattern_expression_parser =
+        constant_assignment_pattern_expression_parser
+            .map(|a| ConstantPrimary::AssignmentPatternExpression(Box::new(a)));
+    let _type_reference_parser = type_reference_parser
+        .map(|a| ConstantPrimary::TypeReference(Box::new(a)));
+    let _null_parser =
+        token(Token::Null).map(|a| ConstantPrimary::Null(Box::new(a)));
+    alt((
+        _primary_literal_parser,
+        _ps_parameter_parser,
+        _specparam_parser,
+        _genvar_parser,
+        _enum_parser,
+        _empty_unpacked_array_concatenation_parser,
+        _concatenation_parser,
+        _multiple_concatenation_parser,
+        _function_call_parser,
+        _let_expression_parser,
+        _mintypmax_parser,
+        _assignment_pattern_expression_parser,
+        _type_reference_parser,
+        _null_parser,
     ))
     .parse_next(input)
 }
@@ -89,7 +180,8 @@ pub fn data_type_parser<'s>(
     )
         .map(|(a, b, c)| DataType::Type(Box::new((a, b, c))));
     let _class_type_parser =
-        class_type_parser.map(|a| DataType::ClassType(Box::new(a)));
+        terminated(class_type_parser, peek(not(packed_dimension_parser)))
+            .map(|a| DataType::ClassType(Box::new(a)));
     let _event_parser =
         token(Token::Event).map(|a| DataType::Event(Box::new(a)));
     let _ps_covergroup_parser = ps_covergroup_identifier_parser
@@ -114,7 +206,9 @@ pub fn data_type_parser<'s>(
     .parse_next(input)
 }
 
-pub fn data_type_or_implicit_parser<'s>(
+// Use versions specific for each use case, to avoid incorrect consumption
+#[allow(dead_code)]
+pub fn _data_type_or_implicit_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<DataTypeOrImplicit<'s>, VerboseError<'s>> {
     alt((
@@ -128,7 +222,10 @@ pub fn data_type_or_implicit_parser<'s>(
 pub fn implicit_data_type_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<ImplicitDataType<'s>, VerboseError<'s>> {
-    (opt_note(signing_parser), repeat_note(packed_dimension_parser))
+    (
+        opt_note(signing_parser),
+        repeat_note(packed_dimension_parser),
+    )
         .map(|(a, b)| ImplicitDataType(a, b))
         .parse_next(input)
 }
@@ -144,8 +241,9 @@ pub fn enum_base_type_parser<'s>(
         opt_note(packed_dimension_parser),
     )
         .map(|(a, b, c)| EnumBaseType::Vector(Box::new((a, b, c))));
-    let _type_parser = (type_identifier_parser, opt_note(packed_dimension_parser))
-        .map(|(a, b)| EnumBaseType::Type(Box::new((a, b))));
+    let _type_parser =
+        (type_identifier_parser, opt_note(packed_dimension_parser))
+            .map(|(a, b)| EnumBaseType::Type(Box::new((a, b))));
     alt((_atom_parser, _vector_parser, _type_parser)).parse_next(input)
 }
 
@@ -169,8 +267,41 @@ pub fn enum_name_declaration_parser<'s>(
 pub fn class_scope_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<ClassScope<'s>, VerboseError<'s>> {
-    (class_type_parser, token(Token::ColonColon))
+    (class_type_parser_peek_class_scope, token(Token::ColonColon))
         .map(|(a, b)| ClassScope(a, b))
+        .parse_next(input)
+}
+
+fn class_type_parser_peek_class_scope<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<ClassType<'s>, VerboseError<'s>> {
+    (
+        ps_class_identifier_parser_peek_class_scope,
+        opt_note(parameter_value_assignment_parser),
+        repeat_note(terminated(
+            (
+                token(Token::ColonColon),
+                class_identifier_parser,
+                opt_note(parameter_value_assignment_parser),
+            ),
+            peek(token(Token::ColonColon)),
+        )),
+    )
+        .map(|(a, b, c)| ClassType(a, b, c))
+        .parse_next(input)
+}
+
+fn ps_class_identifier_parser_peek_class_scope<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<PsClassIdentifier<'s>, VerboseError<'s>> {
+    (
+        opt_note(terminated(
+            package_scope_parser,
+            peek((class_identifier_parser, token(Token::ColonColon))),
+        )),
+        class_identifier_parser,
+    )
+        .map(|(a, b)| PsClassIdentifier(a, b))
         .parse_next(input)
 }
 
@@ -270,7 +401,10 @@ pub fn net_type_parser<'s>(
 pub fn net_port_type_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<NetPortType<'s>, VerboseError<'s>> {
-    let _implicit_parser = (opt_note(net_type_parser), data_type_or_implicit_parser)
+    let _implicit_parser = (
+        opt_note(net_type_parser),
+        data_type_or_implicit_parser_net_port_type,
+    )
         .map(|(a, b)| NetPortType::Implicit(Box::new((a, b))));
     let _nettype_parser =
         nettype_identifier_parser.map(|a| NetPortType::Nettype(Box::new(a)));
@@ -279,6 +413,18 @@ pub fn net_port_type_parser<'s>(
             .map(|(a, b)| NetPortType::Interconnect(Box::new((a, b))));
     alt((_implicit_parser, _nettype_parser, _interconnect_parser))
         .parse_next(input)
+}
+
+fn data_type_or_implicit_parser_net_port_type<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<DataTypeOrImplicit<'s>, VerboseError<'s>> {
+    alt((
+        terminated(data_type_parser, peek(port_identifier_parser))
+            .map(|a| DataTypeOrImplicit::DataType(a)),
+        terminated(implicit_data_type_parser, peek(port_identifier_parser))
+            .map(|a| DataTypeOrImplicit::ImplicitDataType(a)),
+    ))
+    .parse_next(input)
 }
 
 pub fn variable_port_type_parser<'s>(
@@ -294,8 +440,23 @@ pub fn var_data_type_parser<'s>(
 ) -> ModalResult<VarDataType<'s>, VerboseError<'s>> {
     alt((
         data_type_parser.map(|a| VarDataType::Data(Box::new(a))),
-        (token(Token::Var), data_type_or_implicit_parser)
+        (
+            token(Token::Var),
+            data_type_or_implicit_parser_var_data_type,
+        )
             .map(|(a, b)| VarDataType::Var(Box::new((a, b)))),
+    ))
+    .parse_next(input)
+}
+
+fn data_type_or_implicit_parser_var_data_type<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<DataTypeOrImplicit<'s>, VerboseError<'s>> {
+    alt((
+        terminated(data_type_parser, peek(variable_identifier_parser))
+            .map(|a| DataTypeOrImplicit::DataType(a)),
+        terminated(implicit_data_type_parser, peek(variable_identifier_parser))
+            .map(|a| DataTypeOrImplicit::ImplicitDataType(a)),
     ))
     .parse_next(input)
 }

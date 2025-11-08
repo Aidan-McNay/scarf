@@ -245,8 +245,7 @@ pub fn identifier_list_parser<'s>(
         .parse_next(input)
 }
 
-// Parse separate from other primaries to avoid subroutine call recursion
-fn method_root_primary_parser<'s>(
+fn primary_parser_without_subroutine<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<Primary<'s>, VerboseError<'s>> {
     let _primary_literal_parser =
@@ -319,7 +318,7 @@ pub fn method_call_root_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<MethodCallRoot<'s>, VerboseError<'s>> {
     alt((
-        method_root_primary_parser
+        primary_parser_without_subroutine
             .map(|a| MethodCallRoot::Primary(Box::new(a))),
         implicit_class_handle_parser
             .map(|a| MethodCallRoot::ImplicitClassHandle(Box::new(a))),

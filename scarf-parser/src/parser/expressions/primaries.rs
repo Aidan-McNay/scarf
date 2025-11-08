@@ -30,9 +30,11 @@ pub fn constant_primary_parser<'s>(
         .map(|(a, b)| ConstantPrimary::Specparam(Box::new((a, b))));
     let _genvar_parser =
         genvar_identifier_parser.map(|a| ConstantPrimary::Genvar(Box::new(a)));
-    let _enum_parser =
-        (opt_note(package_or_class_scope_parser), enum_identifier_parser)
-            .map(|(a, b)| ConstantPrimary::Enum(Box::new((a, b))));
+    let _enum_parser = (
+        opt_note(package_or_class_scope_parser),
+        enum_identifier_parser,
+    )
+        .map(|(a, b)| ConstantPrimary::Enum(Box::new((a, b))));
     let _empty_unpacked_array_concatenation_parser =
         empty_unpacked_array_concatenation_parser.map(|a| {
             ConstantPrimary::EmptyUnpackedArrayConcatenation(Box::new(a))

@@ -7,7 +7,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::alt;
+use winnow::combinator::{alt, peek, terminated};
 use winnow::token::any;
 
 pub fn array_identifier_parser<'s>(
@@ -245,10 +245,13 @@ pub fn hierarchical_event_identifier_parser<'s>(
 pub fn hierarchical_identifier_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<HierarchicalIdentifier<'s>, VerboseError<'s>> {
-    let identifiers_parser = repeat_note((
-        identifier_parser,
-        constant_bit_select_parser,
-        token(Token::Period),
+    let identifiers_parser = repeat_note(terminated(
+        (
+            identifier_parser,
+            constant_bit_select_parser,
+            token(Token::Period),
+        ),
+        peek(identifier_parser),
     ));
     (
         opt_note((token(Token::DollarRoot), token(Token::Period))),
@@ -644,14 +647,17 @@ pub fn ps_parameter_identifier_parser<'s>(
     )
         .map(|(a, b)| PsParameterIdentifier::Scoped(a, b));
     let _generated_parser = (
-        repeat_note((
-            generate_block_identifier_parser,
-            opt_note((
-                token(Token::Bracket),
-                constant_expression_parser,
-                token(Token::EBracket),
-            )),
-            token(Token::Period),
+        repeat_note(terminated(
+            (
+                generate_block_identifier_parser,
+                opt_note((
+                    token(Token::Bracket),
+                    constant_expression_parser,
+                    token(Token::EBracket),
+                )),
+                token(Token::Period),
+            ),
+            peek(parameter_identifier_parser),
         )),
         parameter_identifier_parser,
     )

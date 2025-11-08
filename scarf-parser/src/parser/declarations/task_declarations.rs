@@ -6,7 +6,7 @@
 use crate::*;
 use scarf_syntax::*;
 use winnow::Parser;
-use winnow::combinator::alt;
+use winnow::combinator::{alt, peek, terminated};
 use winnow::error::ModalResult;
 
 pub fn task_declaration_parser<'s>(
@@ -99,7 +99,7 @@ pub fn tf_port_item_parser<'s>(
         attribute_instance_vec_parser,
         opt_note(tf_port_direction_parser),
         opt_note(token(Token::Var)),
-        data_type_or_implicit_parser,
+        data_type_or_implicit_parser_tf_port_item,
         opt_note((
             port_identifier_parser,
             repeat_note(variable_dimension_parser),
@@ -108,6 +108,38 @@ pub fn tf_port_item_parser<'s>(
     )
         .map(|(a, b, c, d, e)| TfPortItem(a, b, c, d, e))
         .parse_next(input)
+}
+
+fn data_type_or_implicit_parser_tf_port_item<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<DataTypeOrImplicit<'s>, VerboseError<'s>> {
+    alt((
+        terminated(
+            data_type_parser,
+            peek((
+                opt_note((
+                    port_identifier_parser,
+                    repeat_note(variable_dimension_parser),
+                    opt_note((token(Token::Eq), expression_parser)),
+                )),
+                alt((token(Token::Comma), token(Token::EParen))),
+            )),
+        )
+        .map(|a| DataTypeOrImplicit::DataType(a)),
+        terminated(
+            implicit_data_type_parser,
+            peek((
+                opt_note((
+                    port_identifier_parser,
+                    repeat_note(variable_dimension_parser),
+                    opt_note((token(Token::Eq), expression_parser)),
+                )),
+                alt((token(Token::Comma), token(Token::EParen))),
+            )),
+        )
+        .map(|a| DataTypeOrImplicit::ImplicitDataType(a)),
+    ))
+    .parse_next(input)
 }
 
 pub fn tf_port_direction_parser<'s>(
@@ -132,12 +164,24 @@ pub fn tf_port_declaration_parser<'s>(
         attribute_instance_vec_parser,
         tf_port_direction_parser,
         opt_note(token(Token::Var)),
-        data_type_or_implicit_parser,
+        data_type_or_implicit_parser_tf_port_declaration,
         list_of_tf_variable_identifiers_parser,
         token(Token::SColon),
     )
         .map(|(a, b, c, d, e, f)| TfPortDeclaration(a, b, c, d, e, f))
         .parse_next(input)
+}
+
+fn data_type_or_implicit_parser_tf_port_declaration<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<DataTypeOrImplicit<'s>, VerboseError<'s>> {
+    alt((
+        terminated(data_type_parser, peek(port_identifier_parser))
+            .map(|a| DataTypeOrImplicit::DataType(a)),
+        terminated(implicit_data_type_parser, peek(port_identifier_parser))
+            .map(|a| DataTypeOrImplicit::ImplicitDataType(a)),
+    ))
+    .parse_next(input)
 }
 
 pub fn task_prototype_parser<'s>(

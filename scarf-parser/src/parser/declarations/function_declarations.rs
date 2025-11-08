@@ -7,17 +7,29 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::alt;
+use winnow::combinator::{alt, peek, terminated};
 use winnow::token::any;
 
 pub fn function_data_type_or_implicit_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<FunctionDataTypeOrImplicit<'s>, VerboseError<'s>> {
     alt((
-        data_type_or_void_parser
-            .map(|a| FunctionDataTypeOrImplicit::DataType(Box::new(a))),
-        implicit_data_type_parser
-            .map(|a| FunctionDataTypeOrImplicit::Implicit(Box::new(a))),
+        terminated(
+            data_type_or_void_parser,
+            peek((
+                opt_note(interface_identifier_or_class_scope_parser),
+                function_identifier_parser,
+            )),
+        )
+        .map(|a| FunctionDataTypeOrImplicit::DataType(Box::new(a))),
+        terminated(
+            implicit_data_type_parser,
+            peek((
+                opt_note(interface_identifier_or_class_scope_parser),
+                function_identifier_parser,
+            )),
+        )
+        .map(|a| FunctionDataTypeOrImplicit::Implicit(Box::new(a))),
     ))
     .parse_next(input)
 }

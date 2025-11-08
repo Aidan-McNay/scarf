@@ -7,7 +7,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::alt;
+use winnow::combinator::{alt, peek, terminated};
 
 pub fn let_declaration_parser<'s>(
     input: &mut Tokens<'s>,
@@ -65,9 +65,24 @@ pub fn let_formal_type_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<LetFormalType<'s>, VerboseError<'s>> {
     alt((
-        data_type_or_implicit_parser
+        data_type_or_implicit_parser_let_formal_type
             .map(|a| LetFormalType::DataTypeOrImplicit(Box::new(a))),
         token(Token::Untyped).map(|a| LetFormalType::Untyped(Box::new(a))),
+    ))
+    .parse_next(input)
+}
+
+fn data_type_or_implicit_parser_let_formal_type<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<DataTypeOrImplicit<'s>, VerboseError<'s>> {
+    alt((
+        terminated(data_type_parser, peek(formal_port_identifier_parser))
+            .map(|a| DataTypeOrImplicit::DataType(a)),
+        terminated(
+            implicit_data_type_parser,
+            peek(formal_port_identifier_parser),
+        )
+        .map(|a| DataTypeOrImplicit::ImplicitDataType(a)),
     ))
     .parse_next(input)
 }

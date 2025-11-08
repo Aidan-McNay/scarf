@@ -7,7 +7,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::alt;
+use winnow::combinator::{alt, peek, terminated};
 use winnow::stream::Stream;
 
 pub fn concurrent_assertion_item_parser<'s>(
@@ -160,7 +160,10 @@ pub fn property_list_of_arguments_parser<'s>(
 ) -> ModalResult<PropertyListOfArguments<'s>, VerboseError<'s>> {
     let _partial_identifier_parser = (
         opt_note(property_actual_arg_parser),
-        repeat_note((token(Token::Comma), opt_note(property_actual_arg_parser))),
+        repeat_note((
+            token(Token::Comma),
+            opt_note(property_actual_arg_parser),
+        )),
         repeat_note((
             token(Token::Comma),
             token(Token::Period),
@@ -809,11 +812,26 @@ pub fn sequence_formal_type_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<SequenceFormalType<'s>, VerboseError<'s>> {
     alt((
-        data_type_or_implicit_parser
+        data_type_or_implicit_parser_sequence_formal_type
             .map(|a| SequenceFormalType::DataTypeOrImplicit(Box::new(a))),
         token(Token::Sequence)
             .map(|a| SequenceFormalType::Sequence(Box::new(a))),
         token(Token::Untyped).map(|a| SequenceFormalType::Untyped(Box::new(a))),
+    ))
+    .parse_next(input)
+}
+
+fn data_type_or_implicit_parser_sequence_formal_type<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<DataTypeOrImplicit<'s>, VerboseError<'s>> {
+    alt((
+        terminated(data_type_parser, peek(formal_port_identifier_parser))
+            .map(|a| DataTypeOrImplicit::DataType(a)),
+        terminated(
+            implicit_data_type_parser,
+            peek(formal_port_identifier_parser),
+        )
+        .map(|a| DataTypeOrImplicit::ImplicitDataType(a)),
     ))
     .parse_next(input)
 }
@@ -842,8 +860,9 @@ fn basic_sequence_expr_parser<'s>(
         repeat_note((cycle_delay_range_parser, sequence_expr_parser)),
     )
         .map(|(a, b, c)| SequenceExpr::StartDelay(Box::new((a, b, c))));
-    let _expr_parser = (expression_or_dist_parser, opt_note(boolean_abbrev_parser))
-        .map(|(a, b)| SequenceExpr::Expr(Box::new((a, b))));
+    let _expr_parser =
+        (expression_or_dist_parser, opt_note(boolean_abbrev_parser))
+            .map(|(a, b)| SequenceExpr::Expr(Box::new((a, b))));
     let _paren_parser = (
         token(Token::Paren),
         sequence_expr_parser,
@@ -1089,7 +1108,10 @@ pub fn sequence_list_of_arguments_parser<'s>(
 ) -> ModalResult<SequenceListOfArguments<'s>, VerboseError<'s>> {
     let _partial_identifier_parser = (
         opt_note(sequence_actual_arg_parser),
-        repeat_note((token(Token::Comma), opt_note(sequence_actual_arg_parser))),
+        repeat_note((
+            token(Token::Comma),
+            opt_note(sequence_actual_arg_parser),
+        )),
         repeat_note((
             token(Token::Comma),
             token(Token::Period),

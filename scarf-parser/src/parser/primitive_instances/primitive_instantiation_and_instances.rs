@@ -7,7 +7,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::alt;
+use winnow::combinator::{alt, peek, terminated};
 
 pub fn gate_instantiation_parser<'s>(
     input: &mut Tokens<'s>,
@@ -69,10 +69,7 @@ pub fn gate_instantiation_parser<'s>(
         pass_en_switchtype_parser,
         opt_note(delay2_parser),
         pass_enable_switch_instance_parser,
-        repeat_note((
-            token(Token::Comma),
-            pass_enable_switch_instance_parser,
-        )),
+        repeat_note((token(Token::Comma), pass_enable_switch_instance_parser)),
         token(Token::SColon),
     )
         .map(|(a, b, c, d, e)| {
@@ -201,7 +198,13 @@ pub fn n_output_gate_instance_parser<'s>(
         opt_note(name_of_instance_parser),
         token(Token::Paren),
         output_terminal_parser,
-        repeat_note((token(Token::Comma), output_terminal_parser)),
+        repeat_note((
+            terminated(
+                token(Token::Comma),
+                peek((output_terminal_parser, token(Token::Comma))),
+            ),
+            output_terminal_parser,
+        )),
         token(Token::Comma),
         input_terminal_parser,
         token(Token::EParen),

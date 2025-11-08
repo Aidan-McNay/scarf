@@ -7,7 +7,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::alt;
+use winnow::combinator::{alt, peek, terminated};
 
 pub fn randsequence_statement_parser<'s>(
     input: &mut Tokens<'s>,
@@ -29,7 +29,10 @@ pub fn rs_production_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<RsProduction<'s>, VerboseError<'s>> {
     (
-        opt_note(data_type_or_void_parser),
+        opt_note(terminated(
+            data_type_or_void_parser,
+            peek(rs_production_identifier_parser),
+        )),
         rs_production_identifier_parser,
         opt_note((
             token(Token::Paren),
@@ -68,7 +71,11 @@ pub fn rs_production_list_parser<'s>(
     let _join_parser = (
         token(Token::Rand),
         token(Token::Join),
-        opt_note((token(Token::Paren), expression_parser, token(Token::EParen))),
+        opt_note((
+            token(Token::Paren),
+            expression_parser,
+            token(Token::EParen),
+        )),
         rs_production_item_parser,
         rs_production_item_parser,
         repeat_note(rs_production_item_parser),

@@ -7,7 +7,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::alt;
+use winnow::combinator::{alt, peek, terminated};
 
 pub fn covergroup_declaration_parser<'s>(
     input: &mut Tokens<'s>,
@@ -183,7 +183,7 @@ pub fn cover_point_parser<'s>(
 ) -> ModalResult<CoverPoint<'s>, VerboseError<'s>> {
     (
         opt_note((
-            opt_note(data_type_or_implicit_parser),
+            opt_note(data_type_or_implicit_parser_cover_point),
             cover_point_identifier_parser,
             token(Token::Colon),
         )),
@@ -199,6 +199,21 @@ pub fn cover_point_parser<'s>(
     )
         .map(|(a, b, c, d, e)| CoverPoint(a, b, c, d, e))
         .parse_next(input)
+}
+
+fn data_type_or_implicit_parser_cover_point<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<DataTypeOrImplicit<'s>, VerboseError<'s>> {
+    alt((
+        terminated(data_type_parser, peek(cover_point_identifier_parser))
+            .map(|a| DataTypeOrImplicit::DataType(a)),
+        terminated(
+            implicit_data_type_parser,
+            peek(cover_point_identifier_parser),
+        )
+        .map(|a| DataTypeOrImplicit::ImplicitDataType(a)),
+    ))
+    .parse_next(input)
 }
 
 pub fn bins_or_empty_parser<'s>(

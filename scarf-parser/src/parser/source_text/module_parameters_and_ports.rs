@@ -125,8 +125,8 @@ pub fn port_declaration_parser<'s>(
 pub fn port_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<Port<'s>, VerboseError<'s>> {
-    let _port_expression_parser =
-        opt_note(port_expression_parser).map(|a| Port::PortExpression(Box::new(a)));
+    let _port_expression_parser = opt_note(port_expression_parser)
+        .map(|a| Port::PortExpression(Box::new(a)));
     let _port_identifier_parser = (
         token(Token::Period),
         port_identifier_parser,
@@ -211,6 +211,7 @@ pub fn interface_port_header_parser<'s>(
 pub fn ansi_port_declaration_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<AnsiPortDeclaration<'s>, VerboseError<'s>> {
+    println!("Got here!");
     alt((
         ansi_net_port_declaration_parser
             .map(|a| AnsiPortDeclaration::NetPort(Box::new(a))),

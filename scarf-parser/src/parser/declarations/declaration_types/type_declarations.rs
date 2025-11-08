@@ -7,7 +7,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::alt;
+use winnow::combinator::{alt, peek, terminated};
 
 pub fn data_declaration_parser<'s>(
     input: &mut Tokens<'s>,
@@ -16,7 +16,7 @@ pub fn data_declaration_parser<'s>(
         opt_note(token(Token::Const)),
         opt_note(token(Token::Var)),
         opt_note(lifetime_parser),
-        data_type_or_implicit_parser,
+        data_type_or_implicit_parser_data_declaration,
         list_of_variable_decl_assignments_parser,
         token(Token::SColon),
     )
@@ -30,6 +30,21 @@ pub fn data_declaration_parser<'s>(
             .map(|a| DataDeclaration::PackageImport(Box::new(a))),
         nettype_declaration_parser
             .map(|a| DataDeclaration::Nettype(Box::new(a))),
+    ))
+    .parse_next(input)
+}
+
+fn data_type_or_implicit_parser_data_declaration<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<DataTypeOrImplicit<'s>, VerboseError<'s>> {
+    alt((
+        terminated(data_type_parser, peek(variable_decl_assignment_parser))
+            .map(|a| DataTypeOrImplicit::DataType(a)),
+        terminated(
+            implicit_data_type_parser,
+            peek(variable_decl_assignment_parser),
+        )
+        .map(|a| DataTypeOrImplicit::ImplicitDataType(a)),
     ))
     .parse_next(input)
 }
@@ -125,7 +140,7 @@ pub fn net_declaration_parser<'s>(
         net_type_parser,
         opt_note(_drive_or_charge_strength_parser),
         opt_note(_vectored_or_scalared_parser),
-        data_type_or_implicit_parser,
+        data_type_or_implicit_parser_net_declaration,
         opt_note(delay3_parser),
         list_of_net_decl_assignments_parser,
         token(Token::SColon),
@@ -161,6 +176,24 @@ pub fn net_declaration_parser<'s>(
         _net_type_parser,
         _nettype_identifier_parser,
         _interconnect_parser,
+    ))
+    .parse_next(input)
+}
+
+fn data_type_or_implicit_parser_net_declaration<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<DataTypeOrImplicit<'s>, VerboseError<'s>> {
+    alt((
+        terminated(
+            data_type_parser,
+            peek((opt_note(delay3_parser), net_decl_assignment_parser)),
+        )
+        .map(|a| DataTypeOrImplicit::DataType(a)),
+        terminated(
+            implicit_data_type_parser,
+            peek((opt_note(delay3_parser), net_decl_assignment_parser)),
+        )
+        .map(|a| DataTypeOrImplicit::ImplicitDataType(a)),
     ))
     .parse_next(input)
 }

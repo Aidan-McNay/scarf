@@ -9,47 +9,42 @@ use winnow::combinator::trace;
 use winnow::error::{ErrMode, ParserError};
 use winnow::stream::{Accumulate, Stream};
 
-pub fn repeat_note<'s, Output, Accumulator, ParseNext>(
+pub fn repeat_note<'s, Output, ParseNext>(
     parser: ParseNext,
-) -> RepeatNote<'s, ParseNext, Output, Accumulator>
+) -> RepeatNote<'s, ParseNext, Output>
 where
-    Accumulator: Accumulate<Output>,
     ParseNext: Parser<Tokens<'s>, Output, ErrMode<VerboseError<'s>>>,
 {
     RepeatNote {
         parser,
         i: Default::default(),
         o: Default::default(),
-        c: Default::default(),
     }
 }
 
-pub struct RepeatNote<'s, P, O, C>
+pub struct RepeatNote<'s, P, O>
 where
     P: Parser<Tokens<'s>, O, ErrMode<VerboseError<'s>>>,
-    C: Accumulate<O>,
 {
     parser: P,
     i: core::marker::PhantomData<Tokens<'s>>,
     o: core::marker::PhantomData<O>,
-    c: core::marker::PhantomData<C>,
 }
 
-impl<'s, P, O, C> Parser<Tokens<'s>, C, ErrMode<VerboseError<'s>>>
-    for RepeatNote<'s, P, O, C>
+impl<'s, P, O> Parser<Tokens<'s>, Vec<O>, ErrMode<VerboseError<'s>>>
+    for RepeatNote<'s, P, O>
 where
     P: Parser<Tokens<'s>, O, ErrMode<VerboseError<'s>>>,
-    C: Accumulate<O>,
 {
     #[inline(always)]
     fn parse_next(
         &mut self,
         i: &mut Tokens<'s>,
-    ) -> Result<C, ErrMode<VerboseError<'s>>> {
+    ) -> Result<Vec<O>, ErrMode<VerboseError<'s>>> {
         trace("repeat_strict", move |i: &mut Tokens<'s>| {
             fold_repeat0_(
                 &mut self.parser,
-                &mut || C::initial(None),
+                &mut || Vec::initial(None),
                 &mut |mut acc, o| {
                     acc.accumulate(o);
                     acc

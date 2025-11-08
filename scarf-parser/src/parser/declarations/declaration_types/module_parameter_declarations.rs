@@ -7,14 +7,14 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::alt;
+use winnow::combinator::{alt, peek, terminated};
 
 pub fn local_parameter_declaration_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<LocalParameterDeclaration<'s>, VerboseError<'s>> {
     let data_parameter_parser = (
         token(Token::Localparam),
-        data_type_or_implicit_parser,
+        data_type_or_implicit_parser_local_parameter_declaration,
         list_of_param_assignments_parser,
     )
         .map(|(a, b, c)| LocalParameterDeclaration::DataParameter(a, b, c));
@@ -24,12 +24,24 @@ pub fn local_parameter_declaration_parser<'s>(
     alt((data_parameter_parser, type_parameter_parser)).parse_next(input)
 }
 
+fn data_type_or_implicit_parser_local_parameter_declaration<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<DataTypeOrImplicit<'s>, VerboseError<'s>> {
+    alt((
+        terminated(data_type_parser, peek(param_assignment_parser))
+            .map(|a| DataTypeOrImplicit::DataType(a)),
+        terminated(implicit_data_type_parser, peek(param_assignment_parser))
+            .map(|a| DataTypeOrImplicit::ImplicitDataType(a)),
+    ))
+    .parse_next(input)
+}
+
 pub fn parameter_declaration_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<ParameterDeclaration<'s>, VerboseError<'s>> {
     let data_parameter_parser = (
         token(Token::Parameter),
-        data_type_or_implicit_parser,
+        data_type_or_implicit_parser_parameter_declaration,
         list_of_param_assignments_parser,
     )
         .map(|(a, b, c)| ParameterDeclaration::DataParameter(a, b, c));
@@ -37,6 +49,18 @@ pub fn parameter_declaration_parser<'s>(
         (token(Token::Parameter), type_parameter_declaration_parser)
             .map(|(a, b)| ParameterDeclaration::TypeParameter(a, b));
     alt((data_parameter_parser, type_parameter_parser)).parse_next(input)
+}
+
+fn data_type_or_implicit_parser_parameter_declaration<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<DataTypeOrImplicit<'s>, VerboseError<'s>> {
+    alt((
+        terminated(data_type_parser, peek(param_assignment_parser))
+            .map(|a| DataTypeOrImplicit::DataType(a)),
+        terminated(implicit_data_type_parser, peek(param_assignment_parser))
+            .map(|a| DataTypeOrImplicit::ImplicitDataType(a)),
+    ))
+    .parse_next(input)
 }
 
 pub fn type_parameter_declaration_parser<'s>(
