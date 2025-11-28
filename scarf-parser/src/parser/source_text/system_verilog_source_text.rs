@@ -9,12 +9,6 @@ use winnow::ModalResult;
 use winnow::Parser;
 use winnow::combinator::alt;
 
-pub(crate) fn attribute_instance_vec_parser<'s>(
-    input: &mut Tokens<'s>,
-) -> ModalResult<Vec<AttributeInstance<'s>>, VerboseError<'s>> {
-    repeat_note(attribute_instance_parser).parse_next(input)
-}
-
 pub fn source_text_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<SourceText<'s>, VerboseError<'s>> {

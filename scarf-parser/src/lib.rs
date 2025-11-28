@@ -5,11 +5,13 @@
 
 pub mod lexer;
 pub mod parser;
+pub mod preprocessor;
 pub use ariadne::{Report, Source};
 use lexer::*;
 pub use lexer::{Span, Token, dump_lex, lex, report_lex_errors};
 use parser::*;
-pub use parser::{parse, report_parse_errors};
+pub use parser::{SpannedToken, VerboseError, parse, report_parse_errors};
+pub use preprocessor::*;
 use winnow::Parser;
 use winnow::stream::TokenSlice;
 #[cfg(test)]

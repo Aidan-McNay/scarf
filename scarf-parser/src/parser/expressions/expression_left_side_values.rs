@@ -61,7 +61,7 @@ pub fn variable_lvalue_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<VariableLvalue<'s>, VerboseError<'s>> {
     let _selection_variable_lvalue_parser = (
-        implicit_class_handle_or_package_scope_parser,
+        opt_note(implicit_class_handle_or_package_scope_parser),
         hierarchical_variable_identifier_parser,
         select_parser,
     )

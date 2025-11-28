@@ -23,6 +23,12 @@ pub fn attribute_instance_parser<'s>(
         .parse_next(input)
 }
 
+pub(crate) fn attribute_instance_vec_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<Vec<AttributeInstance<'s>>, VerboseError<'s>> {
+    repeat_note(attribute_instance_parser).parse_next(input)
+}
+
 pub fn attr_spec_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<AttrSpec<'s>, VerboseError<'s>> {

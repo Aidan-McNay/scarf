@@ -582,10 +582,10 @@ pub fn ps_or_hierarchical_net_identifier_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<PsOrHierarchicalNetIdentifier<'s>, VerboseError<'s>> {
     alt((
-        (opt_note(package_scope_parser), net_identifier_parser)
-            .map(|(a, b)| PsOrHierarchicalNetIdentifier::PackageScope(a, b)),
         hierarchical_net_identifier_parser
             .map(|a| PsOrHierarchicalNetIdentifier::Hierarchical(a)),
+        (opt_note(package_scope_parser), net_identifier_parser)
+            .map(|(a, b)| PsOrHierarchicalNetIdentifier::PackageScope(a, b)),
     ))
     .parse_next(input)
 }
@@ -594,11 +594,11 @@ pub fn ps_or_hierarchical_property_identifier_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<PsOrHierarchicalPropertyIdentifier<'s>, VerboseError<'s>> {
     alt((
+        hierarchical_property_identifier_parser
+            .map(|a| PsOrHierarchicalPropertyIdentifier::Hierarchical(a)),
         (opt_note(package_scope_parser), property_identifier_parser).map(
             |(a, b)| PsOrHierarchicalPropertyIdentifier::PackageScope(a, b),
         ),
-        hierarchical_property_identifier_parser
-            .map(|a| PsOrHierarchicalPropertyIdentifier::Hierarchical(a)),
     ))
     .parse_next(input)
 }
@@ -607,11 +607,11 @@ pub fn ps_or_hierarchical_sequence_identifier_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<PsOrHierarchicalSequenceIdentifier<'s>, VerboseError<'s>> {
     alt((
+        hierarchical_sequence_identifier_parser
+            .map(|a| PsOrHierarchicalSequenceIdentifier::Hierarchical(a)),
         (opt_note(package_scope_parser), sequence_identifier_parser).map(
             |(a, b)| PsOrHierarchicalSequenceIdentifier::PackageScope(a, b),
         ),
-        hierarchical_sequence_identifier_parser
-            .map(|a| PsOrHierarchicalSequenceIdentifier::Hierarchical(a)),
     ))
     .parse_next(input)
 }
@@ -620,10 +620,10 @@ pub fn ps_or_hierarchical_tf_identifier_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<PsOrHierarchicalTfIdentifier<'s>, VerboseError<'s>> {
     alt((
-        (opt_note(package_scope_parser), tf_identifier_parser)
-            .map(|(a, b)| PsOrHierarchicalTfIdentifier::PackageScope(a, b)),
         hierarchical_tf_identifier_parser
             .map(|a| PsOrHierarchicalTfIdentifier::Hierarchical(a)),
+        (opt_note(package_scope_parser), tf_identifier_parser)
+            .map(|(a, b)| PsOrHierarchicalTfIdentifier::PackageScope(a, b)),
     ))
     .parse_next(input)
 }

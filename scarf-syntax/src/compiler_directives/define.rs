@@ -1,7 +1,7 @@
 // =======================================================================
-// text_macro.rs
+// define.rs
 // =======================================================================
-// Syntax for text macros
+// Syntax for preprocessor definitions
 
 use crate::*;
 
@@ -9,7 +9,7 @@ use crate::*;
 pub struct TextMacroDefinition<'a>(
     pub Span, // `define
     pub TextMacroName<'a>,
-    pub MacroText,
+    pub Option<MacroText>,
 );
 
 #[derive(Clone, Debug, PartialEq)]

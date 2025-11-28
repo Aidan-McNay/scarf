@@ -8,7 +8,7 @@ use lexer::Span;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::alt;
+use winnow::combinator::{alt, not, peek, terminated};
 use winnow::token::any;
 
 pub fn constant_primary_parser<'s>(
@@ -86,7 +86,15 @@ pub fn constant_primary_parser<'s>(
     let _null_parser =
         token(Token::Null).map(|a| ConstantPrimary::Null(Box::new(a)));
     alt((
+        _null_parser,
+        _assignment_pattern_expression_parser,
+        _cast_parser,
         _primary_literal_parser,
+        _mintypmax_parser,
+        terminated(
+            _function_call_parser,
+            peek(not(alt((token(Token::Bracket), token(Token::Period))))),
+        ),
         _ps_parameter_parser,
         _specparam_parser,
         _genvar_parser,
@@ -94,13 +102,8 @@ pub fn constant_primary_parser<'s>(
         _empty_unpacked_array_concatenation_parser,
         _concatenation_parser,
         _multiple_concatenation_parser,
-        _function_call_parser,
         _let_expression_parser,
-        _mintypmax_parser,
-        _cast_parser,
-        _assignment_pattern_expression_parser,
         _type_reference_parser,
-        _null_parser,
     ))
     .parse_next(input)
 }
@@ -191,16 +194,23 @@ pub fn primary_parser<'s>(
         token(Token::Dollar).map(|a| Primary::This(Box::new(a)));
     let _null_parser = token(Token::Null).map(|a| Primary::This(Box::new(a)));
     alt((
+        terminated(
+            _hierarchical_identifier_parser,
+            peek(not(alt((
+                token(Token::Paren),
+                token(Token::Period),
+                token(Token::With),
+            )))),
+        ),
+        _assignment_pattern_expression_parser,
+        _cast_parser,
         _primary_literal_parser,
-        _hierarchical_identifier_parser,
         _empty_unpacked_array_concatenation_parser,
         _concatenation_parser,
         _multiple_concatenation_parser,
         _function_subroutine_call_parser,
         _let_expression_parser,
         _mintypmax_parser,
-        _cast_parser,
-        _assignment_pattern_expression_parser,
         _streaming_concatenation_parser,
         _sequence_method_call_parser,
         _this_parser,
@@ -263,8 +273,8 @@ pub fn primary_literal_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<PrimaryLiteral<'s>, VerboseError<'s>> {
     alt((
-        number_parser.map(|a| PrimaryLiteral::Number(Box::new(a))),
         time_literal_parser.map(|a| PrimaryLiteral::TimeLiteral(Box::new(a))),
+        number_parser.map(|a| PrimaryLiteral::Number(Box::new(a))),
         unbased_unsized_literal_parser
             .map(|a| PrimaryLiteral::UnbasedUnsizedLiteral(Box::new(a))),
         string_literal_parser
@@ -394,50 +404,23 @@ pub fn bit_select_parser<'s>(
     .parse_next(input)
 }
 
-fn member_select_parser<'s>(
-    input: &mut Tokens<'s>,
-) -> ModalResult<
-    (
-        (
-            Vec<(Metadata<'s>, MemberIdentifier<'s>, BitSelect<'s>)>,
-            Metadata<'s>,
-            MemberIdentifier<'s>,
-        ),
-        BitSelect<'s>,
-    ),
-    VerboseError<'s>,
-> {
-    let initial_result = (
-        token(Token::Period),
-        member_identifier_parser,
-        bit_select_parser,
-    )
-        .parse_next(input)?;
-    match member_select_parser(input) {
-        Ok(mut sub_expr) => {
-            sub_expr.0.0.push(initial_result);
-            Ok(sub_expr)
-        }
-        Err(_) => Ok((
-            (vec![], initial_result.0, initial_result.1),
-            initial_result.2,
-        )),
-    }
-}
-
 pub fn select_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<Select<'s>, VerboseError<'s>> {
     let _member_select_parser = (
-        member_select_parser,
-        opt_note((
-            token(Token::Bracket),
-            part_select_range_parser,
-            token(Token::EBracket),
+        repeat_note(terminated(
+            (
+                token(Token::Period),
+                member_identifier_parser,
+                bit_select_parser,
+            ),
+            peek(token(Token::Period)),
         )),
-    )
-        .map(|((a, b), c)| Select(Some(a), b, c));
-    let _no_member_select_parser = (
+        token(Token::Period),
+        member_identifier_parser,
+    );
+    (
+        opt_note(_member_select_parser),
         bit_select_parser,
         opt_note((
             token(Token::Bracket),
@@ -445,18 +428,28 @@ pub fn select_parser<'s>(
             token(Token::EBracket),
         )),
     )
-        .map(|(a, b)| Select(None, a, b));
-    alt((_member_select_parser, _no_member_select_parser)).parse_next(input)
+        .map(|(a, b, c)| Select(a, b, c))
+        .parse_next(input)
 }
 
 pub fn nonrange_select_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<NonrangeSelect<'s>, VerboseError<'s>> {
-    let _member_select_parser =
-        member_select_parser.map(|(a, b)| NonrangeSelect(Some(a), b));
-    let _no_member_select_parser =
-        bit_select_parser.map(|a| NonrangeSelect(None, a));
-    alt((_member_select_parser, _no_member_select_parser)).parse_next(input)
+    let _member_select_parser = (
+        repeat_note(terminated(
+            (
+                token(Token::Period),
+                member_identifier_parser,
+                bit_select_parser,
+            ),
+            peek(token(Token::Period)),
+        )),
+        token(Token::Period),
+        member_identifier_parser,
+    );
+    (opt_note(_member_select_parser), bit_select_parser)
+        .map(|(a, b)| NonrangeSelect(a, b))
+        .parse_next(input)
 }
 
 pub fn constant_bit_select_parser<'s>(
@@ -471,50 +464,23 @@ pub fn constant_bit_select_parser<'s>(
     .parse_next(input)
 }
 
-fn constant_member_select_parser<'s>(
-    input: &mut Tokens<'s>,
-) -> ModalResult<
-    (
-        (
-            Vec<(Metadata<'s>, MemberIdentifier<'s>, ConstantBitSelect<'s>)>,
-            Metadata<'s>,
-            MemberIdentifier<'s>,
-        ),
-        ConstantBitSelect<'s>,
-    ),
-    VerboseError<'s>,
-> {
-    let initial_result = (
-        token(Token::Period),
-        member_identifier_parser,
-        constant_bit_select_parser,
-    )
-        .parse_next(input)?;
-    match constant_member_select_parser(input) {
-        Ok(mut sub_expr) => {
-            sub_expr.0.0.push(initial_result);
-            Ok(sub_expr)
-        }
-        Err(_) => Ok((
-            (vec![], initial_result.0, initial_result.1),
-            initial_result.2,
-        )),
-    }
-}
-
 pub fn constant_select_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<ConstantSelect<'s>, VerboseError<'s>> {
     let _member_select_parser = (
-        constant_member_select_parser,
-        opt_note((
-            token(Token::Bracket),
-            constant_part_select_range_parser,
-            token(Token::EBracket),
+        repeat_note(terminated(
+            (
+                token(Token::Period),
+                member_identifier_parser,
+                constant_bit_select_parser,
+            ),
+            peek(token(Token::Period)),
         )),
-    )
-        .map(|((a, b), c)| ConstantSelect(Some(a), b, c));
-    let _no_member_select_parser = (
+        token(Token::Period),
+        member_identifier_parser,
+    );
+    (
+        opt_note(_member_select_parser),
         constant_bit_select_parser,
         opt_note((
             token(Token::Bracket),
@@ -522,8 +488,8 @@ pub fn constant_select_parser<'s>(
             token(Token::EBracket),
         )),
     )
-        .map(|(a, b)| ConstantSelect(None, a, b));
-    alt((_member_select_parser, _no_member_select_parser)).parse_next(input)
+        .map(|(a, b, c)| ConstantSelect(a, b, c))
+        .parse_next(input)
 }
 
 pub fn cast_parser<'s>(

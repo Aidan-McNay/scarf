@@ -96,7 +96,14 @@ fn constant_primary_parser_without_cast<'s>(
     let _null_parser =
         token(Token::Null).map(|a| ConstantPrimary::Null(Box::new(a)));
     alt((
+        _null_parser,
+        _assignment_pattern_expression_parser,
         _primary_literal_parser,
+        _mintypmax_parser,
+        terminated(
+            _function_call_parser,
+            peek(not(alt((token(Token::Bracket), token(Token::Period))))),
+        ),
         _ps_parameter_parser,
         _specparam_parser,
         _genvar_parser,
@@ -104,12 +111,8 @@ fn constant_primary_parser_without_cast<'s>(
         _empty_unpacked_array_concatenation_parser,
         _concatenation_parser,
         _multiple_concatenation_parser,
-        _function_call_parser,
         _let_expression_parser,
-        _mintypmax_parser,
-        _assignment_pattern_expression_parser,
         _type_reference_parser,
-        _null_parser,
     ))
     .parse_next(input)
 }
@@ -439,7 +442,8 @@ pub fn var_data_type_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<VarDataType<'s>, VerboseError<'s>> {
     alt((
-        data_type_parser.map(|a| VarDataType::Data(Box::new(a))),
+        terminated(data_type_parser, peek(variable_identifier_parser))
+            .map(|a| VarDataType::Data(Box::new(a))),
         (
             token(Token::Var),
             data_type_or_implicit_parser_var_data_type,

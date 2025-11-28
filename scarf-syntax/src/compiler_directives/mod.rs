@@ -5,13 +5,13 @@
 
 use crate::*;
 pub mod conditional_compilation;
+pub mod define;
 pub mod include;
 pub mod line;
-pub mod text_macro;
 pub use conditional_compilation::*;
+pub use define::*;
 pub use include::*;
 pub use line::*;
-pub use text_macro::*;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum CompilerDirective<'a> {

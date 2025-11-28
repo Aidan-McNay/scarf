@@ -124,7 +124,7 @@ pub enum GenerateBlock<'a> {
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum GenerateItem<'a> {
-    Module(Box<ModuleOrGenerateItem>),
-    Interface(Box<InterfaceOrGenerateItem>),
+    Module(Box<ModuleOrGenerateItem<'a>>),
+    Interface(Box<InterfaceOrGenerateItem<'a>>),
     Checker(Box<CheckerOrGenerateItem<'a>>),
 }

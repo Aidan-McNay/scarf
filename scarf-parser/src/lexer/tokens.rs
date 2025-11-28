@@ -8,7 +8,7 @@ use logos::Logos;
 use std::fmt;
 
 #[derive(Logos, Debug, Clone, PartialEq, Eq, Copy)]
-#[logos(skip r"[ \r\t\f]+")]
+#[logos(skip r"[ \t\f]+")]
 #[logos(error = String)]
 pub enum Token<'a> {
     Error,
@@ -823,6 +823,11 @@ pub enum Token<'a> {
     StringLiteral(&'a str),
     TripleQuoteStringLiteral(&'a str), // Created from start and end in post-processing
     #[token("\n")]
+    #[token("\r")]
+    #[token("\r\n")]
+    #[token("\u{0085}")]
+    #[token("\u{2028}")]
+    #[token("\u{2029}")]
     Newline,
 }
 

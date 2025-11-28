@@ -48,7 +48,7 @@ pub enum ImplicitClassHandleOrPackageScope<'a> {
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct SelectionVariableLvalue<'a>(
-    pub ImplicitClassHandleOrPackageScope<'a>,
+    pub Option<ImplicitClassHandleOrPackageScope<'a>>,
     pub HierarchicalVariableIdentifier<'a>,
     pub Select<'a>,
 );

@@ -907,7 +907,6 @@ fn sequence_expr_bp_parser<'s>(
     must_consume_and_or: bool,
 ) -> ModalResult<SequenceExpr<'s>, VerboseError<'s>> {
     let mut lhs = alt((
-        basic_sequence_expr_parser,
         (
             expression_or_dist_parser,
             token(Token::Throughout),
@@ -920,6 +919,7 @@ fn sequence_expr_bp_parser<'s>(
             },
         )
             .map(|(a, b, c)| SequenceExpr::Throughout(Box::new((a, b, c)))),
+        basic_sequence_expr_parser,
     ))
     .parse_next(input)?;
     let mut checkpoint = input.checkpoint();

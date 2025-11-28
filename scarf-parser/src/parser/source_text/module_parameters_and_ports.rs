@@ -211,7 +211,6 @@ pub fn interface_port_header_parser<'s>(
 pub fn ansi_port_declaration_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<AnsiPortDeclaration<'s>, VerboseError<'s>> {
-    println!("Got here!");
     alt((
         ansi_net_port_declaration_parser
             .map(|a| AnsiPortDeclaration::NetPort(Box::new(a))),
@@ -227,11 +226,11 @@ pub fn ansi_net_port_declaration_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<AnsiNetPortDeclaration<'s>, VerboseError<'s>> {
     let net_or_interface_port_header_parser = alt((
-        net_port_header_parser
-            .map(|a| NetOrInterfacePortHeader::NetPortHeader(Box::new(a))),
         interface_port_header_parser.map(|a| {
             NetOrInterfacePortHeader::InterfacePortHeader(Box::new(a))
         }),
+        net_port_header_parser
+            .map(|a| NetOrInterfacePortHeader::NetPortHeader(Box::new(a))),
     ));
     (
         opt_note(net_or_interface_port_header_parser),

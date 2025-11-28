@@ -41,10 +41,7 @@ pub fn list_of_parameter_value_assignments_parser<'s>(
 ) -> ModalResult<ListOfParameterValueAssignments<'s>, VerboseError<'s>> {
     let _ordered_ports_parser = (
         ordered_parameter_assignment_parser,
-        repeat_note((
-            token(Token::Comma),
-            ordered_parameter_assignment_parser,
-        )),
+        repeat_note((token(Token::Comma), ordered_parameter_assignment_parser)),
     )
         .map(|(a, b)| {
             ListOfParameterValueAssignments::Ordered(Box::new((a, b)))
@@ -116,7 +113,7 @@ pub fn list_of_port_connections_parser<'s>(
         repeat_note((token(Token::Comma), named_port_connection_parser)),
     )
         .map(|(a, b)| ListOfPortConnections::Named(Box::new((a, b))));
-    alt((_ordered_ports_parser, _named_ports_parser)).parse_next(input)
+    alt((_named_ports_parser, _ordered_ports_parser)).parse_next(input)
 }
 
 pub fn ordered_port_connection_parser<'s>(
