@@ -10,6 +10,18 @@ pub use conditional_compilation::*;
 pub use configs::*;
 use std::iter::Peekable;
 
+pub(crate) trait Pushable<T> {
+    fn push_element(&mut self, item: T);
+}
+
+impl<T> Pushable<T> for Option<&mut Vec<T>> {
+    fn push_element(&mut self, item: T) {
+        if let Some(inner_vec) = self {
+            inner_vec.push(item);
+        }
+    }
+}
+
 pub enum PreprocessorError<'a> {
     Endif(Span),
     NoEndif(Token<'a>, Span),
@@ -59,68 +71,35 @@ impl<'s> From<PreprocessorError<'s>> for VerboseError<'s> {
 
 pub fn preprocess<'s>(
     src: &mut Peekable<impl Iterator<Item = SpannedToken<'s>>>,
-    dest: &mut Vec<SpannedToken<'s>>,
+    dest: &mut Option<&mut Vec<SpannedToken<'s>>>,
     configs: &mut PreprocessConfigs,
-    keep_directives: bool,
 ) -> Result<(), PreprocessorError<'s>> {
     while let Some(spanned_token) = src.next() {
         match spanned_token.0 {
             Token::DirUndefineall => {
                 configs.undefineall();
-                if keep_directives {
-                    dest.push(spanned_token)
-                }
             }
             Token::DirIfdef => {
                 let ifdef_span = spanned_token.1.clone();
-                if keep_directives {
-                    dest.push(spanned_token);
-                }
-                preprocess_ifdef(
-                    src,
-                    dest,
-                    configs,
-                    keep_directives,
-                    ifdef_span,
-                    true,
-                )?;
+                preprocess_ifdef(src, dest, configs, ifdef_span, true)?;
             }
             Token::DirIfndef => {
                 let ifndef_span = spanned_token.1.clone();
-                if keep_directives {
-                    dest.push(spanned_token);
-                }
-                preprocess_ifdef(
-                    src,
-                    dest,
-                    configs,
-                    keep_directives,
-                    ifndef_span,
-                    false,
-                )?;
+                preprocess_ifdef(src, dest, configs, ifndef_span, false)?;
             }
             Token::DirEndif => {
                 let err_span = spanned_token.1.clone();
-                if keep_directives {
-                    dest.push(spanned_token);
-                }
                 return Err(PreprocessorError::Endif(err_span));
             }
             Token::DirElsif => {
                 let err_span = spanned_token.1.clone();
-                if keep_directives {
-                    dest.push(spanned_token);
-                }
                 return Err(PreprocessorError::Elsif(err_span));
             }
             Token::DirElse => {
                 let err_span = spanned_token.1.clone();
-                if keep_directives {
-                    dest.push(spanned_token);
-                }
                 return Err(PreprocessorError::Else(err_span));
             }
-            _ => dest.push(spanned_token),
+            _ => dest.push_element(spanned_token),
         }
     }
     Ok(())

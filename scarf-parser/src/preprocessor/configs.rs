@@ -20,6 +20,7 @@ pub struct Define<'a> {
 
 #[derive(Clone)]
 pub enum DefineBody<'a> {
+    Empty(),
     Text(Vec<SpannedToken<'a>>),
     Function(DefineFunction<'a>),
 }

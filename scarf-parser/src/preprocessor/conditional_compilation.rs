@@ -10,16 +10,12 @@ use std::iter::Peekable;
 
 fn get_ifdef_condition<'s>(
     src: &mut Peekable<impl Iterator<Item = SpannedToken<'s>>>,
-    dest: &mut Vec<SpannedToken<'s>>,
-    keep_directives: bool,
+    dest: &mut Option<&mut Vec<SpannedToken<'s>>>,
     ifdef_span: Span,
 ) -> Result<IfdefCondition<'s>, PreprocessorError<'s>> {
     let Some(spanned_token) = src.next() else {
         return Err(PreprocessorError::IncompleteDirective(ifdef_span));
     };
-    if keep_directives {
-        dest.push(spanned_token.clone());
-    }
     match spanned_token.0 {
         Token::SimpleIdentifier(id_str) => Ok(IfdefCondition::TextMacro(
             Box::new(TextMacroIdentifier(id_str, spanned_token.1)),
@@ -28,13 +24,8 @@ fn get_ifdef_condition<'s>(
             Box::new(TextMacroIdentifier(id_str, spanned_token.1)),
         )),
         Token::Paren => {
-            let ifdef_macro_expression = get_ifdef_macro_expression(
-                src,
-                dest,
-                keep_directives,
-                ifdef_span,
-                0,
-            )?;
+            let ifdef_macro_expression =
+                get_ifdef_macro_expression(src, dest, ifdef_span, 0)?;
             let Some(eparen_token) = src.next() else {
                 return Err(PreprocessorError::Error(VerboseError {
                     valid: true,
@@ -43,9 +34,6 @@ fn get_ifdef_condition<'s>(
                     expected: vec![Expectation::Token(Token::EParen)],
                 }));
             };
-            if keep_directives {
-                dest.push(eparen_token.clone());
-            }
             Ok(IfdefCondition::ParenMacro(Box::new((
                 spanned_token.1,
                 ifdef_macro_expression,
@@ -85,17 +73,13 @@ fn equivalence_operator_binding_power<'s>() -> (u8, u8) {
 
 fn get_ifdef_macro_expression<'s>(
     src: &mut Peekable<impl Iterator<Item = SpannedToken<'s>>>,
-    dest: &mut Vec<SpannedToken<'s>>,
-    keep_directives: bool,
+    dest: &mut Option<&mut Vec<SpannedToken<'s>>>,
     previous_span: Span,
     min_bp: u8,
 ) -> Result<IfdefMacroExpression<'s>, PreprocessorError<'s>> {
     let Some(spanned_token) = src.next() else {
         return Err(PreprocessorError::IncompleteDirective(previous_span));
     };
-    if keep_directives {
-        dest.push(spanned_token.clone());
-    }
     let mut lhs = match spanned_token.0 {
         Token::SimpleIdentifier(id_str) => IfdefMacroExpression::Text(
             Box::new(TextMacroIdentifier(id_str, spanned_token.1)),
@@ -107,7 +91,6 @@ fn get_ifdef_macro_expression<'s>(
             let negated_expr = get_ifdef_macro_expression(
                 src,
                 dest,
-                keep_directives,
                 previous_span.clone(),
                 255,
             )?;
@@ -166,14 +149,9 @@ fn get_ifdef_macro_expression<'s>(
             }
             _ => return Ok(lhs),
         };
-        dest.push(src.next().unwrap()); // Consume peeked token
-        let rhs = get_ifdef_macro_expression(
-            src,
-            dest,
-            keep_directives,
-            previous_span.clone(),
-            r_bp,
-        )?;
+        dest.push_element(src.next().unwrap()); // Consume peeked token
+        let rhs =
+            get_ifdef_macro_expression(src, dest, previous_span.clone(), r_bp)?;
         lhs = IfdefMacroExpression::Operator(Box::new((lhs, op, rhs)));
     }
 }
@@ -238,14 +216,12 @@ fn ifdef_expression_true<'s>(
 
 pub fn preprocess_ifdef<'s>(
     src: &mut Peekable<impl Iterator<Item = SpannedToken<'s>>>,
-    dest: &mut Vec<SpannedToken<'s>>,
+    dest: &mut Option<&mut Vec<SpannedToken<'s>>>,
     configs: &mut PreprocessConfigs,
-    keep_directives: bool,
     ifdef_span: Span,
     is_ifdef: bool, // False for ifndef
 ) -> Result<(), PreprocessorError<'s>> {
-    let ifdef_condition =
-        get_ifdef_condition(src, dest, keep_directives, ifdef_span.clone())?;
+    let ifdef_condition = get_ifdef_condition(src, dest, ifdef_span.clone())?;
     let mut valid_condition_found =
         ifdef_condition_true(ifdef_condition, configs) ^ !is_ifdef;
     let mut curr_condition_valid = valid_condition_found;
@@ -253,14 +229,14 @@ pub fn preprocess_ifdef<'s>(
         let output_dest = if curr_condition_valid {
             &mut *dest
         } else {
-            &mut vec![]
+            &mut None
         };
         let curr_configs = if curr_condition_valid {
             &mut *configs
         } else {
             &mut PreprocessConfigs::default()
         };
-        match preprocess(src, output_dest, curr_configs, keep_directives) {
+        match preprocess(src, output_dest, curr_configs) {
             Ok(()) => {
                 let conditional_token = if is_ifdef {
                     Token::DirIfdef
@@ -274,12 +250,8 @@ pub fn preprocess_ifdef<'s>(
             }
             Err(PreprocessorError::Endif(_)) => return Ok(()),
             Err(PreprocessorError::Elsif(elsif_span)) => {
-                let ifdef_condition = get_ifdef_condition(
-                    src,
-                    dest,
-                    keep_directives,
-                    elsif_span,
-                )?;
+                let ifdef_condition =
+                    get_ifdef_condition(src, dest, elsif_span)?;
                 if valid_condition_found {
                     curr_condition_valid = false;
                 } else {
@@ -291,21 +263,16 @@ pub fn preprocess_ifdef<'s>(
             }
             Err(PreprocessorError::Else(else_span)) => {
                 let output_dest = if !valid_condition_found {
-                    &mut *dest
+                    dest
                 } else {
-                    &mut vec![]
+                    &mut None
                 };
                 let curr_configs = if !valid_condition_found {
                     configs
                 } else {
                     &mut PreprocessConfigs::default()
                 };
-                match preprocess(
-                    src,
-                    output_dest,
-                    curr_configs,
-                    keep_directives,
-                ) {
+                match preprocess(src, output_dest, curr_configs) {
                     Ok(()) => {
                         return Err(PreprocessorError::NoEndif(
                             Token::DirElse,

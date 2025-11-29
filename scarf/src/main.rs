@@ -46,8 +46,21 @@ fn format(args: &FormatArgs) {
             }
             return;
         }
-        let parser_stream = lex_to_parse_stream(lexed_src);
-        let parsed_src = parse(&parser_stream[..]);
+        let token_stream = lex_to_parse_stream(lexed_src);
+        let mut preprocessed_stream: Vec<SpannedToken<'_>> = vec![];
+        let preprocess_result = preprocess(
+            &mut token_stream.into_iter().peekable(),
+            &mut Some(&mut preprocessed_stream),
+            &mut PreprocessConfigs::default(),
+        );
+        match preprocess_result {
+            Err(err) => {
+                let verbose_error: VerboseError<'_> = err.into();
+                println!("{:?}", verbose_error)
+            }
+            _ => (),
+        }
+        let parsed_src = parse(&preprocessed_stream);
         let parse_errors = report_parse_errors(&parsed_src, path);
         if !parse_errors.is_empty() {
             for report in parse_errors {
