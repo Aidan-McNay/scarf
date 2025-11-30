@@ -5,9 +5,11 @@
 
 pub mod conditional_compilation;
 pub mod configs;
+pub mod define;
 use crate::*;
 pub use conditional_compilation::*;
 pub use configs::*;
+pub use define::*;
 use std::iter::Peekable;
 
 pub(crate) trait Pushable<T> {
@@ -27,6 +29,7 @@ pub enum PreprocessorError<'a> {
     NoEndif(Token<'a>, Span),
     Elsif(Span),
     Else(Span),
+    NewlineInDefine(Span),
     IncompleteDirective(Span),
     Error(VerboseError<'a>),
 }
@@ -58,6 +61,14 @@ impl<'s> From<PreprocessorError<'s>> for VerboseError<'s> {
                 found: Some(Token::DirElse),
                 expected: vec![Expectation::Label("a previous `ifdef")],
             },
+            PreprocessorError::NewlineInDefine(newline_span) => VerboseError {
+                valid: true,
+                span: newline_span,
+                found: Some(Token::Newline),
+                expected: vec![Expectation::Label(
+                    "a complete define (internal error)",
+                )],
+            },
             PreprocessorError::IncompleteDirective(span) => VerboseError {
                 valid: true,
                 span: span,
@@ -72,12 +83,28 @@ impl<'s> From<PreprocessorError<'s>> for VerboseError<'s> {
 pub fn preprocess<'s>(
     src: &mut Peekable<impl Iterator<Item = SpannedToken<'s>>>,
     dest: &mut Option<&mut Vec<SpannedToken<'s>>>,
-    configs: &mut PreprocessConfigs,
+    configs: &mut PreprocessConfigs<'s>,
 ) -> Result<(), PreprocessorError<'s>> {
-    while let Some(spanned_token) = src.next() {
+    while let Some(mut spanned_token) = src.next() {
         match spanned_token.0 {
             Token::DirUndefineall => {
                 configs.undefineall();
+            }
+            Token::DirDefine => {
+                let define_span = spanned_token.1;
+                preprocess_define(src, configs, define_span)?;
+            }
+            Token::DirElse => {
+                let err_span = spanned_token.1.clone();
+                return Err(PreprocessorError::Else(err_span));
+            }
+            Token::DirElsif => {
+                let err_span = spanned_token.1.clone();
+                return Err(PreprocessorError::Elsif(err_span));
+            }
+            Token::DirEndif => {
+                let err_span = spanned_token.1.clone();
+                return Err(PreprocessorError::Endif(err_span));
             }
             Token::DirIfdef => {
                 let ifdef_span = spanned_token.1.clone();
@@ -87,17 +114,28 @@ pub fn preprocess<'s>(
                 let ifndef_span = spanned_token.1.clone();
                 preprocess_ifdef(src, dest, configs, ifndef_span, false)?;
             }
-            Token::DirEndif => {
-                let err_span = spanned_token.1.clone();
-                return Err(PreprocessorError::Endif(err_span));
-            }
-            Token::DirElsif => {
-                let err_span = spanned_token.1.clone();
-                return Err(PreprocessorError::Elsif(err_span));
-            }
-            Token::DirElse => {
-                let err_span = spanned_token.1.clone();
-                return Err(PreprocessorError::Else(err_span));
+            Token::Bslash if configs.in_define => loop {
+                match src.next() {
+                    None => dest.push_element(spanned_token),
+                    Some(next_token) => match next_token.0 {
+                        Token::Newline => dest.push_element(next_token),
+                        Token::Bslash => {
+                            dest.push_element(spanned_token);
+                            spanned_token = next_token;
+                            continue;
+                        }
+                        _ => {
+                            dest.push_element(spanned_token);
+                            dest.push_element(next_token)
+                        }
+                    },
+                };
+                break;
+            },
+            Token::Newline if configs.in_define => {
+                return Err(PreprocessorError::NewlineInDefine(
+                    spanned_token.1,
+                ));
             }
             _ => dest.push_element(spanned_token),
         }

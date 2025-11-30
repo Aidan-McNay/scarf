@@ -10,7 +10,6 @@ use std::iter::Peekable;
 
 fn get_ifdef_condition<'s>(
     src: &mut Peekable<impl Iterator<Item = SpannedToken<'s>>>,
-    dest: &mut Option<&mut Vec<SpannedToken<'s>>>,
     ifdef_span: Span,
 ) -> Result<IfdefCondition<'s>, PreprocessorError<'s>> {
     let Some(spanned_token) = src.next() else {
@@ -25,7 +24,7 @@ fn get_ifdef_condition<'s>(
         )),
         Token::Paren => {
             let ifdef_macro_expression =
-                get_ifdef_macro_expression(src, dest, ifdef_span, 0)?;
+                get_ifdef_macro_expression(src, ifdef_span, 0)?;
             let Some(eparen_token) = src.next() else {
                 return Err(PreprocessorError::Error(VerboseError {
                     valid: true,
@@ -45,7 +44,9 @@ fn get_ifdef_condition<'s>(
                 valid: true,
                 span: spanned_token.1,
                 found: Some(spanned_token.0),
-                expected: vec![Expectation::Label("an expression")],
+                expected: vec![Expectation::Label(
+                    "a preprocessor macro expression",
+                )],
             }));
         }
     }
@@ -73,7 +74,6 @@ fn equivalence_operator_binding_power<'s>() -> (u8, u8) {
 
 fn get_ifdef_macro_expression<'s>(
     src: &mut Peekable<impl Iterator<Item = SpannedToken<'s>>>,
-    dest: &mut Option<&mut Vec<SpannedToken<'s>>>,
     previous_span: Span,
     min_bp: u8,
 ) -> Result<IfdefMacroExpression<'s>, PreprocessorError<'s>> {
@@ -88,12 +88,8 @@ fn get_ifdef_macro_expression<'s>(
             Box::new(TextMacroIdentifier(id_str, spanned_token.1)),
         ),
         Token::Exclamation => {
-            let negated_expr = get_ifdef_macro_expression(
-                src,
-                dest,
-                previous_span.clone(),
-                255,
-            )?;
+            let negated_expr =
+                get_ifdef_macro_expression(src, previous_span.clone(), 255)?;
             IfdefMacroExpression::Not(Box::new((spanned_token.1, negated_expr)))
         }
         _ => {
@@ -101,7 +97,9 @@ fn get_ifdef_macro_expression<'s>(
                 valid: true,
                 span: spanned_token.1,
                 found: Some(spanned_token.0),
-                expected: vec![Expectation::Label("an expression")],
+                expected: vec![Expectation::Label(
+                    "a preprocessor macro expression",
+                )],
             }));
         }
     };
@@ -149,9 +147,8 @@ fn get_ifdef_macro_expression<'s>(
             }
             _ => return Ok(lhs),
         };
-        dest.push_element(src.next().unwrap()); // Consume peeked token
-        let rhs =
-            get_ifdef_macro_expression(src, dest, previous_span.clone(), r_bp)?;
+        let _ = src.next().unwrap(); // Consume peeked token
+        let rhs = get_ifdef_macro_expression(src, previous_span.clone(), r_bp)?;
         lhs = IfdefMacroExpression::Operator(Box::new((lhs, op, rhs)));
     }
 }
@@ -217,11 +214,11 @@ fn ifdef_expression_true<'s>(
 pub fn preprocess_ifdef<'s>(
     src: &mut Peekable<impl Iterator<Item = SpannedToken<'s>>>,
     dest: &mut Option<&mut Vec<SpannedToken<'s>>>,
-    configs: &mut PreprocessConfigs,
+    configs: &mut PreprocessConfigs<'s>,
     ifdef_span: Span,
     is_ifdef: bool, // False for ifndef
 ) -> Result<(), PreprocessorError<'s>> {
-    let ifdef_condition = get_ifdef_condition(src, dest, ifdef_span.clone())?;
+    let ifdef_condition = get_ifdef_condition(src, ifdef_span.clone())?;
     let mut valid_condition_found =
         ifdef_condition_true(ifdef_condition, configs) ^ !is_ifdef;
     let mut curr_condition_valid = valid_condition_found;
@@ -250,8 +247,7 @@ pub fn preprocess_ifdef<'s>(
             }
             Err(PreprocessorError::Endif(_)) => return Ok(()),
             Err(PreprocessorError::Elsif(elsif_span)) => {
-                let ifdef_condition =
-                    get_ifdef_condition(src, dest, elsif_span)?;
+                let ifdef_condition = get_ifdef_condition(src, elsif_span)?;
                 if valid_condition_found {
                     curr_condition_valid = false;
                 } else {
