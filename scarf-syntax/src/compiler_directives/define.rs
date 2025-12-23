@@ -7,18 +7,18 @@ use crate::*;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct TextMacroDefinition<'a>(
-    pub Span, // `define
+    pub Span<'a>, // `define
     pub TextMacroName<'a>,
-    pub Option<MacroText>,
+    pub Option<MacroText<'a>>,
 );
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct TextMacroName<'a>(
     pub TextMacroIdentifier<'a>,
     pub  Option<(
-        Span, // (
+        Span<'a>, // (
         ListOfFormalArguments<'a>,
-        Span, // )
+        Span<'a>, // )
     )>,
 );
 
@@ -26,33 +26,33 @@ pub struct TextMacroName<'a>(
 pub struct ListOfFormalArguments<'a>(
     pub FormalArgument<'a>,
     pub  Vec<(
-        Span, // ,
+        Span<'a>, // ,
         FormalArgument<'a>,
     )>,
 );
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct FormalArgument<'a>(
-    pub (&'a str, Span), // identifier
+    pub (&'a str, Span<'a>), // identifier
     pub  Option<(
-        Span, // =
-        Span, // default_text
+        Span<'a>, // =
+        Span<'a>, // default_text
     )>,
 );
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct TextMacroIdentifier<'a>(pub &'a str, pub Span);
+pub struct TextMacroIdentifier<'a>(pub &'a str, pub Span<'a>);
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct MacroText(pub Span);
+pub struct MacroText<'a>(pub Span<'a>);
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct TextMacroUsage<'a>(
-    pub (&'a str, Span), // `text_macro_identifier
+    pub (&'a str, Span<'a>), // `text_macro_identifier
     pub  Option<(
-        Span, // (
+        Span<'a>, // (
         ListOfActualArguments<'a>,
-        Span, // )
+        Span<'a>, // )
     )>,
 );
 
@@ -60,7 +60,7 @@ pub struct TextMacroUsage<'a>(
 pub struct ListOfActualArguments<'a>(
     pub ActualArgument<'a>,
     pub  Vec<(
-        Span, // ,
+        Span<'a>, // ,
         ActualArgument<'a>,
     )>,
 );
@@ -73,6 +73,6 @@ pub enum ActualArgument<'a> {
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct UndefineCompilerDirective<'a>(
-    pub Span, // `undef
+    pub Span<'a>, // `undef
     pub TextMacroIdentifier<'a>,
 );

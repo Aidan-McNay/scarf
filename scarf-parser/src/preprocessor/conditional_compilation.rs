@@ -10,7 +10,7 @@ use std::iter::Peekable;
 
 fn get_ifdef_condition<'s>(
     src: &mut Peekable<impl Iterator<Item = SpannedToken<'s>>>,
-    ifdef_span: Span,
+    ifdef_span: Span<'s>,
 ) -> Result<IfdefCondition<'s>, PreprocessorError<'s>> {
     let Some(spanned_token) = src.next() else {
         return Err(PreprocessorError::IncompleteDirective(ifdef_span));
@@ -74,7 +74,7 @@ fn equivalence_operator_binding_power<'s>() -> (u8, u8) {
 
 fn get_ifdef_macro_expression<'s>(
     src: &mut Peekable<impl Iterator<Item = SpannedToken<'s>>>,
-    previous_span: Span,
+    previous_span: Span<'s>,
     min_bp: u8,
 ) -> Result<IfdefMacroExpression<'s>, PreprocessorError<'s>> {
     let Some(spanned_token) = src.next() else {
@@ -215,7 +215,7 @@ pub fn preprocess_ifdef<'s>(
     src: &mut Peekable<impl Iterator<Item = SpannedToken<'s>>>,
     dest: &mut Option<&mut Vec<SpannedToken<'s>>>,
     configs: &mut PreprocessConfigs<'s>,
-    ifdef_span: Span,
+    ifdef_span: Span<'s>,
     is_ifdef: bool, // False for ifndef
 ) -> Result<(), PreprocessorError<'s>> {
     let ifdef_condition = get_ifdef_condition(src, ifdef_span.clone())?;

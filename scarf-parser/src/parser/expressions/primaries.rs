@@ -4,7 +4,6 @@
 // Parsing for 1800-2023 A.8.4
 
 use crate::*;
-use lexer::Span;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;

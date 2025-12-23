@@ -7,8 +7,8 @@ use crate::*;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct LineCompilerDirective<'a>(
-    pub Span,            // `line
-    pub (&'a str, Span), // number
-    pub (&'a str, Span), // filename
-    pub (&'a str, Span), // level
+    pub Span<'a>,            // `line
+    pub (&'a str, Span<'a>), // number
+    pub (&'a str, Span<'a>), // filename
+    pub (&'a str, Span<'a>), // level
 );

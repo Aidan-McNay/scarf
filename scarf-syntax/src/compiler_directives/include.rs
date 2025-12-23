@@ -9,16 +9,16 @@ use crate::*;
 pub enum IncludeCompilerDirective<'a> {
     DoubleQuotes(
         (
-            Span, // `include
+            Span<'a>, // `include
             &'a str,
         ),
     ),
     AngleBracket(
         (
-            Span, // `include
-            Span, // <
+            Span<'a>, // `include
+            Span<'a>, // <
             &'a str,
-            Span, // >
+            Span<'a>, // >
         ),
     ),
 }

@@ -28,7 +28,7 @@ pub use general::*;
 pub use instantiations::*;
 pub(crate) use pratt::*;
 pub use primitive_instances::*;
-use scarf_syntax::SourceText;
+use scarf_syntax::*;
 pub use source_text::*;
 pub use spanned_token::*;
 pub use specify_section::*;
@@ -100,36 +100,42 @@ fn format_reason_short<'s>(error: &VerboseError<'s>) -> String {
     }
 }
 
-pub fn report_parse_errors<'s, 'b>(
+pub fn report_parse_errors<'s>(
     result: &Result<SourceText<'s>, VerboseError<'s>>,
-    file_path: &'b str,
-) -> Vec<Report<'s, (&'b str, std::ops::Range<usize>)>> {
-    let mut reports: Vec<Report<'s, (&'b str, std::ops::Range<usize>)>> =
+    file_path: &'s str,
+) -> Vec<Report<'s, (&'s str, std::ops::Range<usize>)>> {
+    let mut reports: Vec<Report<'s, (&'s str, std::ops::Range<usize>)>> =
         Vec::new();
     if let &Err(ref verbose_error) = result {
         let error_span = if verbose_error.is_eoi() {
             let file_len = fs::metadata(file_path).expect("REASON").len();
-            Range {
+            let byte_span = Range {
                 start: file_len as usize,
                 end: file_len as usize,
+            };
+            Span {
+                file: file_path,
+                bytes: byte_span,
+                included_from: None,
             }
         } else {
             verbose_error.span.clone()
         };
-        let report =
-            Report::build(ReportKind::Error, (file_path, error_span.clone()))
-                .with_code("P1")
-                .with_config(
-                    ariadne::Config::new()
-                        .with_index_type(ariadne::IndexType::Byte),
-                )
-                .with_message(format_reason(verbose_error))
-                .with_label(
-                    Label::new((file_path, error_span))
-                        .with_message(format_reason_short(verbose_error))
-                        .with_color(Color::Red),
-                )
-                .finish();
+        let report = Report::build(
+            ReportKind::Error,
+            (error_span.file, error_span.bytes.clone()),
+        )
+        .with_code("P1")
+        .with_config(
+            ariadne::Config::new().with_index_type(ariadne::IndexType::Byte),
+        )
+        .with_message(format_reason(verbose_error))
+        .with_label(
+            Label::new((error_span.file, error_span.bytes.clone()))
+                .with_message(format_reason_short(verbose_error))
+                .with_color(Color::Red),
+        )
+        .finish();
         reports.push(report);
     }
     reports

@@ -18,6 +18,12 @@ pub enum StandardVersion {
     IEEE1800_2023,
 }
 
+impl Default for StandardVersion {
+    fn default() -> Self {
+        StandardVersion::IEEE1800_2023
+    }
+}
+
 // -----------------------------------------------------------------------
 // keyword_replace
 // -----------------------------------------------------------------------
@@ -25,7 +31,7 @@ pub enum StandardVersion {
 // current standard
 
 impl<'a> Token<'a> {
-    pub fn keyword_replace(&self, standard: StandardVersion) -> bool {
+    pub fn keyword_replace(&self, standard: &StandardVersion) -> bool {
         let valid_in_standard = match self {
             Token::Automatic
             | Token::Endgenerate
@@ -37,7 +43,7 @@ impl<'a> Token<'a> {
             | Token::PulsestyleOnevent
             | Token::Showcancelled
             | Token::Signed
-            | Token::Unsigned => standard > StandardVersion::IEEE1364_2001,
+            | Token::Unsigned => *standard > StandardVersion::IEEE1364_2001,
             Token::Cell
             | Token::Config
             | Token::Design
@@ -48,10 +54,10 @@ impl<'a> Token<'a> {
             | Token::Liblist
             | Token::Library
             | Token::Use => {
-                (standard >= StandardVersion::IEEE1364_2001)
-                    & (standard != StandardVersion::IEEE1364_2001Noconfig)
+                (*standard >= StandardVersion::IEEE1364_2001)
+                    & (*standard != StandardVersion::IEEE1364_2001Noconfig)
             }
-            Token::Uwire => standard >= StandardVersion::IEEE1364_2005,
+            Token::Uwire => *standard >= StandardVersion::IEEE1364_2005,
             Token::Alias
             | Token::AlwaysComb
             | Token::AlwaysFf
@@ -148,7 +154,7 @@ impl<'a> Token<'a> {
             | Token::WaitOrder
             | Token::Wildcard
             | Token::With
-            | Token::Within => standard >= StandardVersion::IEEE1800_2005,
+            | Token::Within => *standard >= StandardVersion::IEEE1800_2005,
             Token::AcceptOn
             | Token::Checker
             | Token::Endchecker
@@ -171,10 +177,11 @@ impl<'a> Token<'a> {
             | Token::Until
             | Token::UntilWith
             | Token::Untyped
-            | Token::Weak => standard >= StandardVersion::IEEE1800_2009,
-            Token::Implements | Token::Interconnect | Token::Nettype | Token::Soft => {
-                standard >= StandardVersion::IEEE1800_2012
-            }
+            | Token::Weak => *standard >= StandardVersion::IEEE1800_2009,
+            Token::Implements
+            | Token::Interconnect
+            | Token::Nettype
+            | Token::Soft => *standard >= StandardVersion::IEEE1800_2012,
             _ => true,
         };
         !valid_in_standard

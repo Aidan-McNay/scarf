@@ -7,25 +7,25 @@ use crate::*;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct IfdefDirective<'a>(
-    pub Span, // `ifdef
+    pub Span<'a>, // `ifdef
     pub IfdefCondition<'a>,
 );
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct IfndefDirective<'a>(
-    pub Span, // `ifndef
+    pub Span<'a>, // `ifndef
     pub IfdefCondition<'a>,
 );
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct ElsifDirective<'a>(
-    pub Span, // `elsif
+    pub Span<'a>, // `elsif
     pub IfdefCondition<'a>,
 );
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct EndifDirective(
-    pub Span, // `endif
+pub struct EndifDirective<'a>(
+    pub Span<'a>, // `endif
 );
 
 #[derive(Clone, Debug, PartialEq)]
@@ -33,9 +33,9 @@ pub enum IfdefCondition<'a> {
     TextMacro(Box<TextMacroIdentifier<'a>>),
     ParenMacro(
         Box<(
-            Span, // (
+            Span<'a>, // (
             IfdefMacroExpression<'a>,
-            Span, // )
+            Span<'a>, // )
         )>,
     ),
 }
@@ -46,29 +46,29 @@ pub enum IfdefMacroExpression<'a> {
     Operator(
         Box<(
             IfdefMacroExpression<'a>,
-            BinaryLogicalOperator,
+            BinaryLogicalOperator<'a>,
             IfdefMacroExpression<'a>,
         )>,
     ),
     Not(
         Box<(
-            Span, // !
+            Span<'a>, // !
             IfdefMacroExpression<'a>,
         )>,
     ),
     Paren(
         Box<(
-            Span, // (
+            Span<'a>, // (
             IfdefMacroExpression<'a>,
-            Span, // )
+            Span<'a>, // )
         )>,
     ),
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub enum BinaryLogicalOperator {
-    AmpAmp(Span),
-    PipePipe(Span),
-    Implication(Span),
-    Equivalence(Span),
+pub enum BinaryLogicalOperator<'a> {
+    AmpAmp(Span<'a>),
+    PipePipe(Span<'a>),
+    Implication(Span<'a>),
+    Equivalence(Span<'a>),
 }

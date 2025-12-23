@@ -4,7 +4,8 @@
 // The type of errors used for AST parsing
 
 use crate::*;
-use lexer::{Span, Token};
+use lexer::Token;
+use scarf_syntax::*;
 use winnow::{
     error::{AddContext, ParserError},
     stream::Stream,
@@ -13,7 +14,7 @@ use winnow::{
 #[derive(Debug)]
 pub struct VerboseError<'s> {
     pub valid: bool,
-    pub span: Span,
+    pub span: Span<'s>,
     pub found: Option<Token<'s>>,
     pub expected: Vec<Expectation<'s>>,
 }
@@ -71,15 +72,13 @@ impl<'s> ParserError<Tokens<'s>> for VerboseError<'s> {
             }
             (Some(_), Some(_)) => {
                 // Prefer the one with a later span (a.k.a. got farther)
-                //  - Only compare start, since they'd belong to the
-                //    same token if the same
-                if self.span.start > other.span.start {
-                    self
-                } else if self.span.start < other.span.start {
-                    other
-                } else {
-                    self.expected.append(&mut other.expected);
-                    self
+                match self.span.compare(&other.span) {
+                    SpanRelation::Later => self,
+                    SpanRelation::Earlier => other,
+                    SpanRelation::Same => {
+                        self.expected.append(&mut other.expected);
+                        self
+                    }
                 }
             }
         }
@@ -126,14 +125,12 @@ impl<'s> VerboseError<'s> {
             }
             (Some(_), Some(_)) => {
                 // Prefer the one with a later span (a.k.a. got farther)
-                //  - Only compare start, since they'd belong to the
-                //    same token if the same
-                if self.span.start > other.span.start {
-                    ()
-                } else if self.span.start < other.span.start {
-                    *self = other
-                } else {
-                    self.expected.append(&mut other.expected);
+                match self.span.compare(&other.span) {
+                    SpanRelation::Later => (),
+                    SpanRelation::Earlier => *self = other,
+                    SpanRelation::Same => {
+                        self.expected.append(&mut other.expected);
+                    }
                 }
             }
         }

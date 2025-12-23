@@ -15,17 +15,17 @@ pub use line::*;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum CompilerDirective<'a> {
-    __FILE__(Box<Span>),
-    __LINE__(Box<Span>),
+    __FILE__(Box<Span<'a>>),
+    __LINE__(Box<Span<'a>>),
     DirBeginKeywords(),
     DirCellDefine(),
     DirDefaultNettype(),
     DirDefine(Box<TextMacroDefinition<'a>>),
-    DirElse(Box<Span>),
+    DirElse(Box<Span<'a>>),
     DirElsif(Box<ElsifDirective<'a>>),
     DirEndKeywords(),
     DirEndcalldefine(),
-    DirEndif(Box<EndifDirective>),
+    DirEndif(Box<EndifDirective<'a>>),
     DirIfdef(Box<IfdefDirective<'a>>),
     DirIfndef(Box<IfndefDirective<'a>>),
     DirInclude(Box<IncludeCompilerDirective<'a>>),
@@ -36,6 +36,6 @@ pub enum CompilerDirective<'a> {
     DirTimescale(),
     DirUnconnectedDrive(),
     DirUndef(Box<UndefineCompilerDirective<'a>>),
-    DirUndefineall(Box<Span>),
+    DirUndefineall(Box<Span<'a>>),
     TextMacro(Box<TextMacroUsage<'a>>),
 }

@@ -8,18 +8,26 @@ use std::path::{Path, PathBuf};
 
 #[derive(Default, Clone)]
 pub struct PreprocessConfigs<'a> {
-    pub includes: Vec<&'a Path>,
-    pub defines: Vec<Define<'a>>,
+    includes: Vec<&'a Path>,
+    defines: Vec<Define<'a>>,
+    pub curr_standard: StandardVersion,
     pub in_define: bool,
+    pub in_define_arg: bool,
 }
 
 #[derive(Clone)]
-pub struct SpannedString<'a>(pub &'a str, pub Span);
+pub struct SpannedString<'a>(pub &'a str, pub Span<'a>);
 
 #[derive(Clone)]
 pub struct Define<'a> {
     pub name: SpannedString<'a>,
     pub body: DefineBody<'a>,
+}
+
+impl<'a> Define<'a> {
+    pub fn is_from_command_line(&self) -> bool {
+        self.name.1.file == ""
+    }
 }
 
 #[derive(Clone)]
@@ -34,11 +42,24 @@ pub struct DefineFunction<'a> {
     pub args: Vec<(
         SpannedString<'a>,
         Option<(
-            Span, // =
-            SpannedString<'a>,
+            Span<'a>, // =
+            Vec<SpannedToken<'a>>,
         )>,
     )>,
     pub body: Option<Vec<SpannedToken<'a>>>,
+}
+
+impl<'a> DefineBody<'a> {
+    pub fn get_tokens(&self) -> (Vec<SpannedToken<'a>>, bool) {
+        match self {
+            DefineBody::Empty() => (vec![], false),
+            DefineBody::Text(token_vec) => (token_vec.clone(), false),
+            DefineBody::Function(def_func) => match &def_func.body {
+                Some(token_vec) => (token_vec.clone(), true),
+                None => (vec![], true),
+            },
+        }
+    }
 }
 
 impl<'a> PreprocessConfigs<'a> {
@@ -63,7 +84,7 @@ impl<'a> PreprocessConfigs<'a> {
     pub fn define(
         &mut self,
         macro_name: &'a str,
-        macro_span: Span,
+        macro_span: Span<'a>,
         macro_body: DefineBody<'a>,
     ) {
         self.defines.retain(|d| d.name.0 != macro_name);
@@ -73,9 +94,38 @@ impl<'a> PreprocessConfigs<'a> {
         });
     }
 
+    /// Define a new macro from the command line
+    pub fn command_line_define(
+        &mut self,
+        macro_name: &'a str,
+        macro_text: Option<Vec<SpannedToken<'a>>>,
+    ) {
+        self.define(
+            macro_name,
+            Span::default(),
+            match macro_text {
+                None => DefineBody::Empty(),
+                Some(token_vec) => DefineBody::Text(token_vec),
+            },
+        )
+    }
+
     /// Undefine all macros
     pub fn undefineall(&mut self) {
         self.defines = vec![];
+    }
+
+    /// Get the tokens for a macro replacement
+    pub fn get_macro_tokens(
+        &self,
+        macro_name: &'a str,
+    ) -> Option<(Vec<SpannedToken<'a>>, bool)> {
+        for define in &self.defines {
+            if define.name.0 == macro_name {
+                return Some(define.body.get_tokens());
+            }
+        }
+        None
     }
 
     /// Get the full path from an include statement

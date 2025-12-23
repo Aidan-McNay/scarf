@@ -5,6 +5,7 @@
 
 use crate::Span;
 use crate::*;
+use logos::Span as ByteSpan;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::combinator::alt;
@@ -165,15 +166,24 @@ fn double_level_symbol_parser<'s>(
                 if char_vec.len() != 2 {
                     None
                 } else {
-                    let span_midpoint =
-                        (metadata.span.start + metadata.span.end) / 2;
+                    let span_midpoint = (metadata.span.bytes.start
+                        + metadata.span.bytes.end)
+                        / 2;
                     let span0 = Span {
-                        start: metadata.span.start,
-                        end: span_midpoint,
+                        file: metadata.span.file,
+                        bytes: ByteSpan {
+                            start: metadata.span.bytes.start,
+                            end: span_midpoint,
+                        },
+                        included_from: metadata.span.included_from,
                     };
                     let span1 = Span {
-                        start: span_midpoint,
-                        end: metadata.span.end,
+                        file: metadata.span.file,
+                        bytes: ByteSpan {
+                            start: span_midpoint,
+                            end: metadata.span.bytes.end,
+                        },
+                        included_from: metadata.span.included_from,
                     };
                     let metadata0 = Metadata {
                         span: span0,

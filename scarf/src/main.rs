@@ -32,12 +32,12 @@ struct FormatArgs {
 fn format(args: &FormatArgs) {
     for path in &args.paths {
         let src = std::fs::read_to_string(&path).unwrap();
-        let lexed_src = lex(&src);
+        let lexed_src = lex(&src, path.as_str());
         match dump_lex(&lexed_src, "./scarf_debug/lex.txt") {
             Ok(_) => (),
             Err(err) => println!("{}", err),
         }
-        let lex_errors = report_lex_errors(&lexed_src, path);
+        let lex_errors = report_lex_errors(&lexed_src);
         if !lex_errors.is_empty() {
             for report in lex_errors {
                 report
@@ -70,7 +70,7 @@ fn format(args: &FormatArgs) {
             }
             return;
         }
-        println!("{:#?}", parsed_src);
+        // println!("{:#?}", parsed_src);
     }
 }
 

@@ -812,8 +812,8 @@ pub enum Token<'a> {
     SimpleIdentifier(&'a str),
     #[regex(r"\\[!-~]+", |lex| lex.slice())]
     EscapedIdentifier(&'a str),
-    #[regex(r"`[a-zA-Z_][a-zA-Z0-9_\$]*", |lex| lex.slice())]
-    #[regex(r"`\\[!-~]+", |lex| lex.slice())]
+    #[regex(r"`[a-zA-Z_][a-zA-Z0-9_\$]*", text_macro)]
+    #[regex(r"`\\[!-~]+", text_macro)]
     TextMacro(&'a str),
     TimeUnit(&'a str), // Created in post-processing
     #[regex(
