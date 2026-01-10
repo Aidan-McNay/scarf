@@ -4,12 +4,24 @@
 // Configurations for preprocessing
 
 use crate::*;
+use scarf_syntax::*;
 use std::path::{Path, PathBuf};
+
+const DEFAULT_TIMESCALE: Timescale = Timescale::new(
+    Span::empty(),
+    (TimescaleValue::One, TimescaleUnit::NS),
+    (TimescaleValue::One, TimescaleUnit::NS),
+);
+
+const DEFAULT_NETTYPE: DefaultNettype = DefaultNettype::Wire;
 
 #[derive(Default, Clone)]
 pub struct PreprocessConfigs<'a> {
     includes: Vec<&'a Path>,
     defines: Vec<Define<'a>>,
+    timescales: Vec<Timescale<'a>>,
+    default_nettypes: Vec<(DefaultNettype, Span<'a>)>,
+    _included_files: Vec<(Box<str>, Box<str>)>,
     pub curr_standard: StandardVersion,
     pub in_define: bool,
     pub in_define_arg: bool,
@@ -136,6 +148,69 @@ impl<'a> PreprocessConfigs<'a> {
                 return Some(full_path);
             }
         }
-        return None;
+        Some(PathBuf::from(include_path))
+    }
+
+    /// Add a compiler directive timescale
+    pub fn add_timescale(
+        &mut self,
+        def_span: Span<'a>,
+        unit: (TimescaleValue, TimescaleUnit),
+        precision: (TimescaleValue, TimescaleUnit),
+    ) {
+        self.timescales
+            .push(Timescale::new(def_span, unit, precision));
+    }
+
+    /// Get the correct compiler timescale, based on a span
+    pub fn get_timescale(&self, span: &Span<'a>) -> &Timescale<'a> {
+        for timescale in self.timescales.iter().rev() {
+            if timescale.is_valid(span) {
+                return timescale;
+            }
+        }
+        // Default timescale
+        &DEFAULT_TIMESCALE
+    }
+
+    /// Add a compiler directive default nettype
+    pub fn add_default_nettype(
+        &mut self,
+        def_span: Span<'a>,
+        default_nettype: DefaultNettype,
+    ) {
+        self.default_nettypes.push((default_nettype, def_span));
+    }
+
+    /// Get the correct compiler default nettype, based on a span
+    pub fn get_default_nettype(&self, span: &Span<'a>) -> &DefaultNettype {
+        for default_nettype in self.default_nettypes.iter().rev() {
+            if default_nettype.1.compare(span) == SpanRelation::Earlier {
+                return &default_nettype.0;
+            }
+        }
+        &DEFAULT_NETTYPE
+    }
+
+    /// Retain the contents of a file
+    pub fn retain_file(
+        &mut self,
+        file_path: String,
+        file_contents: String,
+    ) -> (&'a str, &'a str) {
+        self._included_files
+            .push((file_path.into_boxed_str(), file_contents.into_boxed_str()));
+        let entry = self._included_files.last().unwrap();
+        let path: *const str = entry.0.as_ref();
+        let contents: *const str = entry.1.as_ref();
+        unsafe { (&*path, &*contents) }
+    }
+
+    /// Get the included file contents as a vector
+    pub fn included_files(&self) -> Vec<(String, String)> {
+        self._included_files
+            .iter()
+            .map(|(a, b)| (a.clone().into(), b.clone().into()))
+            .collect()
     }
 }

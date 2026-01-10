@@ -6,7 +6,7 @@
 pub mod lexer;
 pub mod parser;
 pub mod preprocessor;
-pub use ariadne::{Report, Source};
+pub use ariadne::{Report, Source, sources};
 use lexer::*;
 pub use lexer::{Token, dump_lex, lex, report_lex_errors};
 use parser::*;

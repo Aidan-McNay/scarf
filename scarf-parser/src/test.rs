@@ -13,7 +13,7 @@ pub fn check_parser<'s, T: std::cmp::PartialEq + std::fmt::Debug>(
     input: &'s str,
     expected: T,
 ) {
-    let parser_stream = lex_to_parse_stream(lex(input, "<test>"));
+    let parser_stream = lex_to_parse_stream(lex(input, "<test>", None));
     let mut stateful_parser_input = Tokens {
         input: TokenSlice::new(&parser_stream[..]),
         state: VerboseError::default(),
@@ -31,7 +31,7 @@ pub fn apply_parser<'s, T>(
     ) -> ModalResult<T, ErrMode<VerboseError<'s>>>,
     input: &'s str,
 ) -> T {
-    let parser_stream = lex_to_parse_stream(lex(input, "<test>"));
+    let parser_stream = lex_to_parse_stream(lex(input, "<test>", None));
     let mut stateful_parser_input = Tokens {
         input: TokenSlice::new(&parser_stream[..]),
         state: VerboseError::default(),

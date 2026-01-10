@@ -22,6 +22,7 @@ pub use tokens::Token;
 
 pub fn token_span_mapper<'a>(
     file_name: &'a str,
+    included_from: Option<&'a Span<'a>>,
 ) -> impl Fn(
     (Result<Token<'a>, String>, ByteSpan),
 ) -> (Result<Token<'a>, String>, Span<'a>) {
@@ -31,7 +32,7 @@ pub fn token_span_mapper<'a>(
             Span {
                 file: file_name,
                 bytes: byte_span,
-                included_from: None,
+                included_from,
             },
         )
     }
@@ -40,8 +41,9 @@ pub fn token_span_mapper<'a>(
 pub fn lex<'a>(
     src: &'a str,
     file_name: &'a str,
+    included_from: Option<&'a Span<'a>>,
 ) -> Vec<(Result<Token<'a>, String>, Span<'a>)> {
-    let span_mapper = token_span_mapper(file_name);
+    let span_mapper = token_span_mapper(file_name, included_from);
     TokenMerge::new(Token::lexer(src), src)
         .map(span_mapper)
         .collect()

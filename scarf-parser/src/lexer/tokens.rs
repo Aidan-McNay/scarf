@@ -544,6 +544,7 @@ pub enum Token<'a> {
     DirIfndef,
     #[token("`include")]
     DirInclude,
+    DirIncludeToolPath(&'a str), // Formed in post-processing
     #[token("`line")]
     DirLine,
     #[token("`nounconnected_drive")]
@@ -722,8 +723,6 @@ pub enum Token<'a> {
     PipeMinusGt,
     #[token("|=>")]
     PipeEqGt,
-    #[token(r#"""#)]
-    Quote,
     #[token(r#"""""#)]
     QuoteQuoteQuote,
     #[token(r"\")]
@@ -1126,6 +1125,7 @@ impl<'a> Token<'a> {
             Token::DirIfdef => "`ifdef",
             Token::DirIfndef => "`ifndef",
             Token::DirInclude => "`include",
+            Token::DirIncludeToolPath(_text) => "<tool-relative include path>",
             Token::DirLine => "`line",
             Token::DirNounconnectedDrive => "`nounconnected_drive",
             Token::DirPragma => "`pragma",
@@ -1214,7 +1214,6 @@ impl<'a> Token<'a> {
             Token::StarGt => "*>",
             Token::PipeMinusGt => "|->",
             Token::PipeEqGt => "|=>",
-            Token::Quote => r#"""#,
             Token::QuoteQuoteQuote => r#"""""#,
             Token::Bslash => r"\",
             Token::Std => "std",
@@ -1325,6 +1324,10 @@ impl<'a> fmt::Display for Token<'a> {
             }
             Token::EscapedIdentifier(text) => {
                 temp_str = format!("escaped identifier '{}'", text);
+                temp_str.as_str()
+            }
+            Token::DirIncludeToolPath(text) => {
+                temp_str = format!("include path '{}'", text);
                 temp_str.as_str()
             }
             Token::TextMacro(text) => {

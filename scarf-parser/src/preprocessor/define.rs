@@ -243,3 +243,19 @@ pub fn preprocess_define<'s>(
     configs.define(define_name.0, define_name.1, define_body);
     Ok(())
 }
+
+pub fn preprocess_undefine<'s>(
+    src: &mut Peekable<impl Iterator<Item = SpannedToken<'s>>>,
+    configs: &mut PreprocessConfigs<'s>,
+    define_span: Span<'s>,
+) -> Result<(), PreprocessorError<'s>> {
+    let undefine_name = get_define_name(src, define_span)?;
+    if !configs.undefine(undefine_name.0) {
+        Err(PreprocessorError::NotPreviouslyDefinedMacro((
+            undefine_name.0,
+            undefine_name.1,
+        )))
+    } else {
+        Ok(())
+    }
+}

@@ -6,15 +6,23 @@
 pub mod conditional_compilation;
 pub mod configs;
 pub mod define;
+pub mod error;
+pub mod implicit_nettype;
+pub mod include;
 pub mod keywords;
 pub mod text_macro;
+pub mod timescale;
 use crate::*;
 pub use conditional_compilation::*;
 pub use configs::*;
 pub use define::*;
+pub use error::*;
+pub use implicit_nettype::*;
+pub use include::*;
 pub use keywords::*;
 use std::iter::Peekable;
 pub use text_macro::*;
+pub use timescale::*;
 
 pub(crate) trait Pushable<T> {
     fn push_element(&mut self, item: T);
@@ -28,155 +36,6 @@ impl<T> Pushable<T> for Option<&mut Vec<T>> {
     }
 }
 
-pub enum PreprocessorError<'a> {
-    // Errors that can be exposed outside preprocess
-    Endif(Span<'a>),
-    NoEndif(Token<'a>, Span<'a>),
-    Elsif(Span<'a>),
-    Else(Span<'a>),
-    EndKeywords(Span<'a>),
-    NoEndKeywords(Span<'a>),
-    InvalidDefineArgument(SpannedToken<'a>),
-    InvalidVersionSpecifier((&'a str, Span<'a>)),
-    IncompleteDirective(Span<'a>),
-    IncompleteDirectiveWithToken(SpannedToken<'a>),
-    UndefinedMacro((&'a str, Span<'a>)),
-    NoMacroArguments((&'a str, Span<'a>)),
-    IncompleteMacroWithToken(SpannedToken<'a>),
-    Error(VerboseError<'a>),
-    // Internal "errors" used for communication
-    // - Should not be exposed outside of main preprocess function
-    NewlineInDefine(Span<'a>),
-    EndOfFunctionArgument(SpannedToken<'a>),
-}
-
-impl<'s> From<PreprocessorError<'s>> for VerboseError<'s> {
-    fn from(s: PreprocessorError<'s>) -> Self {
-        match s {
-            PreprocessorError::Endif(endif_span) => VerboseError {
-                valid: true,
-                span: endif_span,
-                found: Some(Token::DirEndif),
-                expected: vec![Expectation::Label("a previous `ifdef")],
-            },
-            PreprocessorError::NoEndif(token, ifdef_span) => VerboseError {
-                valid: true,
-                span: ifdef_span,
-                found: Some(token),
-                expected: vec![Expectation::Label("a matching `endif")],
-            },
-            PreprocessorError::Elsif(elsif_span) => VerboseError {
-                valid: true,
-                span: elsif_span,
-                found: Some(Token::DirElsif),
-                expected: vec![Expectation::Label("a previous `ifdef")],
-            },
-            PreprocessorError::Else(else_span) => VerboseError {
-                valid: true,
-                span: else_span,
-                found: Some(Token::DirElse),
-                expected: vec![Expectation::Label("a previous `ifdef")],
-            },
-            PreprocessorError::EndKeywords(end_keywords_span) => VerboseError {
-                valid: true,
-                span: end_keywords_span,
-                found: Some(Token::DirEndKeywords),
-                expected: vec![Expectation::Label(
-                    "a previous `begin_keywords",
-                )],
-            },
-            PreprocessorError::NoEndKeywords(begin_span) => VerboseError {
-                valid: true,
-                span: begin_span,
-                found: Some(Token::DirBeginKeywords),
-                expected: vec![Expectation::Label("a matching `end_keywords")],
-            },
-            PreprocessorError::InvalidDefineArgument(err_spanned_token) => {
-                VerboseError {
-                    valid: true,
-                    span: err_spanned_token.1,
-                    found: Some(err_spanned_token.0),
-                    expected: vec![
-                        Expectation::Token(Token::Comma),
-                        Expectation::Token(Token::EParen),
-                        Expectation::Label("a preprocessor macro argument"),
-                    ],
-                }
-            }
-            PreprocessorError::InvalidVersionSpecifier((
-                spec_string,
-                spec_span,
-            )) => VerboseError {
-                valid: true,
-                span: spec_span,
-                found: Some(Token::SimpleIdentifier(spec_string)),
-                expected: vec![Expectation::Label("a valid version specifier")],
-            },
-            PreprocessorError::IncompleteDirective(span) => VerboseError {
-                valid: true,
-                span: span,
-                found: None,
-                expected: vec![Expectation::Label("a complete directive")],
-            },
-            PreprocessorError::IncompleteDirectiveWithToken(
-                err_spanned_token,
-            ) => VerboseError {
-                valid: true,
-                span: err_spanned_token.1,
-                found: Some(err_spanned_token.0),
-                expected: vec![Expectation::Label(
-                    "a complete directive or escaped newline after",
-                )],
-            },
-            PreprocessorError::UndefinedMacro((macro_name, macro_span)) => {
-                VerboseError {
-                    valid: true,
-                    span: macro_span,
-                    found: Some(Token::TextMacro(macro_name)),
-                    expected: vec![Expectation::Label("a previous definition")],
-                }
-            }
-            PreprocessorError::NoMacroArguments((macro_name, macro_span)) => {
-                VerboseError {
-                    valid: true,
-                    span: macro_span,
-                    found: Some(Token::TextMacro(macro_name)),
-                    expected: vec![Expectation::Label("arguments after")],
-                }
-            }
-            PreprocessorError::IncompleteMacroWithToken(err_spanned_token) => {
-                VerboseError {
-                    valid: true,
-                    span: err_spanned_token.1,
-                    found: Some(err_spanned_token.0),
-                    expected: vec![Expectation::Label(
-                        "a complete macro argument or escaped newline after",
-                    )],
-                }
-            }
-            PreprocessorError::Error(verbose_error) => verbose_error,
-            PreprocessorError::NewlineInDefine(newline_span) => VerboseError {
-                valid: true,
-                span: newline_span,
-                found: Some(Token::Newline),
-                expected: vec![Expectation::Label(
-                    "a complete define (internal error)",
-                )],
-            },
-            PreprocessorError::EndOfFunctionArgument(err_spanned_token) => {
-                VerboseError {
-                    valid: true,
-                    span: err_spanned_token.1,
-                    found: Some(err_spanned_token.0),
-                    expected: vec![Expectation::Label(
-                        "a complete function argument (internal error)",
-                    )],
-                }
-            }
-        }
-    }
-}
-
 pub fn preprocess<'s>(
     src: &mut Peekable<impl Iterator<Item = SpannedToken<'s>>>,
     dest: &mut Option<&mut Vec<SpannedToken<'s>>>,
@@ -185,6 +44,10 @@ pub fn preprocess<'s>(
     let mut enclosures: Vec<Token<'s>> = vec![];
     while let Some(mut spanned_token) = src.next() {
         match spanned_token.0 {
+            Token::DirInclude => {
+                let include_span = Box::leak(Box::new(spanned_token.1));
+                preprocess_include(src, dest, configs, include_span)?;
+            }
             Token::DirUndefineall => {
                 configs.undefineall();
             }
@@ -224,6 +87,15 @@ pub fn preprocess<'s>(
                     configs,
                     (macro_name, spanned_token.1),
                 )?;
+            }
+            Token::DirUndef => {
+                preprocess_undefine(src, configs, spanned_token.1)?;
+            }
+            Token::DirTimescale => {
+                preprocess_timescale(src, configs, spanned_token.1)?;
+            }
+            Token::DirDefaultNettype => {
+                preprocess_default_nettype(src, configs, spanned_token.1)?;
             }
             Token::Bslash if configs.in_define => loop {
                 match src.next() {

@@ -103,8 +103,8 @@ fn format_reason_short<'s>(error: &VerboseError<'s>) -> String {
 pub fn report_parse_errors<'s>(
     result: &Result<SourceText<'s>, VerboseError<'s>>,
     file_path: &'s str,
-) -> Vec<Report<'s, (&'s str, std::ops::Range<usize>)>> {
-    let mut reports: Vec<Report<'s, (&'s str, std::ops::Range<usize>)>> =
+) -> Vec<Report<'s, (String, std::ops::Range<usize>)>> {
+    let mut reports: Vec<Report<'s, (String, std::ops::Range<usize>)>> =
         Vec::new();
     if let &Err(ref verbose_error) = result {
         let error_span = if verbose_error.is_eoi() {
@@ -123,7 +123,7 @@ pub fn report_parse_errors<'s>(
         };
         let report = Report::build(
             ReportKind::Error,
-            (error_span.file, error_span.bytes.clone()),
+            (error_span.file.to_string(), error_span.bytes.clone()),
         )
         .with_code("P1")
         .with_config(
@@ -131,7 +131,7 @@ pub fn report_parse_errors<'s>(
         )
         .with_message(format_reason(verbose_error))
         .with_label(
-            Label::new((error_span.file, error_span.bytes.clone()))
+            Label::new((error_span.file.to_string(), error_span.bytes.clone()))
                 .with_message(format_reason_short(verbose_error))
                 .with_color(Color::Red),
         )

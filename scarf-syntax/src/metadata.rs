@@ -15,6 +15,7 @@ pub struct Span<'a> {
     pub included_from: Option<&'a Span<'a>>,
 }
 
+#[derive(PartialEq)]
 pub enum SpanRelation {
     Earlier,
     Later,
@@ -30,6 +31,13 @@ impl<'a> Span<'a> {
                 nested_byte_indeces.push(self.bytes.start);
                 nested_byte_indeces
             }
+        }
+    }
+    pub const fn empty() -> Span<'a> {
+        Span {
+            file: "",
+            bytes: ByteSpan { start: 0, end: 0 },
+            included_from: None,
         }
     }
     pub fn compare(&self, other: &Self) -> SpanRelation {

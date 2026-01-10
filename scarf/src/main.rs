@@ -32,7 +32,8 @@ struct FormatArgs {
 fn format(args: &FormatArgs) {
     for path in &args.paths {
         let src = std::fs::read_to_string(&path).unwrap();
-        let lexed_src = lex(&src, path.as_str());
+        let lex_src = src.clone();
+        let lexed_src = lex(&lex_src, path.as_str(), None);
         match dump_lex(&lexed_src, "./scarf_debug/lex.txt") {
             Ok(_) => (),
             Err(err) => println!("{}", err),
@@ -48,28 +49,31 @@ fn format(args: &FormatArgs) {
         }
         let token_stream = lex_to_parse_stream(lexed_src);
         let mut preprocessed_stream: Vec<SpannedToken<'_>> = vec![];
+        let mut configs = PreprocessConfigs::default();
         let preprocess_result = preprocess(
             &mut token_stream.into_iter().peekable(),
             &mut Some(&mut preprocessed_stream),
-            &mut PreprocessConfigs::default(),
+            &mut configs,
         );
+        let mut error_sources = configs.included_files();
+        error_sources.push((path.clone(), src));
+        let mut error_sources = sources(error_sources);
         match preprocess_result {
             Err(err) => {
-                let verbose_error: VerboseError<'_> = err.into();
-                println!("{:?}", verbose_error)
+                let error: Report<'_, (String, std::ops::Range<usize>)> =
+                    err.into();
+                error.print(&mut error_sources).unwrap()
             }
             _ => (),
         }
-        let parsed_src = parse(&preprocessed_stream);
-        let parse_errors = report_parse_errors(&parsed_src, path);
-        if !parse_errors.is_empty() {
-            for report in parse_errors {
-                report
-                    .print((path.as_str(), Source::from(src.as_str())))
-                    .unwrap()
-            }
-            return;
-        }
+        // let parsed_src = parse(&preprocessed_stream);
+        // let parse_errors = report_parse_errors(&parsed_src, path);
+        // if !parse_errors.is_empty() {
+        //     for report in parse_errors {
+        //         report.print(&mut error_sources).unwrap()
+        //     }
+        //     return;
+        // }
         // println!("{:#?}", parsed_src);
     }
 }
