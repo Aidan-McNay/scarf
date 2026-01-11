@@ -56,6 +56,7 @@ pub fn preprocess_include<'s>(
         include_path,
         Some(include_span),
     ));
+    dest.reserve(included_file_contents.len());
     preprocess(
         &mut included_file_contents.into_iter().peekable(),
         dest,
