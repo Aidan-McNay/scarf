@@ -523,7 +523,7 @@ pub enum Token<'a> {
     #[token("`begin_keywords")]
     DirBeginKeywords,
     #[token("`celldefine")]
-    DirCellDefine,
+    DirCelldefine,
     #[token("`default_nettype")]
     DirDefaultNettype,
     #[token("`define")]
@@ -836,7 +836,7 @@ impl<'a> Token<'a> {
             Token::DirUnderscoreFile
             | Token::DirUnderscoreLine
             | Token::DirBeginKeywords
-            | Token::DirCellDefine
+            | Token::DirCelldefine
             | Token::DirDefaultNettype
             | Token::DirDefine
             | Token::DirElse
@@ -1114,7 +1114,7 @@ impl<'a> Token<'a> {
             Token::DirUnderscoreFile => "`__FILE__",
             Token::DirUnderscoreLine => "`__LINE__",
             Token::DirBeginKeywords => "`begin_keywords",
-            Token::DirCellDefine => "`celldefine",
+            Token::DirCelldefine => "`celldefine",
             Token::DirDefaultNettype => "`default_nettype",
             Token::DirDefine => "`define",
             Token::DirElse => "`else",

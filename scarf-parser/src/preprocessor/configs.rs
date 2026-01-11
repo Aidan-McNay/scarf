@@ -15,13 +15,19 @@ const DEFAULT_TIMESCALE: Timescale = Timescale::new(
 
 const DEFAULT_NETTYPE: DefaultNettype = DefaultNettype::Wire;
 
+const DEFAULT_UNCONNECTED_DRIVE: UnconnectedDrive =
+    UnconnectedDrive::NoUnconnected;
+
 #[derive(Default, Clone)]
 pub struct PreprocessConfigs<'a> {
     includes: Vec<&'a Path>,
     defines: Vec<Define<'a>>,
     timescales: Vec<Timescale<'a>>,
     default_nettypes: Vec<(DefaultNettype, Span<'a>)>,
-    _included_files: Vec<(Box<str>, Box<str>)>,
+    unconnected_drives: Vec<(UnconnectedDrive, Span<'a>)>,
+    cell_defines: Vec<(bool, Span<'a>)>,
+    included_files: Vec<(Box<str>, Box<str>)>,
+    included_spans: Vec<Span<'a>>,
     pub curr_standard: StandardVersion,
     pub in_define: bool,
     pub in_define_arg: bool,
@@ -75,6 +81,21 @@ impl<'a> DefineBody<'a> {
 }
 
 impl<'a> PreprocessConfigs<'a> {
+    /// Reset all resetable configs
+    pub fn reset_all(&mut self, reset_all_span: Span<'a>) {
+        self.add_timescale(
+            reset_all_span.clone(),
+            DEFAULT_TIMESCALE.unit,
+            DEFAULT_TIMESCALE.precision,
+        );
+        self.add_default_nettype(reset_all_span.clone(), DEFAULT_NETTYPE);
+        self.add_unconnected_drive(
+            reset_all_span.clone(),
+            DEFAULT_UNCONNECTED_DRIVE,
+        );
+        self.add_cell_define(false, reset_all_span);
+    }
+
     /// Check whether the given macro is defined
     pub fn is_defined(&self, macro_name: &'a str) -> bool {
         self.defines.iter().any(|d| d.name.0 == macro_name)
@@ -198,19 +219,62 @@ impl<'a> PreprocessConfigs<'a> {
         file_path: String,
         file_contents: String,
     ) -> (&'a str, &'a str) {
-        self._included_files
+        self.included_files
             .push((file_path.into_boxed_str(), file_contents.into_boxed_str()));
-        let entry = self._included_files.last().unwrap();
+        let entry = self.included_files.last().unwrap();
         let path: *const str = entry.0.as_ref();
         let contents: *const str = entry.1.as_ref();
         unsafe { (&*path, &*contents) }
     }
 
+    /// Retain a span
+    pub fn retain_span(&mut self, span: Span<'a>) -> &'a Span<'a> {
+        self.included_spans.push(span);
+        let entry: *const Span<'a> = self.included_spans.last().unwrap();
+        unsafe { &*entry }
+    }
+
     /// Get the included file contents as a vector
     pub fn included_files(&self) -> Vec<(String, String)> {
-        self._included_files
+        self.included_files
             .iter()
             .map(|(a, b)| (a.clone().into(), b.clone().into()))
             .collect()
+    }
+
+    /// Add an unconnected drive
+    pub fn add_unconnected_drive(
+        &mut self,
+        unconnected_drive_span: Span<'a>,
+        unconnected_drive: UnconnectedDrive,
+    ) {
+        self.unconnected_drives
+            .push((unconnected_drive, unconnected_drive_span));
+    }
+
+    /// Get the unconnected drive based on a span
+    pub fn get_unconnected_drive(&self, span: &Span<'a>) -> &UnconnectedDrive {
+        for unconnected_drive in self.unconnected_drives.iter().rev() {
+            if unconnected_drive.1.compare(span) == SpanRelation::Earlier {
+                return &unconnected_drive.0;
+            }
+        }
+        &DEFAULT_UNCONNECTED_DRIVE
+    }
+
+    /// Add a cell define declaration
+    pub fn add_cell_define(&mut self, is_cell_define: bool, span: Span<'a>) {
+        self.cell_defines.push((is_cell_define, span));
+    }
+
+    /// Determine whether a module is a cell module, based on a span
+    pub fn is_cell_module(&self, declaration_span: &Span<'a>) -> bool {
+        for cell_define in self.cell_defines.iter().rev() {
+            if cell_define.1.compare(declaration_span) == SpanRelation::Earlier
+            {
+                return cell_define.0;
+            }
+        }
+        false
     }
 }

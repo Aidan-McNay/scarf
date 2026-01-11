@@ -13,6 +13,7 @@ pub enum PreprocessorError<'a> {
     Else(Span<'a>),
     EndKeywords(Span<'a>),
     NoEndKeywords(Span<'a>),
+    InvalidDefineParameter(SpannedToken<'a>),
     InvalidDefineArgument(SpannedToken<'a>),
     InvalidVersionSpecifier((&'a str, Span<'a>)),
     IncompleteDirective(Span<'a>),
@@ -26,144 +27,6 @@ pub enum PreprocessorError<'a> {
     // - Should not be exposed outside of main preprocess function
     NewlineInDefine(Span<'a>),
     EndOfFunctionArgument(SpannedToken<'a>),
-}
-
-impl<'s> From<PreprocessorError<'s>> for VerboseError<'s> {
-    fn from(s: PreprocessorError<'s>) -> Self {
-        match s {
-            PreprocessorError::Endif(endif_span) => VerboseError {
-                valid: true,
-                span: endif_span,
-                found: Some(Token::DirEndif),
-                expected: vec![Expectation::Label("a previous `ifdef")],
-            },
-            PreprocessorError::NoEndif(token, ifdef_span) => VerboseError {
-                valid: true,
-                span: ifdef_span,
-                found: Some(token),
-                expected: vec![Expectation::Label("a matching `endif")],
-            },
-            PreprocessorError::Elsif(elsif_span) => VerboseError {
-                valid: true,
-                span: elsif_span,
-                found: Some(Token::DirElsif),
-                expected: vec![Expectation::Label("a previous `ifdef")],
-            },
-            PreprocessorError::Else(else_span) => VerboseError {
-                valid: true,
-                span: else_span,
-                found: Some(Token::DirElse),
-                expected: vec![Expectation::Label("a previous `ifdef")],
-            },
-            PreprocessorError::EndKeywords(end_keywords_span) => VerboseError {
-                valid: true,
-                span: end_keywords_span,
-                found: Some(Token::DirEndKeywords),
-                expected: vec![Expectation::Label(
-                    "a previous `begin_keywords",
-                )],
-            },
-            PreprocessorError::NoEndKeywords(begin_span) => VerboseError {
-                valid: true,
-                span: begin_span,
-                found: Some(Token::DirBeginKeywords),
-                expected: vec![Expectation::Label("a matching `end_keywords")],
-            },
-            PreprocessorError::InvalidDefineArgument(err_spanned_token) => {
-                VerboseError {
-                    valid: true,
-                    span: err_spanned_token.1,
-                    found: Some(err_spanned_token.0),
-                    expected: vec![
-                        Expectation::Token(Token::Comma),
-                        Expectation::Token(Token::EParen),
-                        Expectation::Label("a preprocessor macro argument"),
-                    ],
-                }
-            }
-            PreprocessorError::InvalidVersionSpecifier((
-                spec_string,
-                spec_span,
-            )) => VerboseError {
-                valid: true,
-                span: spec_span,
-                found: Some(Token::SimpleIdentifier(spec_string)),
-                expected: vec![Expectation::Label("a valid version specifier")],
-            },
-            PreprocessorError::IncompleteDirective(span) => VerboseError {
-                valid: true,
-                span: span,
-                found: None,
-                expected: vec![Expectation::Label("a complete directive")],
-            },
-            PreprocessorError::IncompleteDirectiveWithToken(
-                err_spanned_token,
-            ) => VerboseError {
-                valid: true,
-                span: err_spanned_token.1,
-                found: Some(err_spanned_token.0),
-                expected: vec![Expectation::Label(
-                    "a complete directive or escaped newline after",
-                )],
-            },
-            PreprocessorError::UndefinedMacro((macro_name, macro_span)) => {
-                VerboseError {
-                    valid: true,
-                    span: macro_span,
-                    found: Some(Token::TextMacro(macro_name)),
-                    expected: vec![Expectation::Label("a previous definition")],
-                }
-            }
-            PreprocessorError::NotPreviouslyDefinedMacro((
-                macro_name,
-                macro_span,
-            )) => VerboseError {
-                valid: true,
-                span: macro_span,
-                found: Some(Token::TextMacro(macro_name)),
-                expected: vec![Expectation::Label(
-                    "a previously-defined macro",
-                )],
-            },
-            PreprocessorError::NoMacroArguments((macro_name, macro_span)) => {
-                VerboseError {
-                    valid: true,
-                    span: macro_span,
-                    found: Some(Token::TextMacro(macro_name)),
-                    expected: vec![Expectation::Label("arguments after")],
-                }
-            }
-            PreprocessorError::IncompleteMacroWithToken(err_spanned_token) => {
-                VerboseError {
-                    valid: true,
-                    span: err_spanned_token.1,
-                    found: Some(err_spanned_token.0),
-                    expected: vec![Expectation::Label(
-                        "a complete macro argument or escaped newline after",
-                    )],
-                }
-            }
-            PreprocessorError::Error(verbose_error) => verbose_error,
-            PreprocessorError::NewlineInDefine(newline_span) => VerboseError {
-                valid: true,
-                span: newline_span,
-                found: Some(Token::Newline),
-                expected: vec![Expectation::Label(
-                    "a complete define (internal error)",
-                )],
-            },
-            PreprocessorError::EndOfFunctionArgument(err_spanned_token) => {
-                VerboseError {
-                    valid: true,
-                    span: err_spanned_token.1,
-                    found: Some(err_spanned_token.0),
-                    expected: vec![Expectation::Label(
-                        "a complete function argument (internal error)",
-                    )],
-                }
-            }
-        }
-    }
 }
 
 fn make_report<'s>(
@@ -258,6 +121,18 @@ impl<'s> From<PreprocessorError<'s>>
                 "No matching `end_keywords".to_string(),
                 ReportKind::Error,
             ),
+            PreprocessorError::InvalidDefineParameter(err_spanned_token) => {
+                make_report(
+                    err_spanned_token.1,
+                    "PP7",
+                    format!(
+                        "Found {}, expected a preprocessor macro parameter/identifier",
+                        err_spanned_token.0
+                    ),
+                    format!("Unexpected {}", err_spanned_token.0),
+                    ReportKind::Error,
+                )
+            }
             PreprocessorError::InvalidDefineArgument(err_spanned_token) => {
                 make_report(
                     err_spanned_token.1,
@@ -284,7 +159,7 @@ impl<'s> From<PreprocessorError<'s>>
                 span,
                 "PP9",
                 "Incomplete directive".to_string(),
-                "Expected more after".to_string(),
+                "Expected a complete directive".to_string(),
                 ReportKind::Error,
             ),
             PreprocessorError::IncompleteDirectiveWithToken(

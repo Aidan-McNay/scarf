@@ -12,6 +12,7 @@ pub mod include;
 pub mod keywords;
 pub mod text_macro;
 pub mod timescale;
+pub mod unconnected;
 use crate::*;
 pub use conditional_compilation::*;
 pub use configs::*;
@@ -23,6 +24,7 @@ pub use keywords::*;
 use std::iter::Peekable;
 pub use text_macro::*;
 pub use timescale::*;
+pub use unconnected::*;
 
 pub(crate) trait Pushable<T> {
     fn push_element(&mut self, item: T);
@@ -44,8 +46,11 @@ pub fn preprocess<'s>(
     let mut enclosures: Vec<Token<'s>> = vec![];
     while let Some(mut spanned_token) = src.next() {
         match spanned_token.0 {
+            Token::DirResetall => {
+                configs.reset_all(spanned_token.1);
+            }
             Token::DirInclude => {
-                let include_span = Box::leak(Box::new(spanned_token.1));
+                let include_span = configs.retain_span(spanned_token.1);
                 preprocess_include(src, dest, configs, include_span)?;
             }
             Token::DirUndefineall => {
@@ -96,6 +101,18 @@ pub fn preprocess<'s>(
             }
             Token::DirDefaultNettype => {
                 preprocess_default_nettype(src, configs, spanned_token.1)?;
+            }
+            Token::DirUnconnectedDrive => {
+                preprocess_unconnected_drive(src, configs, spanned_token.1)?;
+            }
+            Token::DirNounconnectedDrive => {
+                preprocess_nounconnected_drive(configs, spanned_token.1)?;
+            }
+            Token::DirCelldefine => {
+                configs.add_cell_define(true, spanned_token.1);
+            }
+            Token::DirEndcelldefine => {
+                configs.add_cell_define(false, spanned_token.1);
             }
             Token::Bslash if configs.in_define => loop {
                 match src.next() {

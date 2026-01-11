@@ -66,14 +66,14 @@ fn format(args: &FormatArgs) {
             }
             _ => (),
         }
-        // let parsed_src = parse(&preprocessed_stream);
-        // let parse_errors = report_parse_errors(&parsed_src, path);
-        // if !parse_errors.is_empty() {
-        //     for report in parse_errors {
-        //         report.print(&mut error_sources).unwrap()
-        //     }
-        //     return;
-        // }
+        let parsed_src = parse(&preprocessed_stream);
+        let parse_errors = report_parse_errors(&parsed_src, path);
+        if !parse_errors.is_empty() {
+            for report in parse_errors {
+                report.print(&mut error_sources).unwrap()
+            }
+            return;
+        }
         // println!("{:#?}", parsed_src);
     }
 }
