@@ -5,6 +5,7 @@
 
 use crate::*;
 use scarf_syntax::*;
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
 const DEFAULT_TIMESCALE: Timescale = Timescale::new(
@@ -26,11 +27,13 @@ pub struct PreprocessConfigs<'a> {
     default_nettypes: Vec<(DefaultNettype, Span<'a>)>,
     unconnected_drives: Vec<(UnconnectedDrive, Span<'a>)>,
     cell_defines: Vec<(bool, Span<'a>)>,
-    included_files: Vec<(Box<str>, Box<str>)>,
-    included_spans: Vec<Span<'a>>,
+    included_files: HashMap<Box<str>, Box<str>>,
+    included_spans: Vec<Box<Span<'a>>>,
+    stored_lines: Vec<Box<str>>,
     pub curr_standard: StandardVersion,
     pub in_define: bool,
     pub in_define_arg: bool,
+    pub include_line_directives: bool,
 }
 
 #[derive(Clone)]
@@ -219,9 +222,14 @@ impl<'a> PreprocessConfigs<'a> {
         file_path: String,
         file_contents: String,
     ) -> (&'a str, &'a str) {
-        self.included_files
-            .push((file_path.into_boxed_str(), file_contents.into_boxed_str()));
-        let entry = self.included_files.last().unwrap();
+        self.included_files.insert(
+            file_path.clone().into_boxed_str(),
+            file_contents.into_boxed_str(),
+        );
+        let entry = self
+            .included_files
+            .get_key_value(&file_path.into_boxed_str())
+            .unwrap();
         let path: *const str = entry.0.as_ref();
         let contents: *const str = entry.1.as_ref();
         unsafe { (&*path, &*contents) }
@@ -229,8 +237,9 @@ impl<'a> PreprocessConfigs<'a> {
 
     /// Retain a span
     pub fn retain_span(&mut self, span: Span<'a>) -> &'a Span<'a> {
-        self.included_spans.push(span);
-        let entry: *const Span<'a> = self.included_spans.last().unwrap();
+        self.included_spans.push(Box::new(span));
+        let entry: *const Span<'a> =
+            self.included_spans.last().unwrap().as_ref();
         unsafe { &*entry }
     }
 
@@ -276,5 +285,21 @@ impl<'a> PreprocessConfigs<'a> {
             }
         }
         false
+    }
+
+    /// Get the file from a Span
+    pub fn get_file(&self, span: &Span<'a>) -> &'a str {
+        span.file
+    }
+
+    /// Get the line number of a Span
+    pub fn get_line(&mut self, span: &Span<'a>) -> &'a str {
+        let offset = span.bytes.start;
+        let file_contents: &str = self.included_files.get(span.file).unwrap();
+        let line_num = file_contents[..offset].lines().count() + 1;
+        self.stored_lines
+            .push(line_num.to_string().into_boxed_str());
+        let line_str: *const str = self.stored_lines.last().unwrap().as_ref();
+        unsafe { &*line_str }
     }
 }

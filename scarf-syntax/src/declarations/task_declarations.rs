@@ -28,7 +28,7 @@ pub enum InterfaceIdentifierOrClassScope<'a> {
 pub enum TaskBodyDeclaration<'a> {
     Tf(
         Box<(
-            InterfaceIdentifierOrClassScope<'a>,
+            Option<InterfaceIdentifierOrClassScope<'a>>,
             TaskIdentifier<'a>,
             Metadata<'a>, // ;
             Vec<TfItemDeclaration<'a>>,
@@ -42,7 +42,7 @@ pub enum TaskBodyDeclaration<'a> {
     ),
     Block(
         Box<(
-            InterfaceIdentifierOrClassScope<'a>,
+            Option<InterfaceIdentifierOrClassScope<'a>>,
             TaskIdentifier<'a>,
             Metadata<'a>, // (
             Option<TfPortList<'a>>,

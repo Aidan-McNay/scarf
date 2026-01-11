@@ -41,7 +41,7 @@ pub fn task_body_declaration_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<TaskBodyDeclaration<'s>, VerboseError<'s>> {
     let _tf_parser = (
-        interface_identifier_or_class_scope_parser,
+        opt_note(interface_identifier_or_class_scope_parser),
         task_identifier_parser,
         token(Token::SColon),
         repeat_note(tf_item_declaration_parser),
@@ -53,7 +53,7 @@ pub fn task_body_declaration_parser<'s>(
             TaskBodyDeclaration::Tf(Box::new((a, b, c, d, e, f, g)))
         });
     let _block_parser = (
-        interface_identifier_or_class_scope_parser,
+        opt_note(interface_identifier_or_class_scope_parser),
         task_identifier_parser,
         token(Token::Paren),
         opt_note(tf_port_list_parser),

@@ -142,6 +142,14 @@ pub fn preprocess<'s>(
                         dest.push_element(spanned_token)
                     }
                 }
+                Token::TextMacro(macro_name) => {
+                    preprocess_macro(
+                        src,
+                        dest,
+                        configs,
+                        (macro_name, spanned_token.1),
+                    )?;
+                }
                 _ => dest.push_element(spanned_token),
             }
         }
@@ -235,7 +243,14 @@ pub fn preprocess<'s>(
                 Token::DirEndcelldefine => {
                     configs.add_cell_define(false, spanned_token.1);
                 }
-
+                Token::DirUnderscoreFile => dest.push_element(SpannedToken(
+                    Token::SimpleIdentifier(configs.get_file(&spanned_token.1)),
+                    spanned_token.1,
+                )),
+                Token::DirUnderscoreLine => dest.push_element(SpannedToken(
+                    Token::UnsignedNumber(configs.get_line(&spanned_token.1)),
+                    spanned_token.1,
+                )),
                 token if token.keyword_replace(&configs.curr_standard) => {
                     let new_token = SpannedToken(
                         Token::SimpleIdentifier(token.as_str()),

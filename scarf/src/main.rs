@@ -32,8 +32,9 @@ struct FormatArgs {
 fn format(args: &FormatArgs) {
     for path in &args.paths {
         let src = std::fs::read_to_string(&path).unwrap();
-        let lex_src = src.clone();
-        let lexed_src = lex(&lex_src, path.as_str(), None);
+        let mut configs = PreprocessConfigs::default();
+        let (_, src) = configs.retain_file(path.clone(), src);
+        let lexed_src = lex(src, path.as_str(), None);
         match dump_lex(&lexed_src, "./scarf_debug/lex.txt") {
             Ok(_) => (),
             Err(err) => println!("{}", err),
@@ -41,23 +42,18 @@ fn format(args: &FormatArgs) {
         let lex_errors = report_lex_errors(&lexed_src);
         if !lex_errors.is_empty() {
             for report in lex_errors {
-                report
-                    .print((path.as_str(), Source::from(src.as_str())))
-                    .unwrap()
+                report.print((path.as_str(), Source::from(src))).unwrap()
             }
             return;
         }
         let token_stream = lex_to_parse_stream(lexed_src);
         let mut preprocessed_stream: Vec<SpannedToken<'_>> = vec![];
-        let mut configs = PreprocessConfigs::default();
         let preprocess_result = preprocess(
             &mut token_stream.into_iter().peekable(),
             &mut Some(&mut preprocessed_stream),
             &mut configs,
         );
-        let mut error_sources = configs.included_files();
-        error_sources.push((path.clone(), src));
-        let mut error_sources = sources(error_sources);
+        let mut error_sources = sources(configs.included_files());
         match preprocess_result {
             Err(err) => {
                 let error: Report<'_, (String, std::ops::Range<usize>)> =

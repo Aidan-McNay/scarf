@@ -711,10 +711,16 @@ pub fn specparam_identifier_parser<'s>(
         .parse_next(input)
 }
 
+// Handle system tf identifiers with explicit tokens separately
+const SYSTEM_TF_FATAL: &str = "$fatal";
+const SYSTEM_TF_ERROR: &str = "$error";
+const SYSTEM_TF_WARNING: &str = "$warning";
+const SYSTEM_TF_INFO: &str = "$info";
+
 pub fn system_tf_identifier_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<SystemTfIdentifier<'s>, VerboseError<'s>> {
-    (
+    let general_system_tf_identifier_parser = (
         any.verify_map(|s: &'s SpannedToken<'s>| match s.0 {
             Token::SystemTfIdentifier(text) => Some(SystemTfIdentifier(
                 text,
@@ -732,9 +738,19 @@ pub fn system_tf_identifier_parser<'s>(
                 identifier.0,
                 replace_nodes(identifier.1, extra_nodes),
             )
-        })
-        .context("a system tf identifier")
-        .parse_next(input)
+        });
+    alt((
+        token(Token::DollarFatal)
+            .map(|a| SystemTfIdentifier(SYSTEM_TF_FATAL, a)),
+        token(Token::DollarError)
+            .map(|a| SystemTfIdentifier(SYSTEM_TF_ERROR, a)),
+        token(Token::DollarWarning)
+            .map(|a| SystemTfIdentifier(SYSTEM_TF_WARNING, a)),
+        token(Token::DollarInfo).map(|a| SystemTfIdentifier(SYSTEM_TF_INFO, a)),
+        general_system_tf_identifier_parser,
+    ))
+    .context("a system tf identifier")
+    .parse_next(input)
 }
 
 pub fn task_identifier_parser<'s>(
