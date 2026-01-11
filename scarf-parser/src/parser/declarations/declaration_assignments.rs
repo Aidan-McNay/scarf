@@ -204,7 +204,11 @@ pub fn dynamic_array_new_parser<'s>(
         token(Token::Bracket),
         expression_parser,
         token(Token::EBracket),
-        opt_note((token(Token::Paren), expression_parser, token(Token::EParen))),
+        opt_note((
+            token(Token::Paren),
+            expression_parser,
+            token(Token::EParen),
+        )),
     )
         .map(|(a, b, c, d, e)| DynamicArrayNew(a, b, c, d, e))
         .parse_next(input)

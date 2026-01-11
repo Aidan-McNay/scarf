@@ -75,7 +75,7 @@ pub enum DataType<'a> {
     ),
     Type(
         Box<(
-            ClassOrPackageScope<'a>,
+            Option<ClassOrPackageScope<'a>>,
             TypeIdentifier<'a>,
             Vec<PackedDimension<'a>>,
         )>,

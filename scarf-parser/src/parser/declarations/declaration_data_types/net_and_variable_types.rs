@@ -177,7 +177,7 @@ pub fn data_type_parser<'s>(
     )
         .map(|(a, b, c, d, e)| DataType::Virtual(Box::new((a, b, c, d, e))));
     let _type_parser = (
-        class_or_package_scope_parser,
+        opt_note(class_or_package_scope_parser),
         type_identifier_parser,
         repeat_note(packed_dimension_parser),
     )
@@ -200,8 +200,8 @@ pub fn data_type_parser<'s>(
         _string_parser,
         _chandle_parser,
         _virtual_parser,
-        _type_parser,
         _class_type_parser,
+        _type_parser,
         _event_parser,
         _ps_covergroup_parser,
         _type_ref_parser,

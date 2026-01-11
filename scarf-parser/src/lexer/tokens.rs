@@ -1197,7 +1197,7 @@ impl<'a> Token<'a> {
             Token::Colon => ":",
             Token::SColon => ";",
             Token::Apost => "\"'\"",
-            Token::Comma => "\",\"",
+            Token::Comma => "a comma",
             Token::Period => ".",
             Token::Pound => "#",
             Token::Dollar => "$",
