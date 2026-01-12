@@ -5,7 +5,7 @@
 
 use crate::*;
 
-#[derive(Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Debug)]
 pub enum StandardVersion {
     IEEE1364_1995,
     IEEE1364_2001Noconfig,

@@ -20,7 +20,11 @@ pub enum PreprocessorError<'a> {
     IncompleteDirectiveWithToken(SpannedToken<'a>),
     UndefinedMacro((&'a str, Span<'a>)),
     NotPreviouslyDefinedMacro((&'a str, Span<'a>)),
+    DuplicateMacroParameter((&'a str, Span<'a>)),
     NoMacroArguments((&'a str, Span<'a>)),
+    TooManyMacroArguments((&'a str, usize, usize, Span<'a>)),
+    MissingMacroArgument((&'a str, Span<'a>)),
+    InvalidIdentifierFormation((&'a str, Span<'a>)),
     IncompleteMacroWithToken(SpannedToken<'a>),
     Error(VerboseError<'a>),
     // Internal "errors" used for communication
@@ -193,19 +197,55 @@ impl<'s> From<PreprocessorError<'s>>
                 "Not previously defined".to_string(),
                 ReportKind::Error,
             ),
+            PreprocessorError::DuplicateMacroParameter((arg_name, arg_span)) => {
+                make_report(
+                    arg_span,
+                    "PP13",
+                    format!("'{arg_name}' was already declared as a macro parameter"),
+                    "Parameter already used".to_string(),
+                    ReportKind::Error,
+                )
+            }
             PreprocessorError::NoMacroArguments((macro_name, macro_span)) => {
                 make_report(
                     macro_span,
-                    "PP13",
+                    "PP14",
                     format!("Expected arguments when using {macro_name}"),
                     "Expected arguments not present".to_string(),
+                    ReportKind::Error,
+                )
+            }
+            PreprocessorError::TooManyMacroArguments((macro_name, expected, found, macro_span)) => {
+                make_report(
+                    macro_span,
+                    "PP15",
+                    format!("{} expected {} arguments, but {} were supplied", macro_name, expected, found),
+                    "Too many arguments".to_string(),
+                    ReportKind::Error,
+                )
+            }
+            PreprocessorError::MissingMacroArgument((arg_name, macro_span)) => {
+                make_report(
+                    macro_span,
+                    "PP16",
+                    format!("'{arg_name}' wasn't specified and has no default"),
+                    "Missing argument".to_string(),
+                    ReportKind::Error,
+                )
+            }
+            PreprocessorError::InvalidIdentifierFormation((arg_name, arg_span)) => {
+                make_report(
+                    arg_span,
+                    "PP17",
+                    format!("The argument for '{arg_name}' cannot be concatenated into an identifier"),
+                    "No valid conversion to identifier".to_string(),
                     ReportKind::Error,
                 )
             }
             PreprocessorError::IncompleteMacroWithToken(err_spanned_token) => {
                 make_report(
                   err_spanned_token.1,
-                  "PP14",
+                  "PP18",
                   format!("Usage of {} is incomplete", err_spanned_token.0),
                   "Expected a complete macro argument or escaped newline after".to_string(),
                   ReportKind::Error,

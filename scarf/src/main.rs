@@ -58,7 +58,7 @@ fn format(args: &FormatArgs) {
             Err(err) => {
                 let error: Report<'_, (String, std::ops::Range<usize>)> =
                     err.into();
-                error.print(&mut error_sources).unwrap()
+                error.print(&mut error_sources).unwrap();
             }
             _ => (),
         }

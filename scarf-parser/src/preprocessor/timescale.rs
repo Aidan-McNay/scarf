@@ -7,14 +7,14 @@ use crate::*;
 use scarf_syntax::SpanRelation;
 use std::iter::Peekable;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum TimescaleValue {
     One,
     Ten,
     Hundred,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum TimescaleUnit {
     S,
     MS,
@@ -24,7 +24,7 @@ pub enum TimescaleUnit {
     FS,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Timescale<'a> {
     def_span: Span<'a>,
     pub unit: (TimescaleValue, TimescaleUnit),

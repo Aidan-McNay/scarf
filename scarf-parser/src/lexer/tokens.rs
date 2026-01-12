@@ -811,6 +811,8 @@ pub enum Token<'a> {
     SimpleIdentifier(&'a str),
     #[regex(r"\\[!-~]+", |lex| lex.slice())]
     EscapedIdentifier(&'a str),
+    #[regex(r"[a-zA-Z_][a-zA-Z0-9_\$]*(``([a-zA-Z_][a-zA-Z0-9_\$]*)?)+", |lex| lex.slice())]
+    PreprocessorIdentifier(&'a str),
     #[regex(r"`[a-zA-Z_][a-zA-Z0-9_\$]*", text_macro)]
     #[regex(r"`\\[!-~]+", text_macro)]
     TextMacro(&'a str),
@@ -1196,7 +1198,7 @@ impl<'a> Token<'a> {
             Token::EBrace => "}",
             Token::Colon => ":",
             Token::SColon => ";",
-            Token::Apost => "\"'\"",
+            Token::Apost => "'",
             Token::Comma => "a comma",
             Token::Period => ".",
             Token::Pound => "#",
@@ -1256,6 +1258,7 @@ impl<'a> Token<'a> {
             Token::SystemTfIdentifier(_text) => "<system tf identifier>",
             Token::SimpleIdentifier(_text) => "<simple identifier>",
             Token::EscapedIdentifier(_text) => "<escaped identifier>",
+            Token::PreprocessorIdentifier(_text) => "<preprocessor identifier>",
             Token::TextMacro(_text) => "<text macro>",
             Token::TimeUnit(_text) => "<time unit>",
             Token::StringLiteral(_text) => "<string>",
@@ -1324,6 +1327,10 @@ impl<'a> fmt::Display for Token<'a> {
             }
             Token::EscapedIdentifier(text) => {
                 temp_str = format!("escaped identifier '{}'", text);
+                temp_str.as_str()
+            }
+            Token::PreprocessorIdentifier(text) => {
+                temp_str = format!("preprocessor identifier '{}'", text);
                 temp_str.as_str()
             }
             Token::DirIncludeToolPath(text) => {

@@ -142,7 +142,7 @@ pub fn preprocess<'s>(
                         dest.push_element(spanned_token)
                     }
                 }
-                Token::TextMacro(macro_name) => {
+                Token::TextMacro(macro_name) if configs.in_define_arg => {
                     preprocess_macro(
                         src,
                         dest,

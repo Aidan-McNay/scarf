@@ -174,6 +174,13 @@ fn get_define_function_arg<'s>(
             }
         }
     };
+    for prev_arg_id in dest.iter().map(|(id, _)| id) {
+        if prev_arg_id.0 == arg_id.0 {
+            return Err(PreprocessorError::DuplicateMacroParameter((
+                arg_id.0, arg_id.1,
+            )));
+        }
+    }
     let eq_span = loop {
         match src.peek() {
             None => {

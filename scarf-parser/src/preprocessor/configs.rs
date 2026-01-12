@@ -29,17 +29,17 @@ pub struct PreprocessConfigs<'a> {
     cell_defines: Vec<(bool, Span<'a>)>,
     included_files: HashMap<Box<str>, Box<str>>,
     included_spans: Vec<Box<Span<'a>>>,
-    stored_lines: Vec<Box<str>>,
+    stored_strings: Vec<Box<str>>,
     pub curr_standard: StandardVersion,
     pub in_define: bool,
     pub in_define_arg: bool,
     pub include_line_directives: bool,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct SpannedString<'a>(pub &'a str, pub Span<'a>);
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Define<'a> {
     pub name: SpannedString<'a>,
     pub body: DefineBody<'a>,
@@ -51,14 +51,14 @@ impl<'a> Define<'a> {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum DefineBody<'a> {
     Empty(),
     Text(Vec<SpannedToken<'a>>),
     Function(DefineFunction<'a>),
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct DefineFunction<'a> {
     pub args: Vec<(
         SpannedString<'a>,
@@ -71,14 +71,29 @@ pub struct DefineFunction<'a> {
 }
 
 impl<'a> DefineBody<'a> {
-    pub fn get_tokens(&self) -> (Vec<SpannedToken<'a>>, bool) {
+    pub fn get_tokens(
+        &self,
+    ) -> (
+        Vec<SpannedToken<'a>>,
+        Option<Vec<(SpannedString<'a>, Option<Vec<SpannedToken<'a>>>)>>,
+    ) {
         match self {
-            DefineBody::Empty() => (vec![], false),
-            DefineBody::Text(token_vec) => (token_vec.clone(), false),
-            DefineBody::Function(def_func) => match &def_func.body {
-                Some(token_vec) => (token_vec.clone(), true),
-                None => (vec![], true),
-            },
+            DefineBody::Empty() => (vec![], None),
+            DefineBody::Text(token_vec) => (token_vec.clone(), None),
+            DefineBody::Function(def_func) => {
+                let function_args = def_func
+                    .args
+                    .iter()
+                    .map(|(a, b)| match b {
+                        Some((_, tokens)) => (a.clone(), Some(tokens.clone())),
+                        None => (a.clone(), None),
+                    })
+                    .collect();
+                match &def_func.body {
+                    Some(token_vec) => (token_vec.clone(), Some(function_args)),
+                    None => (vec![], Some(function_args)),
+                }
+            }
         }
     }
 }
@@ -155,7 +170,10 @@ impl<'a> PreprocessConfigs<'a> {
     pub fn get_macro_tokens(
         &self,
         macro_name: &'a str,
-    ) -> Option<(Vec<SpannedToken<'a>>, bool)> {
+    ) -> Option<(
+        Vec<SpannedToken<'a>>,
+        Option<Vec<(SpannedString<'a>, Option<Vec<SpannedToken<'a>>>)>>,
+    )> {
         for define in &self.defines {
             if define.name.0 == macro_name {
                 return Some(define.body.get_tokens());
@@ -297,9 +315,16 @@ impl<'a> PreprocessConfigs<'a> {
         let offset = span.bytes.start;
         let file_contents: &str = self.included_files.get(span.file).unwrap();
         let line_num = file_contents[..offset].lines().count() + 1;
-        self.stored_lines
+        self.stored_strings
             .push(line_num.to_string().into_boxed_str());
-        let line_str: *const str = self.stored_lines.last().unwrap().as_ref();
+        let line_str: *const str = self.stored_strings.last().unwrap().as_ref();
         unsafe { &*line_str }
+    }
+
+    pub fn retain_string(&mut self, string: String) -> &'a str {
+        self.stored_strings.push(string.into_boxed_str());
+        let stored_str_ptr: *const str =
+            self.stored_strings.last().unwrap().as_ref();
+        unsafe { &*stored_str_ptr }
     }
 }

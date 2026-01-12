@@ -7,7 +7,7 @@ use crate::Span;
 use crate::*;
 use std::iter::Peekable;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum DefaultNettype {
     Wire,
     Tri,
