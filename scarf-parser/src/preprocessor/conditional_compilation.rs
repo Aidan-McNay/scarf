@@ -155,7 +155,7 @@ fn get_ifdef_macro_expression<'s>(
 
 fn ifdef_condition_true<'s>(
     condition: IfdefCondition<'s>,
-    configs: &PreprocessConfigs,
+    configs: &PreprocessConfigs<'s>,
 ) -> bool {
     match condition {
         IfdefCondition::TextMacro(inner_box) => {
@@ -170,7 +170,7 @@ fn ifdef_condition_true<'s>(
 
 fn ifdef_expression_true<'s>(
     expression: IfdefMacroExpression<'s>,
-    configs: &PreprocessConfigs,
+    configs: &PreprocessConfigs<'s>,
 ) -> bool {
     match expression {
         IfdefMacroExpression::Text(inner_box) => {
@@ -231,7 +231,7 @@ pub fn preprocess_ifdef<'s>(
         let curr_configs = if curr_condition_valid {
             &mut *configs
         } else {
-            &mut PreprocessConfigs::default()
+            &mut PreprocessConfigs::new(configs.cache)
         };
         match preprocess(src, output_dest, curr_configs) {
             Ok(()) => {
@@ -266,7 +266,7 @@ pub fn preprocess_ifdef<'s>(
                 let curr_configs = if !valid_condition_found {
                     configs
                 } else {
-                    &mut PreprocessConfigs::default()
+                    &mut PreprocessConfigs::new(configs.cache)
                 };
                 match preprocess(src, output_dest, curr_configs) {
                     Ok(()) => {

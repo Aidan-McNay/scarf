@@ -199,6 +199,7 @@ pub fn primary_parser<'s>(
                 token(Token::Paren),
                 token(Token::Period),
                 token(Token::With),
+                token(Token::Apost),
             )))),
         ),
         _assignment_pattern_expression_parser,

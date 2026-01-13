@@ -16,3 +16,4 @@ scarf-syntax = { version = "0.1.0", path = "../scarf-syntax" }
 logos = "0.15.0"
 regex = "1.11.1"
 winnow = "0.7.13"
+elsa = "1.11.2"

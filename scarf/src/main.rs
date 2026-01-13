@@ -32,7 +32,8 @@ struct FormatArgs {
 fn format(args: &FormatArgs) {
     for path in &args.paths {
         let src = std::fs::read_to_string(&path).unwrap();
-        let mut configs = PreprocessConfigs::default();
+        let string_cache = PreprocessorCache::default();
+        let mut configs = PreprocessConfigs::new(&string_cache);
         let (_, src) = configs.retain_file(path.clone(), src);
         let lexed_src = lex(src, path.as_str(), None);
         match dump_lex(&lexed_src, "./scarf_debug/lex.txt") {

@@ -4,6 +4,7 @@
 // Configurations for preprocessing
 
 use crate::*;
+use elsa::FrozenVec;
 use scarf_syntax::*;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -19,7 +20,22 @@ const DEFAULT_NETTYPE: DefaultNettype = DefaultNettype::Wire;
 const DEFAULT_UNCONNECTED_DRIVE: UnconnectedDrive =
     UnconnectedDrive::NoUnconnected;
 
-#[derive(Default, Clone)]
+#[derive(Default)]
+pub struct PreprocessorCache<'a> {
+    spans: FrozenVec<Box<Span<'a>>>,
+    strings: FrozenVec<Box<str>>,
+}
+
+impl<'a> PreprocessorCache<'a> {
+    pub fn retain_span(&self, span: Span<'a>) -> &Span<'a> {
+        self.spans.push_get(Box::new(span))
+    }
+    pub fn retain_string(&self, string: String) -> &str {
+        self.strings.push_get(string.into_boxed_str())
+    }
+}
+
+#[derive(Clone)]
 pub struct PreprocessConfigs<'a> {
     includes: Vec<&'a Path>,
     defines: Vec<Define<'a>>,
@@ -27,9 +43,8 @@ pub struct PreprocessConfigs<'a> {
     default_nettypes: Vec<(DefaultNettype, Span<'a>)>,
     unconnected_drives: Vec<(UnconnectedDrive, Span<'a>)>,
     cell_defines: Vec<(bool, Span<'a>)>,
-    included_files: HashMap<Box<str>, Box<str>>,
-    included_spans: Vec<Box<Span<'a>>>,
-    stored_strings: Vec<Box<str>>,
+    included_files: HashMap<&'a str, &'a str>,
+    pub cache: &'a PreprocessorCache<'a>,
     pub curr_standard: StandardVersion,
     pub in_define: bool,
     pub in_define_arg: bool,
@@ -99,6 +114,22 @@ impl<'a> DefineBody<'a> {
 }
 
 impl<'a> PreprocessConfigs<'a> {
+    pub fn new(string_cache: &'a PreprocessorCache<'a>) -> Self {
+        Self {
+            includes: vec![],
+            defines: vec![],
+            timescales: vec![],
+            default_nettypes: vec![],
+            unconnected_drives: vec![],
+            cell_defines: vec![],
+            included_files: HashMap::new(),
+            cache: string_cache,
+            curr_standard: StandardVersion::default(),
+            in_define: false,
+            in_define_arg: false,
+            include_line_directives: false,
+        }
+    }
     /// Reset all resetable configs
     pub fn reset_all(&mut self, reset_all_span: Span<'a>) {
         self.add_timescale(
@@ -240,32 +271,22 @@ impl<'a> PreprocessConfigs<'a> {
         file_path: String,
         file_contents: String,
     ) -> (&'a str, &'a str) {
-        self.included_files.insert(
-            file_path.clone().into_boxed_str(),
-            file_contents.into_boxed_str(),
-        );
-        let entry = self
-            .included_files
-            .get_key_value(&file_path.into_boxed_str())
-            .unwrap();
-        let path: *const str = entry.0.as_ref();
-        let contents: *const str = entry.1.as_ref();
-        unsafe { (&*path, &*contents) }
+        let path = self.cache.retain_string(file_path);
+        let contents = self.cache.retain_string(file_contents);
+        self.included_files.insert(path, contents);
+        (path, contents)
     }
 
     /// Retain a span
     pub fn retain_span(&mut self, span: Span<'a>) -> &'a Span<'a> {
-        self.included_spans.push(Box::new(span));
-        let entry: *const Span<'a> =
-            self.included_spans.last().unwrap().as_ref();
-        unsafe { &*entry }
+        self.cache.retain_span(span)
     }
 
     /// Get the included file contents as a vector
     pub fn included_files(&self) -> Vec<(String, String)> {
         self.included_files
             .iter()
-            .map(|(a, b)| (a.clone().into(), b.clone().into()))
+            .map(|(a, b)| (a.to_string(), b.to_string()))
             .collect()
     }
 
@@ -315,16 +336,10 @@ impl<'a> PreprocessConfigs<'a> {
         let offset = span.bytes.start;
         let file_contents: &str = self.included_files.get(span.file).unwrap();
         let line_num = file_contents[..offset].lines().count() + 1;
-        self.stored_strings
-            .push(line_num.to_string().into_boxed_str());
-        let line_str: *const str = self.stored_strings.last().unwrap().as_ref();
-        unsafe { &*line_str }
+        self.cache.retain_string(line_num.to_string())
     }
 
     pub fn retain_string(&mut self, string: String) -> &'a str {
-        self.stored_strings.push(string.into_boxed_str());
-        let stored_str_ptr: *const str =
-            self.stored_strings.last().unwrap().as_ref();
-        unsafe { &*stored_str_ptr }
+        self.cache.retain_string(string)
     }
 }
