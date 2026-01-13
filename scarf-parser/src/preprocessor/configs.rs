@@ -68,7 +68,7 @@ impl<'a> Define<'a> {
 
 #[derive(Clone, Debug)]
 pub enum DefineBody<'a> {
-    Empty(),
+    Empty,
     Text(Vec<SpannedToken<'a>>),
     Function(DefineFunction<'a>),
 }
@@ -93,7 +93,7 @@ impl<'a> DefineBody<'a> {
         Option<Vec<(SpannedString<'a>, Option<Vec<SpannedToken<'a>>>)>>,
     ) {
         match self {
-            DefineBody::Empty() => (vec![], None),
+            DefineBody::Empty => (vec![], None),
             DefineBody::Text(token_vec) => (token_vec.clone(), None),
             DefineBody::Function(def_func) => {
                 let function_args = def_func
@@ -176,6 +176,11 @@ impl<'a> PreprocessConfigs<'a> {
         });
     }
 
+    /// Provide a reference to existing defines
+    pub fn defines(&self) -> &Vec<Define<'a>> {
+        &self.defines
+    }
+
     /// Define a new macro from the command line
     pub fn command_line_define(
         &mut self,
@@ -186,7 +191,7 @@ impl<'a> PreprocessConfigs<'a> {
             macro_name,
             Span::default(),
             match macro_text {
-                None => DefineBody::Empty(),
+                None => DefineBody::Empty,
                 Some(token_vec) => DefineBody::Text(token_vec),
             },
         )

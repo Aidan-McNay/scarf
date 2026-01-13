@@ -247,7 +247,7 @@ pub fn preprocess_define<'s>(
         }),
         None => match define_text {
             Some(text_vec) => DefineBody::Text(text_vec),
-            None => DefineBody::Empty(),
+            None => DefineBody::Empty,
         },
     };
     configs.define(define_name.0, define_name.1, define_body);

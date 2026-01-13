@@ -96,6 +96,115 @@ fn resolve_text_macro_args<'s>(
     Ok(resolved_args)
 }
 
+fn get_identifier_substitute<'a>(
+    arg_name: &'a str,
+    replacement_tokens: &Vec<SpannedToken<'a>>,
+) -> Result<&'a str, PreprocessorError<'a>> {
+    let replacement_tokens_len = replacement_tokens.len();
+    if replacement_tokens_len > 1 {
+        // Only currently support a max of one token
+        let err_span = replacement_tokens.first().unwrap().1.clone();
+        return Err(PreprocessorError::InvalidIdentifierFormation((
+            arg_name, err_span,
+        )));
+    } else if replacement_tokens_len == 1 {
+        let replacement_token = replacement_tokens.first().unwrap().clone();
+        match replacement_token.0 {
+            Token::UnsignedNumber(text)
+            | Token::FixedPointNumber(text)
+            | Token::BinaryNumber(text)
+            | Token::OctalNumber(text)
+            | Token::DecimalNumber(text)
+            | Token::HexNumber(text)
+            | Token::ScientificNumber(text)
+            | Token::UnbasedUnsizedLiteral(text)
+            | Token::SystemTfIdentifier(text)
+            | Token::SimpleIdentifier(text)
+            | Token::EscapedIdentifier(text)
+            | Token::TimeUnit(text) => Ok(text),
+            Token::OnelineComment(_)
+            | Token::BlockComment(_)
+            | Token::PreprocessorIdentifier(_)
+            | Token::TextMacro(_)
+            | Token::StringLiteral(_)
+            | Token::TripleQuoteStringLiteral(_)
+            | Token::DirIncludeToolPath(_)
+            | Token::Newline => {
+                return Err(PreprocessorError::InvalidIdentifierFormation((
+                    arg_name,
+                    replacement_token.1,
+                )));
+            }
+            other => Ok(other.as_str()),
+        }
+    } else {
+        Ok("")
+    }
+}
+
+fn get_string_substitute<'a>(
+    id_name: &'a str,
+    replacement_tokens: &Vec<SpannedToken<'a>>,
+    str_to_append: &mut String,
+) -> Result<(), PreprocessorError<'a>> {
+    let replacement_tokens_len = replacement_tokens.len();
+    if replacement_tokens_len > 1 {
+        // Only currently support a max of one token
+        let err_span = replacement_tokens.first().unwrap().1.clone();
+        return Err(PreprocessorError::InvalidIdentifierFormation((
+            id_name, err_span,
+        )));
+    } else if replacement_tokens_len == 1 {
+        let replacement_token = replacement_tokens.first().unwrap().clone();
+        match replacement_token.0 {
+            Token::UnsignedNumber(text)
+            | Token::FixedPointNumber(text)
+            | Token::BinaryNumber(text)
+            | Token::OctalNumber(text)
+            | Token::DecimalNumber(text)
+            | Token::HexNumber(text)
+            | Token::ScientificNumber(text)
+            | Token::UnbasedUnsizedLiteral(text)
+            | Token::SystemTfIdentifier(text)
+            | Token::SimpleIdentifier(text)
+            | Token::EscapedIdentifier(text)
+            | Token::TimeUnit(text) => {
+                *str_to_append += text;
+                Ok(())
+            }
+            Token::StringLiteral(text) => {
+                *str_to_append += "\"";
+                *str_to_append += text;
+                *str_to_append += "\"";
+                Ok(())
+            }
+            Token::TripleQuoteStringLiteral(text) => {
+                *str_to_append += "\"\"\"";
+                *str_to_append += text;
+                *str_to_append += "\"\"\"";
+                Ok(())
+            }
+            Token::OnelineComment(_)
+            | Token::BlockComment(_)
+            | Token::PreprocessorIdentifier(_)
+            | Token::TextMacro(_)
+            | Token::DirIncludeToolPath(_)
+            | Token::Newline => {
+                return Err(PreprocessorError::InvalidIdentifierFormation((
+                    id_name,
+                    replacement_token.1,
+                )));
+            }
+            other => {
+                *str_to_append += other.as_str();
+                Ok(())
+            }
+        }
+    } else {
+        Ok(())
+    }
+}
+
 fn replace_macro_arguments<'a>(
     original_stream: IntoIter<SpannedToken<'a>>,
     arguments: HashMap<&'a str, (Span<'a>, Vec<SpannedToken<'a>>)>,
@@ -116,49 +225,10 @@ fn replace_macro_arguments<'a>(
                 for component in components.into_iter() {
                     match arguments.get(component) {
                         Some((_, replacement_tokens)) => {
-                            let replacement_tokens_len =
-                                replacement_tokens.len();
-                            if replacement_tokens_len > 1 {
-                                // Only currently support a max of one token
-                                let err_span = replacement_tokens
-                                    .first()
-                                    .unwrap()
-                                    .1
-                                    .clone();
-                                return Err(PreprocessorError::InvalidIdentifierFormation((component, err_span)));
-                            } else if replacement_tokens_len == 1 {
-                                let replacement_token =
-                                    replacement_tokens.first().unwrap().clone();
-                                match replacement_token.0 {
-                                    Token::UnsignedNumber(text)
-                                    | Token::FixedPointNumber(text)
-                                    | Token::BinaryNumber(text)
-                                    | Token::OctalNumber(text)
-                                    | Token::DecimalNumber(text)
-                                    | Token::HexNumber(text)
-                                    | Token::ScientificNumber(text)
-                                    | Token::UnbasedUnsizedLiteral(text)
-                                    | Token::SystemTfIdentifier(text)
-                                    | Token::SimpleIdentifier(text)
-                                    | Token::EscapedIdentifier(text)
-                                    | Token::TimeUnit(text) => {
-                                        resulting_identifier += text;
-                                    }
-                                    Token::OnelineComment(_)
-                                    | Token::BlockComment(_)
-                                    | Token::PreprocessorIdentifier(_)
-                                    | Token::TextMacro(_)
-                                    | Token::StringLiteral(_)
-                                    | Token::TripleQuoteStringLiteral(_)
-                                    | Token::DirIncludeToolPath(_)
-                                    | Token::Newline => {
-                                        return Err(PreprocessorError::InvalidIdentifierFormation((component, replacement_token.1)));
-                                    }
-                                    other => {
-                                        resulting_identifier += other.as_str()
-                                    }
-                                }
-                            }
+                            resulting_identifier += get_identifier_substitute(
+                                component,
+                                replacement_tokens,
+                            )?;
                         }
                         None => {
                             resulting_identifier += component;
@@ -171,6 +241,46 @@ fn replace_macro_arguments<'a>(
                     ),
                     span,
                 ));
+            }
+            SpannedToken(Token::PreprocessorStringLiteral(id), span) => {
+                let mut resulting_string = id.to_string();
+                // Replace definitions
+                for define in configs.defines() {
+                    let define_id = format! {"`{}", define.name.0};
+                    if resulting_string.contains(&define_id) {
+                        let replacement_string = match &define.body {
+                            DefineBody::Empty => "".to_string(),
+                            DefineBody::Text(tokens) => {
+                                let mut token_str = "".to_string();
+                                get_string_substitute(
+                                    define.name.0,
+                                    tokens,
+                                    &mut token_str,
+                                )?;
+                                token_str
+                            }
+                            DefineBody::Function(_) => {
+                                todo!("Error for using functions here")
+                            }
+                        };
+                        resulting_string = resulting_string
+                            .replace(&define_id, replacement_string.as_str());
+                    }
+                }
+                // Replace arguments
+                for argument in arguments.keys() {
+                    if resulting_string.contains(argument) {
+                        let mut replacement_string = "".to_string();
+                        get_string_substitute(
+                            argument,
+                            &arguments.get(argument).unwrap().1,
+                            &mut replacement_string,
+                        )?;
+                        resulting_string = resulting_string
+                            .replace(argument, replacement_string.as_str())
+                    }
+                }
+                result_vec.push(SpannedToken(Token::StringLiteral(id), span));
             }
             other_token => {
                 result_vec.push(other_token);

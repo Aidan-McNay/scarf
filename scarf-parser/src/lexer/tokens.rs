@@ -779,7 +779,7 @@ pub enum Token<'a> {
     #[token("$info")]
     DollarInfo,
     // Comments
-    #[regex(r"//[^\n]*", oneline_comment)]
+    #[regex(r"//[^\r\n]*", oneline_comment, allow_greedy = true)]
     OnelineComment(&'a str),
     #[regex(r"/\*")]
     BlockCommentStart,
@@ -802,7 +802,7 @@ pub enum Token<'a> {
     HexNumber(&'a str),
     #[regex(r"[0-9][0-9_]*(\.[0-9][0-9_]*)?(e|E)(\+|-)?[0-9][0-9_]*", |lex| lex.slice())]
     ScientificNumber(&'a str),
-    #[regex(r"('0|'1|'x|'X|'z|'Z|'?)", |lex| lex.slice())]
+    #[regex(r"('0|'1|'x|'X|'z|'Z|'\?)", |lex| lex.slice())]
     UnbasedUnsizedLiteral(&'a str),
     // Literals
     #[regex(r"\$[a-zA-Z0-9_\$]+", |lex| lex.slice())]
@@ -822,6 +822,11 @@ pub enum Token<'a> {
         string_literal
     )]
     StringLiteral(&'a str),
+    #[regex(
+        r#"`"([^"\r\n\\]|\\[\x00-\x7F]|\\[0-7]{1,3}|\\x[0-9a-fA-F]{1,2})*(`\\`"([^"\r\n\\]|\\[\x00-\x7F]|\\[0-7]{1,3}|\\x[0-9a-fA-F]{1,2})*)*`""#,
+        preprocessor_string_literal
+    )]
+    PreprocessorStringLiteral(&'a str),
     TripleQuoteStringLiteral(&'a str), // Created from start and end in post-processing
     #[token("\n")]
     #[token("\r")]
@@ -1262,6 +1267,7 @@ impl<'a> Token<'a> {
             Token::TextMacro(_text) => "<text macro>",
             Token::TimeUnit(_text) => "<time unit>",
             Token::StringLiteral(_text) => "<string>",
+            Token::PreprocessorStringLiteral(_text) => "<preprocessor string>",
             Token::TripleQuoteStringLiteral(_text) => "<triple-quote string>",
             Token::Newline => "newline",
         }
@@ -1347,6 +1353,10 @@ impl<'a> fmt::Display for Token<'a> {
             }
             Token::StringLiteral(text) => {
                 temp_str = format!("string \"{}\"", text);
+                temp_str.as_str()
+            }
+            Token::PreprocessorStringLiteral(text) => {
+                temp_str = format!("preprocessor string \"{}\"", text);
                 temp_str.as_str()
             }
             Token::TripleQuoteStringLiteral(text) => {
