@@ -723,8 +723,6 @@ pub enum Token<'a> {
     PipeMinusGt,
     #[token("|=>")]
     PipeEqGt,
-    #[token(r#"""""#)]
-    QuoteQuoteQuote,
     #[token(r"\")]
     Bslash,
     // Other Language Grammar
@@ -781,11 +779,8 @@ pub enum Token<'a> {
     // Comments
     #[regex(r"//[^\r\n]*", oneline_comment, allow_greedy = true)]
     OnelineComment(&'a str),
-    #[regex(r"/\*")]
-    BlockCommentStart,
-    #[regex(r"\*/")]
-    BlockCommentEnd,
-    BlockComment(&'a str), // Created from start and end in post-processing
+    #[token(r"/*", block_comment)]
+    BlockComment(&'a str),
     // Numbers
     #[regex(r"[0-9][0-9_]*", |lex| lex.slice())]
     UnsignedNumber(&'a str),
@@ -817,17 +812,14 @@ pub enum Token<'a> {
     #[regex(r"`\\[!-~]+", text_macro)]
     TextMacro(&'a str),
     TimeUnit(&'a str), // Created in post-processing
-    #[regex(
-        r#""([^"\r\n\\]|\\[\x00-\x7F]|\\[0-7]{1,3}|\\x[0-9a-fA-F]{1,2})*""#,
-        string_literal
-    )]
+    #[token(r#"""#, string_literal)]
     StringLiteral(&'a str),
-    #[regex(
-        r#"`"([^"\r\n\\]|\\[\x00-\x7F]|\\[0-7]{1,3}|\\x[0-9a-fA-F]{1,2})*(`\\`"([^"\r\n\\]|\\[\x00-\x7F]|\\[0-7]{1,3}|\\x[0-9a-fA-F]{1,2})*)*`""#,
-        preprocessor_string_literal
-    )]
+    #[regex(r#"`""#, preprocessor_string_literal)]
     PreprocessorStringLiteral(&'a str),
-    TripleQuoteStringLiteral(&'a str), // Created from start and end in post-processing
+    #[token(r#"""""#, multiline_string_literal)]
+    TripleQuoteStringLiteral(&'a str),
+    #[token(r#"`""""#, preprocessor_multiline_string_literal)]
+    PreprocessorTripleQuoteStringLiteral(&'a str),
     #[token("\n")]
     #[token("\r")]
     #[token("\r\n")]
@@ -1221,7 +1213,6 @@ impl<'a> Token<'a> {
             Token::StarGt => "*>",
             Token::PipeMinusGt => "|->",
             Token::PipeEqGt => "|=>",
-            Token::QuoteQuoteQuote => r#"""""#,
             Token::Bslash => r"\",
             Token::Std => "std",
             Token::PathpulseDollar => "PATHPULSE$",
@@ -1249,8 +1240,6 @@ impl<'a> Token<'a> {
             Token::DollarWarning => "$warning",
             Token::DollarInfo => "$info",
             Token::OnelineComment(_text) => "<oneline comment>",
-            Token::BlockCommentStart => "/*",
-            Token::BlockCommentEnd => "*/",
             Token::BlockComment(_text) => "<block comment>",
             Token::UnsignedNumber(_text) => "<unsigned number>",
             Token::FixedPointNumber(_text) => "<real number>",
@@ -1269,6 +1258,9 @@ impl<'a> Token<'a> {
             Token::StringLiteral(_text) => "<string>",
             Token::PreprocessorStringLiteral(_text) => "<preprocessor string>",
             Token::TripleQuoteStringLiteral(_text) => "<triple-quote string>",
+            Token::PreprocessorTripleQuoteStringLiteral(_text) => {
+                "<preprocessor triple-quote string>"
+            }
             Token::Newline => "newline",
         }
     }
@@ -1356,11 +1348,16 @@ impl<'a> fmt::Display for Token<'a> {
                 temp_str.as_str()
             }
             Token::PreprocessorStringLiteral(text) => {
-                temp_str = format!("preprocessor string \"{}\"", text);
+                temp_str = format!("preprocessor string `\"{}`\"", text);
                 temp_str.as_str()
             }
             Token::TripleQuoteStringLiteral(text) => {
                 temp_str = format!("string \"\"\"{}\"\"\"", text);
+                temp_str.as_str()
+            }
+            Token::PreprocessorTripleQuoteStringLiteral(text) => {
+                temp_str =
+                    format!("preprocessor string `\"\"\"{}`\"\"\"", text);
                 temp_str.as_str()
             }
             _ => self.as_str(),

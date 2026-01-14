@@ -62,64 +62,6 @@ impl<'s> TokenMerge<'s> {
             }
         }
     }
-
-    fn get_block_comment(
-        &mut self,
-        start_span: ByteSpan,
-    ) -> (Result<Token<'s>, String>, ByteSpan) {
-        loop {
-            match self.tokens.next() {
-                Some((Ok(Token::BlockCommentEnd), end_span)) => {
-                    let block_comment_text =
-                        &self.text[start_span.end..end_span.start];
-                    let overall_span = ByteSpan {
-                        start: start_span.start,
-                        end: end_span.end,
-                    };
-                    return (
-                        Ok(Token::BlockComment(block_comment_text)),
-                        overall_span,
-                    );
-                }
-                None => {
-                    return (
-                        Err("Block comment with no ending".to_owned()),
-                        start_span,
-                    );
-                }
-                _ => (),
-            }
-        }
-    }
-
-    fn get_triple_quote_string(
-        &mut self,
-        start_span: ByteSpan,
-    ) -> (Result<Token<'s>, String>, ByteSpan) {
-        loop {
-            match self.tokens.next() {
-                Some((Ok(Token::QuoteQuoteQuote), end_span)) => {
-                    let string_text =
-                        &self.text[start_span.end..end_span.start];
-                    let overall_span = ByteSpan {
-                        start: start_span.start,
-                        end: end_span.end,
-                    };
-                    return (
-                        Ok(Token::TripleQuoteStringLiteral(string_text)),
-                        overall_span,
-                    );
-                }
-                None => {
-                    return (
-                        Err("Triple-quote string with no ending".to_owned()),
-                        start_span,
-                    );
-                }
-                _ => (),
-            }
-        }
-    }
 }
 
 impl<'s> Iterator for TokenMerge<'s> {
@@ -131,14 +73,6 @@ impl<'s> Iterator for TokenMerge<'s> {
             return result;
         }
         match self.tokens.next() {
-            Some((Ok(Token::BlockCommentStart), start_span)) => {
-                self.prev_was_num = false;
-                Some(self.get_block_comment(start_span))
-            }
-            Some((Ok(Token::QuoteQuoteQuote), start_span)) => {
-                self.prev_was_num = false;
-                Some(self.get_triple_quote_string(start_span))
-            }
             Some((Ok(Token::UnsignedNumber(num_str)), num_span)) => {
                 self.prev_was_num = true;
                 Some((Ok(Token::UnsignedNumber(num_str)), num_span))
