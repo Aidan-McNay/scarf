@@ -13,7 +13,7 @@ fn get_text_macro_args<'s>(
     configs: &mut PreprocessConfigs<'s>,
     define_span: &Span<'s>,
     text_macro: (&'s str, Span<'s>),
-) -> Result<Vec<Vec<SpannedToken<'s>>>, PreprocessorError<'s>> {
+) -> Result<(Vec<Vec<SpannedToken<'s>>>, Span<'s>), PreprocessorError<'s>> {
     let paren_span = loop {
         match src.next() {
             Some(SpannedToken(Token::Paren, paren_span)) => {
@@ -29,7 +29,7 @@ fn get_text_macro_args<'s>(
         }
     };
     let mut arg_vec: Vec<Vec<SpannedToken<'s>>> = vec![];
-    loop {
+    let end_span = loop {
         let mut new_arg: Vec<SpannedToken<'s>> = vec![];
         configs.in_define_arg = true;
         let result = preprocess(src, &mut Some(&mut new_arg), configs);
@@ -40,10 +40,10 @@ fn get_text_macro_args<'s>(
             }
             Err(PreprocessorError::EndOfFunctionArgument(SpannedToken(
                 Token::EParen,
-                _,
+                eparen_span,
             ))) => {
                 arg_vec.push(new_arg);
-                break;
+                break eparen_span;
             }
             Err(PreprocessorError::EndOfFunctionArgument(SpannedToken(
                 Token::Comma,
@@ -55,8 +55,10 @@ fn get_text_macro_args<'s>(
                 return Err(err);
             }
         }
-    }
-    Ok(arg_vec)
+    };
+    let mut overall_span = text_macro.1;
+    overall_span.bytes.end = end_span.bytes.end;
+    Ok((arg_vec, overall_span))
 }
 
 fn resolve_text_macro_args<'s>(
@@ -329,6 +331,38 @@ fn replace_macro_arguments<'a>(
     Ok(result_vec)
 }
 
+struct SpanReplacer<'a> {
+    text_macro_span: &'a Span<'a>,
+    tokens: IntoIter<SpannedToken<'a>>,
+}
+
+impl<'a> Iterator for SpanReplacer<'a> {
+    type Item = SpannedToken<'a>;
+    fn next(&mut self) -> Option<Self::Item> {
+        match self.tokens.next() {
+            Some(token) => Some(self.update_span(token)),
+            None => None,
+        }
+    }
+}
+
+impl<'a> SpanReplacer<'a> {
+    fn new(
+        text_macro_span: &'a Span<'a>,
+        tokens: IntoIter<SpannedToken<'a>>,
+    ) -> Self {
+        Self {
+            text_macro_span,
+            tokens,
+        }
+    }
+
+    fn update_span(&self, mut token: SpannedToken<'a>) -> SpannedToken<'a> {
+        token.1.expanded_from = Some(self.text_macro_span);
+        token
+    }
+}
+
 pub fn preprocess_macro<'s>(
     src: &mut Peekable<impl Iterator<Item = SpannedToken<'s>>>,
     dest: &mut Option<&mut Vec<SpannedToken<'s>>>,
@@ -337,13 +371,15 @@ pub fn preprocess_macro<'s>(
 ) -> Result<(), PreprocessorError<'s>> {
     match configs.get_macro_tokens(text_macro.0) {
         Some((define_span, (mut token_vec, define_args))) => {
+            let mut macro_span = text_macro.1.clone();
             if let Some(define_args) = define_args {
-                let function_args = get_text_macro_args(
+                let (function_args, function_macro_span) = get_text_macro_args(
                     src,
                     configs,
                     &define_span,
                     text_macro.clone(),
                 )?;
+                macro_span = function_macro_span;
                 token_vec = replace_macro_arguments(
                     token_vec.into_iter(),
                     resolve_text_macro_args(
@@ -355,7 +391,11 @@ pub fn preprocess_macro<'s>(
                     configs,
                 )?;
             }
-            preprocess(&mut token_vec.into_iter().peekable(), dest, configs)
+            let token_iter = SpanReplacer::new(
+                configs.retain_span(macro_span),
+                token_vec.into_iter(),
+            );
+            preprocess(&mut token_iter.peekable(), dest, configs)
         }
         None => Err(PreprocessorError::UndefinedMacro(text_macro)),
     }

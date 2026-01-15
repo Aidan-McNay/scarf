@@ -23,7 +23,7 @@ pub enum PreprocessorError<'a> {
     IncompleteDirectiveWithToken(SpannedToken<'a>),
     UndefinedMacro((&'a str, Span<'a>)),
     NotPreviouslyDefinedMacro((&'a str, Span<'a>)),
-    DuplicateMacroParameter((&'a str, Span<'a>)),
+    DuplicateMacroParameter((&'a str, &'a str, Span<'a>, Span<'a>)),
     NoMacroArguments((Span<'a>, (&'a str, Span<'a>))),
     TooManyMacroArguments((Span<'a>, (&'a str, usize, usize, Span<'a>))),
     MissingMacroArgument((Span<'a>, (&'a str, Span<'a>))),
@@ -43,42 +43,15 @@ fn make_report<'s>(
     code_label: String,
     kind: ariadne::ReportKind<'s>,
 ) -> ReportBuilder<'s, (String, std::ops::Range<usize>)> {
-    let mut report =
+    let report =
         Report::build(kind, (span.file.to_string(), span.bytes.clone()))
             .with_code(code)
             .with_config(
                 ariadne::Config::new()
                     .with_index_type(ariadne::IndexType::Byte),
             )
-            .with_message(reason)
-            .with_label(
-                Label::new((span.file.to_string(), span.bytes.clone()))
-                    .with_message(code_label)
-                    .with_color(Color::Red),
-            );
-    let mut curr_span: &Span<'s> = &span;
-    let mut note = "".to_string();
-    let mut note_pad = "".to_string();
-    loop {
-        if let Some(included_span) = curr_span.included_from {
-            curr_span = included_span;
-            if note.is_empty() {
-                note = format!("Included from {}", curr_span.file);
-            } else {
-                note = format!(
-                    "{}\n{}╰-Included from {}",
-                    note, note_pad, curr_span.file
-                );
-                note_pad += "  ";
-            }
-        } else {
-            break;
-        }
-    }
-    if !note.is_empty() {
-        report = report.with_note(note);
-    }
-    report
+            .with_message(reason);
+    attach_span_label(span, Color::Red, code_label, report)
 }
 
 impl<'s> From<PreprocessorError<'s>>
@@ -200,53 +173,41 @@ impl<'s> From<PreprocessorError<'s>>
                 "Not previously defined".to_string(),
                 ReportKind::Error,
             ).finish(),
-            PreprocessorError::DuplicateMacroParameter((arg_name, arg_span)) => {
-                make_report(
+            PreprocessorError::DuplicateMacroParameter((define_name, arg_name, arg_span, prev_span)) => {
+                attach_span_label(prev_span, NOTE_COLOR, "Previously declared here", make_report(
                     arg_span,
                     "PP13",
-                    format!("'{arg_name}' was already declared as a macro parameter"),
-                    "Parameter already used".to_string(),
+                    format!("'{arg_name}' was already declared as a macro parameter for {define_name}"),
+                    "Duplicate parameter declaration".to_string(),
                     ReportKind::Error,
-                ).finish()
+                )).finish()
             }
             PreprocessorError::NoMacroArguments((define_span, (macro_name, macro_span))) => {
-                make_report(
+                attach_span_label(define_span, NOTE_COLOR, "Macro defined here", make_report(
                     macro_span,
                     "PP14",
                     format!("Expected arguments when using {macro_name}"),
                     "Expected arguments not present".to_string(),
                     ReportKind::Error,
-                ).with_label(
-                    Label::new((define_span.file.to_string(), define_span.bytes.clone()))
-                    .with_message("Macro defined here")
-                    .with_color(NOTE_COLOR)
-                ).finish()
+                )).finish()
             }
             PreprocessorError::TooManyMacroArguments((define_span, (macro_name, expected, found, macro_span))) => {
-                make_report(
+                attach_span_label(define_span, NOTE_COLOR, format!("Macro definition expects {expected} arguments"), make_report(
                     macro_span,
                     "PP15",
                     format!("{} expected {} arguments, but {} were provided", macro_name, expected, found),
                     format!("{found} arguments provided"),
                     ReportKind::Error,
-                ).with_label(
-                    Label::new((define_span.file.to_string(), define_span.bytes.clone()))
-                    .with_message(format!("Macro definition expects {expected} arguments"))
-                    .with_color(NOTE_COLOR)
-                ).finish()
+                )).finish()
             }
             PreprocessorError::MissingMacroArgument((define_span, (arg_name, macro_span))) => {
-                make_report(
+                attach_span_label(define_span, NOTE_COLOR, "Macro defined here", make_report(
                     macro_span,
                     "PP16",
                     format!("'{arg_name}' wasn't specified and has no default"),
                     "Missing argument".to_string(),
                     ReportKind::Error,
-                ).with_label(
-                    Label::new((define_span.file.to_string(), define_span.bytes.clone()))
-                    .with_message("Macro defined here")
-                    .with_color(NOTE_COLOR)
-                ).finish()
+                )).finish()
             }
             PreprocessorError::InvalidIdentifierFormation((arg_name, arg_span)) => {
                 make_report(

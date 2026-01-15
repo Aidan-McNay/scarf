@@ -57,6 +57,7 @@ fn get_define_name<'s>(
 
 fn get_define_function_args<'s>(
     src: &mut Peekable<impl Iterator<Item = SpannedToken<'s>>>,
+    define_name: &'s str,
     configs: &mut PreprocessConfigs<'s>,
 ) -> Result<
     Option<(
@@ -86,6 +87,7 @@ fn get_define_function_args<'s>(
                     src,
                     &mut function_args,
                     configs,
+                    define_name,
                     paren_span.clone(),
                 ) {
                     Ok(()) => {
@@ -161,6 +163,7 @@ fn get_define_function_arg<'s>(
         Option<(Span<'s>, Vec<SpannedToken<'s>>)>,
     )>,
     configs: &mut PreprocessConfigs<'s>,
+    define_name: &'s str,
     paren_span: Span<'s>,
 ) -> Result<(), PreprocessorError<'s>> {
     let arg_id = loop {
@@ -181,7 +184,10 @@ fn get_define_function_arg<'s>(
     for prev_arg_id in dest.iter().map(|(id, _)| id) {
         if prev_arg_id.0 == arg_id.0 {
             return Err(PreprocessorError::DuplicateMacroParameter((
-                arg_id.0, arg_id.1,
+                define_name,
+                arg_id.0,
+                arg_id.1,
+                prev_arg_id.1.clone(),
             )));
         }
     }
@@ -228,10 +234,7 @@ fn get_define_body<'s>(
     configs.in_define = false;
     match result {
         Ok(()) => Ok(Some(define_body)),
-        Err(PreprocessorError::NewlineInDefine(newline_span)) => {
-            define_body.push(SpannedToken(Token::Newline, newline_span));
-            Ok(Some(define_body))
-        }
+        Err(PreprocessorError::NewlineInDefine(_)) => Ok(Some(define_body)),
         Err(err) => Err(err),
     }
 }
@@ -242,7 +245,7 @@ pub fn preprocess_define<'s>(
     define_span: Span<'s>,
 ) -> Result<(), PreprocessorError<'s>> {
     let define_name = get_define_name(src, define_span)?;
-    let function_args = get_define_function_args(src, configs)?;
+    let function_args = get_define_function_args(src, define_name.0, configs)?;
     let define_text = get_define_body(src, configs)?;
     let (define_body, define_span) = match function_args {
         Some((end_span, arg_vec)) => {

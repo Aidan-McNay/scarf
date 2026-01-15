@@ -124,7 +124,7 @@ pub fn report_parse_errors<'s>(
         } else {
             verbose_error.span.clone()
         };
-        let report = Report::build(
+        let mut report = Report::build(
             ReportKind::Error,
             (error_span.file.to_string(), error_span.bytes.clone()),
         )
@@ -132,14 +132,14 @@ pub fn report_parse_errors<'s>(
         .with_config(
             ariadne::Config::new().with_index_type(ariadne::IndexType::Byte),
         )
-        .with_message(format_reason(verbose_error))
-        .with_label(
-            Label::new((error_span.file.to_string(), error_span.bytes.clone()))
-                .with_message(format_reason_short(verbose_error))
-                .with_color(Color::Red),
-        )
-        .finish();
-        reports.push(report);
+        .with_message(format_reason(verbose_error));
+        report = attach_span_label(
+            error_span,
+            Color::Red,
+            format_reason_short(verbose_error),
+            report,
+        );
+        reports.push(report.finish());
     }
     reports
 }
