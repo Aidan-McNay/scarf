@@ -47,6 +47,15 @@ fn get_expansion_string(expansion_depth: u32, is_last: bool) -> String {
     }
 }
 
+pub(crate) fn kind_color<'s>(kind: &ariadne::ReportKind<'s>) -> Color {
+    match kind {
+        ReportKind::Error => Color::Red,
+        ReportKind::Warning => Color::Yellow,
+        ReportKind::Advice => Color::Fixed(147),
+        ReportKind::Custom(_, color) => color.clone(),
+    }
+}
+
 pub(crate) fn attach_span_label<'s, M>(
     span: Span<'s>,
     color: ariadne::Color,

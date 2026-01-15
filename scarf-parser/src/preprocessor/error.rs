@@ -51,7 +51,7 @@ fn make_report<'s>(
                     .with_index_type(ariadne::IndexType::Byte),
             )
             .with_message(reason);
-    attach_span_label(span, Color::Red, code_label, report)
+    attach_span_label(span, kind_color(&kind), code_label, report)
 }
 
 impl<'s> From<PreprocessorError<'s>>
@@ -169,9 +169,9 @@ impl<'s> From<PreprocessorError<'s>>
             )) => make_report(
                 macro_span,
                 "PP12",
-                format!("{macro_name} has not been previously defined"),
+                format!("Undefining {macro_name}, which has not been previously defined"),
                 "Not previously defined".to_string(),
-                ReportKind::Error,
+                ReportKind::Warning,
             ).finish(),
             PreprocessorError::DuplicateMacroParameter((define_name, arg_name, arg_span, prev_span)) => {
                 attach_span_label(prev_span, NOTE_COLOR, "Previously declared here", make_report(
