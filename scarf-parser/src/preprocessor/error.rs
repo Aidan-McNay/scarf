@@ -4,6 +4,9 @@
 // Warnings/errors that are thrown by the preprocessor
 
 use crate::*;
+use ariadne::ReportBuilder;
+
+const NOTE_COLOR: Color = Color::Fixed(81);
 
 pub enum PreprocessorError<'a> {
     // Errors that can be exposed outside preprocess
@@ -21,9 +24,9 @@ pub enum PreprocessorError<'a> {
     UndefinedMacro((&'a str, Span<'a>)),
     NotPreviouslyDefinedMacro((&'a str, Span<'a>)),
     DuplicateMacroParameter((&'a str, Span<'a>)),
-    NoMacroArguments((&'a str, Span<'a>)),
-    TooManyMacroArguments((&'a str, usize, usize, Span<'a>)),
-    MissingMacroArgument((&'a str, Span<'a>)),
+    NoMacroArguments((Span<'a>, (&'a str, Span<'a>))),
+    TooManyMacroArguments((Span<'a>, (&'a str, usize, usize, Span<'a>))),
+    MissingMacroArgument((Span<'a>, (&'a str, Span<'a>))),
     InvalidIdentifierFormation((&'a str, Span<'a>)),
     IncompleteMacroWithToken(SpannedToken<'a>),
     Error(VerboseError<'a>),
@@ -39,7 +42,7 @@ fn make_report<'s>(
     reason: String,
     code_label: String,
     kind: ariadne::ReportKind<'s>,
-) -> Report<'s, (String, std::ops::Range<usize>)> {
+) -> ReportBuilder<'s, (String, std::ops::Range<usize>)> {
     let mut report =
         Report::build(kind, (span.file.to_string(), span.bytes.clone()))
             .with_code(code)
@@ -75,7 +78,7 @@ fn make_report<'s>(
     if !note.is_empty() {
         report = report.with_note(note);
     }
-    report.finish()
+    report
 }
 
 impl<'s> From<PreprocessorError<'s>>
@@ -89,42 +92,42 @@ impl<'s> From<PreprocessorError<'s>>
                 "Unexpected `endif".to_string(),
                 "Unexpected `endif".to_string(),
                 ReportKind::Error,
-            ),
+            ).finish(),
             PreprocessorError::NoEndif(token, ifdef_span) => make_report(
                 ifdef_span,
                 "PP2",
                 format!("No matching `endif for {token}"),
                 "No matching `endif".to_owned(),
                 ReportKind::Error,
-            ),
+            ).finish(),
             PreprocessorError::Elsif(elsif_span) => make_report(
                 elsif_span,
                 "PP3",
                 "Unexpected `elsif".to_string(),
                 "Unexpected `elsif".to_string(),
                 ReportKind::Error,
-            ),
+            ).finish(),
             PreprocessorError::Else(else_span) => make_report(
                 else_span,
                 "PP4",
                 "Unexpected `else".to_string(),
                 "Unexpected `else".to_string(),
                 ReportKind::Error,
-            ),
+            ).finish(),
             PreprocessorError::EndKeywords(end_keywords_span) => make_report(
                 end_keywords_span,
                 "PP5",
                 "`end_keywords with no previous `begin_keywords".to_string(),
                 "No matching `begin_keywords".to_string(),
                 ReportKind::Error,
-            ),
+            ).finish(),
             PreprocessorError::NoEndKeywords(begin_span) => make_report(
                 begin_span,
                 "PP6",
                 "`begin_keywords with no matching `end_keywords".to_string(),
                 "No matching `end_keywords".to_string(),
                 ReportKind::Error,
-            ),
+            ).finish(),
             PreprocessorError::InvalidDefineParameter(err_spanned_token) => {
                 make_report(
                     err_spanned_token.1,
@@ -135,7 +138,7 @@ impl<'s> From<PreprocessorError<'s>>
                     ),
                     format!("Unexpected {}", err_spanned_token.0),
                     ReportKind::Error,
-                )
+                ).finish()
             }
             PreprocessorError::InvalidDefineArgument(err_spanned_token) => {
                 make_report(
@@ -147,7 +150,7 @@ impl<'s> From<PreprocessorError<'s>>
                     ),
                     format!("Unexpected {}", err_spanned_token.0),
                     ReportKind::Error,
-                )
+                ).finish()
             }
             PreprocessorError::InvalidVersionSpecifier((
                 spec_string,
@@ -158,14 +161,14 @@ impl<'s> From<PreprocessorError<'s>>
                 format!("{spec_string} is not a valid version specifier"),
                 "Invalid version specifier".to_string(),
                 ReportKind::Error,
-            ),
+            ).finish(),
             PreprocessorError::IncompleteDirective(span) => make_report(
                 span,
                 "PP9",
                 "Incomplete directive".to_string(),
                 "Expected a complete directive".to_string(),
                 ReportKind::Error,
-            ),
+            ).finish(),
             PreprocessorError::IncompleteDirectiveWithToken(
                 err_spanned_token,
             ) => make_report(
@@ -177,7 +180,7 @@ impl<'s> From<PreprocessorError<'s>>
                 ),
                 "Expected more after".to_string(),
                 ReportKind::Error,
-            ),
+            ).finish(),
             PreprocessorError::UndefinedMacro((macro_name, macro_span)) => {
                 make_report(
                     macro_span,
@@ -185,7 +188,7 @@ impl<'s> From<PreprocessorError<'s>>
                     format!("{macro_name} has not been previously defined"),
                     "Not previously defined".to_string(),
                     ReportKind::Error,
-                )
+                ).finish()
             }
             PreprocessorError::NotPreviouslyDefinedMacro((
                 macro_name,
@@ -196,7 +199,7 @@ impl<'s> From<PreprocessorError<'s>>
                 format!("{macro_name} has not been previously defined"),
                 "Not previously defined".to_string(),
                 ReportKind::Error,
-            ),
+            ).finish(),
             PreprocessorError::DuplicateMacroParameter((arg_name, arg_span)) => {
                 make_report(
                     arg_span,
@@ -204,34 +207,46 @@ impl<'s> From<PreprocessorError<'s>>
                     format!("'{arg_name}' was already declared as a macro parameter"),
                     "Parameter already used".to_string(),
                     ReportKind::Error,
-                )
+                ).finish()
             }
-            PreprocessorError::NoMacroArguments((macro_name, macro_span)) => {
+            PreprocessorError::NoMacroArguments((define_span, (macro_name, macro_span))) => {
                 make_report(
                     macro_span,
                     "PP14",
                     format!("Expected arguments when using {macro_name}"),
                     "Expected arguments not present".to_string(),
                     ReportKind::Error,
-                )
+                ).with_label(
+                    Label::new((define_span.file.to_string(), define_span.bytes.clone()))
+                    .with_message("Macro defined here")
+                    .with_color(NOTE_COLOR)
+                ).finish()
             }
-            PreprocessorError::TooManyMacroArguments((macro_name, expected, found, macro_span)) => {
+            PreprocessorError::TooManyMacroArguments((define_span, (macro_name, expected, found, macro_span))) => {
                 make_report(
                     macro_span,
                     "PP15",
-                    format!("{} expected {} arguments, but {} were supplied", macro_name, expected, found),
-                    "Too many arguments".to_string(),
+                    format!("{} expected {} arguments, but {} were provided", macro_name, expected, found),
+                    format!("{found} arguments provided"),
                     ReportKind::Error,
-                )
+                ).with_label(
+                    Label::new((define_span.file.to_string(), define_span.bytes.clone()))
+                    .with_message(format!("Macro definition expects {expected} arguments"))
+                    .with_color(NOTE_COLOR)
+                ).finish()
             }
-            PreprocessorError::MissingMacroArgument((arg_name, macro_span)) => {
+            PreprocessorError::MissingMacroArgument((define_span, (arg_name, macro_span))) => {
                 make_report(
                     macro_span,
                     "PP16",
                     format!("'{arg_name}' wasn't specified and has no default"),
                     "Missing argument".to_string(),
                     ReportKind::Error,
-                )
+                ).with_label(
+                    Label::new((define_span.file.to_string(), define_span.bytes.clone()))
+                    .with_message("Macro defined here")
+                    .with_color(NOTE_COLOR)
+                ).finish()
             }
             PreprocessorError::InvalidIdentifierFormation((arg_name, arg_span)) => {
                 make_report(
@@ -240,7 +255,7 @@ impl<'s> From<PreprocessorError<'s>>
                     format!("The argument for '{arg_name}' cannot be concatenated into an identifier"),
                     "No valid conversion to identifier".to_string(),
                     ReportKind::Error,
-                )
+                ).finish()
             }
             PreprocessorError::IncompleteMacroWithToken(err_spanned_token) => {
                 make_report(
@@ -249,7 +264,7 @@ impl<'s> From<PreprocessorError<'s>>
                   format!("Usage of {} is incomplete", err_spanned_token.0),
                   "Expected a complete macro argument or escaped newline after".to_string(),
                   ReportKind::Error,
-              )
+              ).finish()
             }
             PreprocessorError::Error(_verbose_error) => {
               todo!("Implement VerboseError::into<Report>")
@@ -260,7 +275,7 @@ impl<'s> From<PreprocessorError<'s>>
               "(Internal Error) Newline in define not handled correctly".to_string(),
               "(Internal Error) Newline in define not handled correctly".to_string(),
               ReportKind::Error,
-          ),
+          ).finish(),
             PreprocessorError::EndOfFunctionArgument(err_spanned_token) => {
               make_report(
                 err_spanned_token.1,
@@ -268,7 +283,7 @@ impl<'s> From<PreprocessorError<'s>>
                 "(Internal Error) End of function argument not handled correctly".to_string(),
                 "(Internal Error) End of function argument not handled correctly".to_string(),
                 ReportKind::Error,
-            )
+            ).finish()
             }
         }
     }

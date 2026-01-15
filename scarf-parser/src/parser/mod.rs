@@ -108,7 +108,9 @@ pub fn report_parse_errors<'s>(
         Vec::new();
     if let &Err(ref verbose_error) = result {
         let error_span = if verbose_error.is_eoi() {
-            let file_len = fs::metadata(file_path).expect("REASON").len();
+            let file_len = fs::metadata(file_path)
+                .expect("TODO: Handle file read error")
+                .len();
             let byte_span = Range {
                 start: file_len as usize,
                 end: file_len as usize,
@@ -116,7 +118,8 @@ pub fn report_parse_errors<'s>(
             Span {
                 file: file_path,
                 bytes: byte_span,
-                included_from: None,
+                expanded_from: None,
+                included_from: verbose_error.span.included_from,
             }
         } else {
             verbose_error.span.clone()

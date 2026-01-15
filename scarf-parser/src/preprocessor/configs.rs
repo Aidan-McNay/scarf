@@ -207,12 +207,15 @@ impl<'a> PreprocessConfigs<'a> {
         &self,
         macro_name: &'a str,
     ) -> Option<(
-        Vec<SpannedToken<'a>>,
-        Option<Vec<(SpannedString<'a>, Option<Vec<SpannedToken<'a>>>)>>,
+        Span<'a>,
+        (
+            Vec<SpannedToken<'a>>,
+            Option<Vec<(SpannedString<'a>, Option<Vec<SpannedToken<'a>>>)>>,
+        ),
     )> {
         for define in &self.defines {
             if define.name.0 == macro_name {
-                return Some(define.body.get_tokens());
+                return Some((define.name.1.clone(), define.body.get_tokens()));
             }
         }
         None

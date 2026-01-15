@@ -314,8 +314,9 @@ pub fn random_qualifier_parser<'s>(
 pub fn method_qualifier_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<MethodQualifier<'s>, VerboseError<'s>> {
-    let _pure_virtual_parser = (opt_note(token(Token::Pure)), token(Token::Virtual))
-        .map(|(a, b)| MethodQualifier::PureVirtual(Box::new((a, b))));
+    let _pure_virtual_parser =
+        (opt_note(token(Token::Pure)), token(Token::Virtual))
+            .map(|(a, b)| MethodQualifier::PureVirtual(Box::new((a, b))));
     let _class_item_parser = class_item_qualifier_parser
         .map(|a| MethodQualifier::ClassItem(Box::new(a)));
     alt((_pure_virtual_parser, _class_item_parser)).parse_next(input)

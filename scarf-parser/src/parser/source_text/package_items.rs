@@ -6,7 +6,7 @@
 use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
-use winnow::combinator::{alt};
+use winnow::combinator::alt;
 
 pub fn package_item_parser<'s>(
     input: &mut Tokens<'s>,
@@ -79,7 +79,7 @@ pub fn anonymous_program_parser<'s>(
     (
         token(Token::Program),
         token(Token::SColon),
-        repeat_note( anonymous_program_item_parser),
+        repeat_note(anonymous_program_item_parser),
         token(Token::Endprogram),
     )
         .map(|(a, b, c, d)| AnonymousProgram(a, b, c, d))

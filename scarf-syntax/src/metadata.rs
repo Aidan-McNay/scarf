@@ -12,6 +12,7 @@ pub type ByteSpan = Range<usize>;
 pub struct Span<'a> {
     pub file: &'a str,
     pub bytes: ByteSpan,
+    pub expanded_from: Option<&'a Span<'a>>,
     pub included_from: Option<&'a Span<'a>>,
 }
 
@@ -37,6 +38,7 @@ impl<'a> Span<'a> {
         Span {
             file: "",
             bytes: ByteSpan { start: 0, end: 0 },
+            expanded_from: None,
             included_from: None,
         }
     }

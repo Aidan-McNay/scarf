@@ -61,7 +61,9 @@ pub enum PortDeclaration<'a> {
     InputDeclaration(Box<(Vec<AttributeInstance<'a>>, InputDeclaration<'a>)>),
     OutputDeclaration(Box<(Vec<AttributeInstance<'a>>, OutputDeclaration<'a>)>),
     RefDeclaration(Box<(Vec<AttributeInstance<'a>>, RefDeclaration<'a>)>),
-    InterfacePortDeclaration(Box<(Vec<AttributeInstance<'a>>, InterfacePortDeclaration<'a>)>),
+    InterfacePortDeclaration(
+        Box<(Vec<AttributeInstance<'a>>, InterfacePortDeclaration<'a>)>,
+    ),
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -103,10 +105,16 @@ pub enum PortDirection<'a> {
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct NetPortHeader<'a>(pub Option<PortDirection<'a>>, pub NetPortType<'a>);
+pub struct NetPortHeader<'a>(
+    pub Option<PortDirection<'a>>,
+    pub NetPortType<'a>,
+);
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct VariablePortHeader<'a>(pub Option<PortDirection<'a>>, pub VariablePortType<'a>);
+pub struct VariablePortHeader<'a>(
+    pub Option<PortDirection<'a>>,
+    pub VariablePortType<'a>,
+);
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum InterfacePortHeader<'a> {

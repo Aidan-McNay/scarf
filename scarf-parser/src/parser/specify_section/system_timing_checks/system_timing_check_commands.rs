@@ -108,7 +108,10 @@ pub fn dollar_setuphold_timing_check_parser<'s>(
                     opt_note((
                         token(Token::Comma),
                         opt_note(delayed_reference_parser),
-                        opt_note((token(Token::Comma), opt_note(delayed_data_parser))),
+                        opt_note((
+                            token(Token::Comma),
+                            opt_note(delayed_data_parser),
+                        )),
                     )),
                 )),
             )),
@@ -189,7 +192,10 @@ pub fn dollar_recrem_timing_check_parser<'s>(
                     opt_note((
                         token(Token::Comma),
                         opt_note(delayed_reference_parser),
-                        opt_note((token(Token::Comma), opt_note(delayed_data_parser))),
+                        opt_note((
+                            token(Token::Comma),
+                            opt_note(delayed_data_parser),
+                        )),
                     )),
                 )),
             )),
@@ -241,7 +247,10 @@ pub fn dollar_timeskew_timing_check_parser<'s>(
             opt_note((
                 token(Token::Comma),
                 opt_note(event_based_flag_parser),
-                opt_note((token(Token::Comma), opt_note(remain_active_flag_parser))),
+                opt_note((
+                    token(Token::Comma),
+                    opt_note(remain_active_flag_parser),
+                )),
             )),
         )),
         token(Token::EParen),
@@ -270,7 +279,10 @@ pub fn dollar_fullskew_timing_check_parser<'s>(
             opt_note((
                 token(Token::Comma),
                 opt_note(event_based_flag_parser),
-                opt_note((token(Token::Comma), opt_note(remain_active_flag_parser))),
+                opt_note((
+                    token(Token::Comma),
+                    opt_note(remain_active_flag_parser),
+                )),
             )),
         )),
         token(Token::EParen),

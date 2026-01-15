@@ -32,6 +32,7 @@ pub fn token_span_mapper<'a>(
             Span {
                 file: file_name,
                 bytes: byte_span,
+                expanded_from: None,
                 included_from,
             },
         )
@@ -77,7 +78,7 @@ pub fn report_lex_errors<'a>(
                     ReportKind::Error,
                     (span.file, span.bytes.clone()),
                 )
-                .with_code("L1")
+                .with_code("L2")
                 .with_config(
                     ariadne::Config::new()
                         .with_index_type(ariadne::IndexType::Byte),

@@ -59,7 +59,8 @@ fn get_define_function_args<'s>(
     src: &mut Peekable<impl Iterator<Item = SpannedToken<'s>>>,
     configs: &mut PreprocessConfigs<'s>,
 ) -> Result<
-    Option<
+    Option<(
+        Span<'s>,
         Vec<(
             SpannedString<'s>,
             Option<(
@@ -67,7 +68,7 @@ fn get_define_function_args<'s>(
                 Vec<SpannedToken<'s>>,
             )>,
         )>,
-    >,
+    )>,
     PreprocessorError<'s>,
 > {
     let Some(spanned_token) = src.peek() else {
@@ -116,8 +117,11 @@ fn get_define_function_args<'s>(
                 };
                 loop {
                     match next_arg_token {
-                        SpannedToken(Token::EParen, _) => {
-                            break 'get_args Ok(Some(function_args));
+                        SpannedToken(Token::EParen, eparen_span) => {
+                            break 'get_args Ok(Some((
+                                eparen_span,
+                                function_args,
+                            )));
                         }
                         SpannedToken(Token::Comma, _) => {
                             continue 'get_args;
@@ -240,17 +244,24 @@ pub fn preprocess_define<'s>(
     let define_name = get_define_name(src, define_span)?;
     let function_args = get_define_function_args(src, configs)?;
     let define_text = get_define_body(src, configs)?;
-    let define_body = match function_args {
-        Some(arg_vec) => DefineBody::Function(DefineFunction {
-            args: arg_vec,
-            body: define_text,
-        }),
+    let (define_body, define_span) = match function_args {
+        Some((end_span, arg_vec)) => {
+            let mut overall_span = define_name.1;
+            overall_span.bytes.end = end_span.bytes.end;
+            (
+                DefineBody::Function(DefineFunction {
+                    args: arg_vec,
+                    body: define_text,
+                }),
+                overall_span,
+            )
+        }
         None => match define_text {
-            Some(text_vec) => DefineBody::Text(text_vec),
-            None => DefineBody::Empty,
+            Some(text_vec) => (DefineBody::Text(text_vec), define_name.1),
+            None => (DefineBody::Empty, define_name.1),
         },
     };
-    configs.define(define_name.0, define_name.1, define_body);
+    configs.define(define_name.0, define_span, define_body);
     Ok(())
 }
 

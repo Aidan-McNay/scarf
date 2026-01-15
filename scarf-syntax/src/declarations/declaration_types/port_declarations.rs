@@ -14,7 +14,9 @@ pub struct InoutDeclaration<'a>(
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum InputDeclaration<'a> {
-    NetInputDeclaration(Box<(Metadata<'a>, NetPortType<'a>, ListOfPortIdentifiers<'a>)>),
+    NetInputDeclaration(
+        Box<(Metadata<'a>, NetPortType<'a>, ListOfPortIdentifiers<'a>)>,
+    ),
     VariableInputDeclaration(
         Box<(
             Metadata<'a>,
@@ -26,7 +28,9 @@ pub enum InputDeclaration<'a> {
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum OutputDeclaration<'a> {
-    NetOutputDeclaration(Box<(Metadata<'a>, NetPortType<'a>, ListOfPortIdentifiers<'a>)>),
+    NetOutputDeclaration(
+        Box<(Metadata<'a>, NetPortType<'a>, ListOfPortIdentifiers<'a>)>,
+    ),
     VariableOutputDeclaration(
         Box<(
             Metadata<'a>,

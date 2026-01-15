@@ -175,6 +175,7 @@ fn double_level_symbol_parser<'s>(
                             start: metadata.span.bytes.start,
                             end: span_midpoint,
                         },
+                        expanded_from: metadata.span.expanded_from,
                         included_from: metadata.span.included_from,
                     };
                     let span1 = Span {
@@ -183,6 +184,7 @@ fn double_level_symbol_parser<'s>(
                             start: span_midpoint,
                             end: metadata.span.bytes.end,
                         },
+                        expanded_from: metadata.span.expanded_from,
                         included_from: metadata.span.included_from,
                     };
                     let metadata0 = Metadata {

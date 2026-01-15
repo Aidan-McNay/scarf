@@ -11,6 +11,7 @@ use std::vec::IntoIter;
 fn get_text_macro_args<'s>(
     src: &mut Peekable<impl Iterator<Item = SpannedToken<'s>>>,
     configs: &mut PreprocessConfigs<'s>,
+    define_span: &Span<'s>,
     text_macro: (&'s str, Span<'s>),
 ) -> Result<Vec<Vec<SpannedToken<'s>>>, PreprocessorError<'s>> {
     let paren_span = loop {
@@ -20,7 +21,10 @@ fn get_text_macro_args<'s>(
             }
             Some(SpannedToken(Token::Newline, _)) => (),
             _ => {
-                return Err(PreprocessorError::NoMacroArguments(text_macro));
+                return Err(PreprocessorError::NoMacroArguments((
+                    define_span.clone(),
+                    text_macro,
+                )));
             }
         }
     };
@@ -58,6 +62,7 @@ fn get_text_macro_args<'s>(
 fn resolve_text_macro_args<'s>(
     specified_args: Vec<Vec<SpannedToken<'s>>>,
     original_args: Vec<(SpannedString<'s>, Option<Vec<SpannedToken<'s>>>)>,
+    define_span: &Span<'s>,
     text_macro: (&'s str, Span<'s>),
 ) -> Result<
     HashMap<&'s str, (Span<'s>, Vec<SpannedToken<'s>>)>,
@@ -65,10 +70,13 @@ fn resolve_text_macro_args<'s>(
 > {
     if specified_args.len() > original_args.len() {
         return Err(PreprocessorError::TooManyMacroArguments((
-            text_macro.0,
-            original_args.len(),
-            specified_args.len(),
-            text_macro.1,
+            define_span.clone(),
+            (
+                text_macro.0,
+                original_args.len(),
+                specified_args.len(),
+                text_macro.1,
+            ),
         )));
     }
     let mut specified_args_iter = specified_args.into_iter();
@@ -86,8 +94,8 @@ fn resolve_text_macro_args<'s>(
                 }
                 None => {
                     return Err(PreprocessorError::MissingMacroArgument((
-                        arg_name.0,
-                        text_macro.1,
+                        define_span.clone(),
+                        (arg_name.0, text_macro.1),
                     )));
                 }
             },
@@ -328,15 +336,20 @@ pub fn preprocess_macro<'s>(
     text_macro: (&'s str, Span<'s>),
 ) -> Result<(), PreprocessorError<'s>> {
     match configs.get_macro_tokens(text_macro.0) {
-        Some((mut token_vec, define_args)) => {
+        Some((define_span, (mut token_vec, define_args))) => {
             if let Some(define_args) = define_args {
-                let function_args =
-                    get_text_macro_args(src, configs, text_macro.clone())?;
+                let function_args = get_text_macro_args(
+                    src,
+                    configs,
+                    &define_span,
+                    text_macro.clone(),
+                )?;
                 token_vec = replace_macro_arguments(
                     token_vec.into_iter(),
                     resolve_text_macro_args(
                         function_args,
                         define_args,
+                        &define_span,
                         text_macro,
                     )?,
                     configs,

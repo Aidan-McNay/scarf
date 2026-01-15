@@ -90,10 +90,7 @@ pub fn for_initialization_parser<'s>(
             .map(|a| ForInitialization::VariableAssignment(Box::new(a))),
         (
             for_variable_declaration_parser,
-            repeat_note((
-                token(Token::Comma),
-                for_variable_declaration_parser,
-            )),
+            repeat_note((token(Token::Comma), for_variable_declaration_parser)),
         )
             .map(|(a, b)| {
                 ForInitialization::VariableDeclarations(Box::new((a, b)))
