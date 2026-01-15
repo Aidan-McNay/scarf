@@ -205,6 +205,50 @@ fn get_string_substitute<'a>(
     }
 }
 
+fn get_replacement_string<'a>(
+    mut initial_string: String,
+    configs: &PreprocessConfigs<'a>,
+    arguments: &HashMap<&'a str, (Span<'a>, Vec<SpannedToken<'a>>)>,
+) -> Result<String, PreprocessorError<'a>> {
+    // Replace definitions
+    for define in configs.defines() {
+        let define_id = format! {"`{}", define.name.0};
+        if initial_string.contains(&define_id) {
+            let replacement_string = match &define.body {
+                DefineBody::Empty => "".to_string(),
+                DefineBody::Text(tokens) => {
+                    let mut token_str = "".to_string();
+                    get_string_substitute(
+                        define.name.0,
+                        tokens,
+                        &mut token_str,
+                    )?;
+                    token_str
+                }
+                DefineBody::Function(_) => {
+                    todo!("Error for using functions here")
+                }
+            };
+            initial_string =
+                initial_string.replace(&define_id, replacement_string.as_str());
+        }
+    }
+    // Replace arguments
+    for argument in arguments.keys() {
+        if initial_string.contains(argument) {
+            let mut replacement_string = "".to_string();
+            get_string_substitute(
+                argument,
+                &arguments.get(argument).unwrap().1,
+                &mut replacement_string,
+            )?;
+            initial_string =
+                initial_string.replace(argument, replacement_string.as_str())
+        }
+    }
+    Ok(initial_string)
+}
+
 fn replace_macro_arguments<'a>(
     original_stream: IntoIter<SpannedToken<'a>>,
     arguments: HashMap<&'a str, (Span<'a>, Vec<SpannedToken<'a>>)>,
@@ -243,44 +287,31 @@ fn replace_macro_arguments<'a>(
                 ));
             }
             SpannedToken(Token::PreprocessorStringLiteral(id), span) => {
-                let mut resulting_string = id.to_string();
-                // Replace definitions
-                for define in configs.defines() {
-                    let define_id = format! {"`{}", define.name.0};
-                    if resulting_string.contains(&define_id) {
-                        let replacement_string = match &define.body {
-                            DefineBody::Empty => "".to_string(),
-                            DefineBody::Text(tokens) => {
-                                let mut token_str = "".to_string();
-                                get_string_substitute(
-                                    define.name.0,
-                                    tokens,
-                                    &mut token_str,
-                                )?;
-                                token_str
-                            }
-                            DefineBody::Function(_) => {
-                                todo!("Error for using functions here")
-                            }
-                        };
-                        resulting_string = resulting_string
-                            .replace(&define_id, replacement_string.as_str());
-                    }
-                }
-                // Replace arguments
-                for argument in arguments.keys() {
-                    if resulting_string.contains(argument) {
-                        let mut replacement_string = "".to_string();
-                        get_string_substitute(
-                            argument,
-                            &arguments.get(argument).unwrap().1,
-                            &mut replacement_string,
-                        )?;
-                        resulting_string = resulting_string
-                            .replace(argument, replacement_string.as_str())
-                    }
-                }
-                result_vec.push(SpannedToken(Token::StringLiteral(id), span));
+                result_vec.push(SpannedToken(
+                    Token::StringLiteral(configs.retain_string(
+                        get_replacement_string(
+                            id.to_string(),
+                            configs,
+                            &arguments,
+                        )?,
+                    )),
+                    span,
+                ));
+            }
+            SpannedToken(
+                Token::PreprocessorTripleQuoteStringLiteral(id),
+                span,
+            ) => {
+                result_vec.push(SpannedToken(
+                    Token::TripleQuoteStringLiteral(configs.retain_string(
+                        get_replacement_string(
+                            id.to_string(),
+                            configs,
+                            &arguments,
+                        )?,
+                    )),
+                    span,
+                ));
             }
             other_token => {
                 result_vec.push(other_token);

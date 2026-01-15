@@ -4,12 +4,12 @@
 // The callbacks used to lex a SystemVerilog source
 
 use crate::*;
-use logos::{Lexer, Span};
+use logos::Lexer;
 
 #[derive(Logos)]
 enum StringToken {
-    #[token(r#"""#, |lex| lex.span())]
-    Delimeter(Span),
+    #[token(r#"""#)]
+    Delimeter,
     #[token(r#"\\""#)]
     EscapedDelimeter,
     #[token("\n")]
@@ -34,19 +34,19 @@ enum StringToken {
 
 #[derive(Logos)]
 enum MultilineStringToken {
-    #[token(r#"""""#, |lex| lex.span())]
-    Delimeter(Span),
+    #[token(r#"""""#)]
+    Delimeter,
     #[regex(r#"[^\\]"#)]
     #[regex(r#"\\([ -~]|[0-7]{1,3})"#)]
     #[regex(r#"\\x[0-9a-fA-F]{1,2}"#)]
     Other,
 }
 
-#[derive(Logos)]
+#[derive(Logos, Debug)]
 enum PreprocessorStringToken {
-    #[token(r#"`""#, |lex| lex.span())]
-    Delimeter(Span),
-    #[token(r#"\\`\\""#)]
+    #[token(r#"`""#)]
+    Delimeter,
+    #[token(r#"`\`""#)]
     EscapedDelimeter,
     #[token("\n")]
     #[token("\r")]
@@ -62,7 +62,7 @@ enum PreprocessorStringToken {
     #[token("\\\u{2028}")]
     #[token("\\\u{2029}")]
     EscapedNewline,
-    #[regex(r#"[^"\r\n\\]"#)]
+    #[regex(r#"[^\r\n\\]"#)]
     #[regex(r#"\\([ -~]|[0-7]{1,3})"#)]
     #[regex(r#"\\x[0-9a-fA-F]{1,2}"#)]
     Other,
@@ -70,8 +70,10 @@ enum PreprocessorStringToken {
 
 #[derive(Logos)]
 enum PreprocessorMultilineStringToken {
-    #[token(r#"`""""#, |lex| lex.span())]
-    Delimeter(Span),
+    #[token(r#"`""""#)]
+    Delimeter,
+    #[token(r#"`\`""#)]
+    EscapedDelimeter,
     #[token("\n")]
     #[token("\r")]
     #[token("\r\n")]
@@ -94,8 +96,8 @@ enum PreprocessorMultilineStringToken {
 
 #[derive(Logos)]
 enum BlockCommentToken {
-    #[token("*/", |lex| lex.span())]
-    Delimeter(Span),
+    #[token("*/")]
+    Delimeter,
     #[regex(r".")]
     Other,
 }
@@ -104,120 +106,162 @@ pub fn oneline_comment<'a>(lex: &mut Lexer<'a, Token<'a>>) -> Option<&'a str> {
     lex.slice().strip_prefix("//")
 }
 
-pub fn block_comment<'a>(lex: &mut Lexer<'a, Token<'a>>) -> Option<&'a str> {
+pub fn block_comment<'a>(
+    lex: &mut Lexer<'a, Token<'a>>,
+) -> Result<&'a str, String> {
     let start_span = lex.span();
     let mut block_comment_lexer = lex.clone().morph::<BlockCommentToken>();
     while let Some(string_token) = block_comment_lexer.next() {
         match string_token {
-            Ok(BlockCommentToken::Delimeter(end_span)) => {
+            Ok(BlockCommentToken::Delimeter) => {
+                let end_span = block_comment_lexer.span();
                 let string = &lex.source()[start_span.end..end_span.start];
-                *lex = block_comment_lexer.morph();
-                return Some(string);
+                lex.bump(end_span.end - start_span.end);
+                return Ok(string);
             }
             Ok(_) => (),
             Err(_) => {
-                return None;
+                let end_span = block_comment_lexer.span();
+                lex.bump(end_span.start - start_span.end);
+                return Err("Unterminated block comment".to_string());
             }
         }
     }
-    None
+    let end_span = block_comment_lexer.span();
+    lex.bump(end_span.end - start_span.end);
+    Err("Unterminated block comment".to_string())
 }
 
-pub fn string_literal<'a>(lex: &mut Lexer<'a, Token<'a>>) -> Option<&'a str> {
+pub fn string_literal<'a>(
+    lex: &mut Lexer<'a, Token<'a>>,
+) -> Result<&'a str, String> {
     let start_span = lex.span();
     let mut string_lexer = lex.clone().morph::<StringToken>();
     while let Some(string_token) = string_lexer.next() {
         match string_token {
-            Ok(StringToken::Delimeter(end_span)) => {
+            Ok(StringToken::Delimeter) => {
+                let end_span = string_lexer.span();
                 let string = &lex.source()[start_span.end..end_span.start];
-                *lex = string_lexer.morph();
-                return Some(string);
+                lex.bump(end_span.end - start_span.end);
+                return Ok(string);
             }
             Ok(StringToken::Newline) => {
-                *lex = string_lexer.morph();
-                return None;
+                let end_span = string_lexer.span();
+                lex.bump(end_span.start - start_span.end);
+                return Err("Unterminated string literal".to_string());
             }
             Ok(_) => (),
             Err(_) => {
-                return None;
+                let end_span = string_lexer.span();
+                lex.bump(end_span.start - start_span.end);
+                return Err("Unterminated string literal".to_string());
             }
         }
     }
-    None
+    let end_span = string_lexer.span();
+    lex.bump(end_span.end - start_span.end);
+    Err("Unterminated string literal".to_string())
 }
 
 pub fn multiline_string_literal<'a>(
     lex: &mut Lexer<'a, Token<'a>>,
-) -> Option<&'a str> {
+) -> Result<&'a str, String> {
     let start_span = lex.span();
     let mut multiline_string_lexer =
         lex.clone().morph::<MultilineStringToken>();
     while let Some(string_token) = multiline_string_lexer.next() {
         match string_token {
-            Ok(MultilineStringToken::Delimeter(end_span)) => {
+            Ok(MultilineStringToken::Delimeter) => {
+                let end_span = multiline_string_lexer.span();
                 let string = &lex.source()[start_span.end..end_span.start];
-                *lex = multiline_string_lexer.morph();
-                return Some(string);
+                lex.bump(end_span.end - start_span.end);
+                return Ok(string);
             }
             Ok(_) => (),
             Err(_) => {
-                return None;
+                let end_span = multiline_string_lexer.span();
+                lex.bump(end_span.start - start_span.end);
+                return Err("Unterminated multiline string literal".to_string());
             }
         }
     }
-    None
+    let end_span = multiline_string_lexer.span();
+    lex.bump(end_span.end - start_span.end);
+    Err("Unterminated multiline string literal".to_string())
 }
 
 pub fn preprocessor_string_literal<'a>(
     lex: &mut Lexer<'a, Token<'a>>,
-) -> Option<&'a str> {
+) -> Result<&'a str, String> {
     let start_span = lex.span();
     let mut preprocessor_string_lexer =
         lex.clone().morph::<PreprocessorStringToken>();
     while let Some(string_token) = preprocessor_string_lexer.next() {
         match string_token {
-            Ok(PreprocessorStringToken::Delimeter(end_span)) => {
+            Ok(PreprocessorStringToken::Delimeter) => {
+                let end_span = preprocessor_string_lexer.span();
                 let string = &lex.source()[start_span.end..end_span.start];
-                *lex = preprocessor_string_lexer.morph();
-                return Some(string);
+                lex.bump(end_span.end - start_span.end);
+                return Ok(string);
             }
             Ok(PreprocessorStringToken::Newline) => {
-                *lex = preprocessor_string_lexer.morph();
-                return None;
+                let end_span = preprocessor_string_lexer.span();
+                lex.bump(end_span.start - start_span.end);
+                return Err(
+                    "Unterminated preprocessor string literal".to_string()
+                );
             }
             Ok(_) => (),
             Err(_) => {
-                return None;
+                let end_span = preprocessor_string_lexer.span();
+                lex.bump(end_span.start - start_span.end);
+                return Err(
+                    "Unterminated preprocessor string literal".to_string()
+                );
             }
         }
     }
-    None
+    let end_span = preprocessor_string_lexer.span();
+    lex.bump(end_span.end - start_span.end);
+    Err("Unterminated preprocessor string literal".to_string())
 }
 
 pub fn preprocessor_multiline_string_literal<'a>(
     lex: &mut Lexer<'a, Token<'a>>,
-) -> Option<&'a str> {
+) -> Result<&'a str, String> {
     let start_span = lex.span();
     let mut preprocessor_string_lexer =
         lex.clone().morph::<PreprocessorMultilineStringToken>();
     while let Some(string_token) = preprocessor_string_lexer.next() {
         match string_token {
-            Ok(PreprocessorMultilineStringToken::Delimeter(end_span)) => {
+            Ok(PreprocessorMultilineStringToken::Delimeter) => {
+                let end_span = preprocessor_string_lexer.span();
                 let string = &lex.source()[start_span.end..end_span.start];
-                *lex = preprocessor_string_lexer.morph();
-                return Some(string);
+                lex.bump(end_span.end - start_span.end);
+                return Ok(string);
             }
             Ok(PreprocessorMultilineStringToken::Newline) => {
-                *lex = preprocessor_string_lexer.morph();
-                return None;
+                let end_span = preprocessor_string_lexer.span();
+                lex.bump(end_span.start - start_span.end);
+                return Err(
+                    "Unterminated preprocessor multiline string literal"
+                        .to_string(),
+                );
             }
             Ok(_) => (),
             Err(_) => {
-                return None;
+                let end_span = preprocessor_string_lexer.span();
+                lex.bump(end_span.start - start_span.end);
+                return Err(
+                    "Unterminated preprocessor multiline string literal"
+                        .to_string(),
+                );
             }
         }
     }
-    None
+    let end_span = preprocessor_string_lexer.span();
+    lex.bump(end_span.end - start_span.end);
+    Err("Unterminated preprocessor multiline string literal".to_string())
 }
 
 pub fn text_macro<'a>(lex: &mut Lexer<'a, Token<'a>>) -> Option<&'a str> {

@@ -814,7 +814,7 @@ pub enum Token<'a> {
     TimeUnit(&'a str), // Created in post-processing
     #[token(r#"""#, string_literal)]
     StringLiteral(&'a str),
-    #[regex(r#"`""#, preprocessor_string_literal)]
+    #[token(r#"`""#, preprocessor_string_literal)]
     PreprocessorStringLiteral(&'a str),
     #[token(r#"""""#, multiline_string_literal)]
     TripleQuoteStringLiteral(&'a str),
