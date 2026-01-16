@@ -11,3 +11,6 @@ keywords = ["systemverilog"]
 categories = ["data-structures"]
 
 [dependencies]
+
+[features]
+keep_extras = []

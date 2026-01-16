@@ -16,3 +16,7 @@ scarf-syntax = { version = "0.1.0", path = "../scarf-syntax" }
 logos = "0.16.0"
 winnow = "0.7.13"
 elsa = "1.11.2"
+
+[features]
+parse_extras = ["keep_extras"]
+keep_extras = ["scarf-syntax/keep_extras"]

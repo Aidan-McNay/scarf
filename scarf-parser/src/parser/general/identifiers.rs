@@ -41,13 +41,7 @@ pub fn c_identifier_parser<'s>(
         any.verify_map(|s: &'s SpannedToken<'s>| match s.0 {
             Token::SimpleIdentifier(text) => {
                 if !(text.contains("&")) {
-                    Some(CIdentifier(
-                        text,
-                        Metadata {
-                            span: s.1.clone(),
-                            extra_nodes: vec![],
-                        },
-                    ))
+                    Some(CIdentifier(text, Metadata::new(s.1.clone(), vec![])))
                 } else {
                     None
                 }
@@ -326,19 +320,13 @@ pub fn identifier_parser<'s>(
             Token::SimpleIdentifier(text) => {
                 Some(Identifier::SimpleIdentifier((
                     text,
-                    Metadata {
-                        span: s.1.clone(),
-                        extra_nodes: vec![],
-                    },
+                    Metadata::new(s.1.clone(), vec![]),
                 )))
             }
             Token::EscapedIdentifier(text) => {
                 Some(Identifier::EscapedIdentifier((
                     text,
-                    Metadata {
-                        span: s.1.clone(),
-                        extra_nodes: vec![],
-                    },
+                    Metadata::new(s.1.clone(), vec![]),
                 )))
             }
             _ => None,
@@ -724,10 +712,7 @@ pub fn system_tf_identifier_parser<'s>(
         any.verify_map(|s: &'s SpannedToken<'s>| match s.0 {
             Token::SystemTfIdentifier(text) => Some(SystemTfIdentifier(
                 text,
-                Metadata {
-                    span: s.1.clone(),
-                    extra_nodes: vec![],
-                },
+                Metadata::new(s.1.clone(), vec![]),
             )),
             _ => None,
         }),

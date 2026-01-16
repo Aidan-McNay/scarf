@@ -6,11 +6,14 @@
 use crate::*;
 use scarf_syntax::*;
 use winnow::Parser;
+#[cfg(feature = "parse_extras")]
 use winnow::combinator::alt;
 use winnow::error::ModalResult;
+#[cfg(feature = "parse_extras")]
 use winnow::token::any;
 
 // A parser for matching extra nodes
+#[cfg(feature = "parse_extras")]
 pub fn extra_node_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<Vec<ExtraNode<'s>>, VerboseError<'s>> {
@@ -30,18 +33,34 @@ pub fn extra_node_parser<'s>(
     repeat_note(alt((comment_parser, newline_parser))).parse_next(input)
 }
 
+#[inline]
+#[cfg(not(feature = "parse_extras"))]
+pub fn extra_node_parser<'s>(
+    _: &mut Tokens<'s>,
+) -> ModalResult<Vec<ExtraNode<'s>>, VerboseError<'s>> {
+    Ok(vec![])
+}
+
 // A mapping function for replacing extra nodes in metadata
+#[cfg(feature = "parse_extras")]
 pub fn replace_nodes<'a>(
     old_metadata: Metadata<'a>,
     new_nodes: Vec<ExtraNode<'a>>,
 ) -> Metadata<'a> {
-    Metadata {
-        span: old_metadata.span,
-        extra_nodes: new_nodes,
-    }
+    Metadata::new(old_metadata.span, new_nodes)
+}
+
+#[inline]
+#[cfg(not(feature = "parse_extras"))]
+pub fn replace_nodes<'a>(
+    old_metadata: Metadata<'a>,
+    _: Vec<ExtraNode<'a>>,
+) -> Metadata<'a> {
+    old_metadata
 }
 
 // A parser for matching a token and extra nodes, producing metadata
+#[cfg(feature = "parse_extras")]
 pub fn token<'s>(
     token_to_match: Token<'s>,
 ) -> impl FnMut(&mut Tokens<'s>) -> ModalResult<Metadata<'s>, VerboseError<'s>>
@@ -50,9 +69,21 @@ pub fn token<'s>(
         (token_to_match, extra_node_parser)
             .context(token_to_match)
             .parse_next(input)
-            .map(|(spanned_token, extra_nodes)| Metadata {
-                span: spanned_token.1.clone(),
-                extra_nodes: extra_nodes,
+            .map(|(spanned_token, extra_nodes)| {
+                Metadata::new(spanned_token.1.clone(), extra_nodes)
             })
+    }
+}
+
+#[cfg(not(feature = "parse_extras"))]
+pub fn token<'s>(
+    token_to_match: Token<'s>,
+) -> impl FnMut(&mut Tokens<'s>) -> ModalResult<Metadata<'s>, VerboseError<'s>>
+{
+    move |input: &mut Tokens<'s>| {
+        token_to_match
+            .context(token_to_match)
+            .map(|spanned_token| Metadata::new(spanned_token.1.clone(), vec![]))
+            .parse_next(input)
     }
 }

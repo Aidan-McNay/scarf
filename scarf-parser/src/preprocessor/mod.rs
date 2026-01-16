@@ -53,11 +53,11 @@ pub fn preprocess<'s>(
     if configs.in_define || configs.in_define_arg {
         while let Some(mut spanned_token) = src.next() {
             match spanned_token.0 {
-                Token::Bslash if configs.in_define => loop {
+                Token::Bslash => loop {
                     match src.next() {
                         None => dest.push_element(spanned_token),
                         Some(next_token) => match next_token.0 {
-                            Token::Newline => dest.push_element(next_token),
+                            Token::Newline => (),
                             Token::Bslash => {
                                 dest.push_element(spanned_token);
                                 spanned_token = next_token;
@@ -71,7 +71,7 @@ pub fn preprocess<'s>(
                     };
                     break;
                 },
-                Token::Newline if configs.in_define => {
+                Token::Newline => {
                     return Err(PreprocessorError::NewlineInDefine(
                         spanned_token.1,
                     ));
@@ -139,6 +139,12 @@ pub fn preprocess<'s>(
                             spanned_token,
                         ));
                     } else {
+                        dest.push_element(spanned_token)
+                    }
+                }
+                Token::BlockComment(_) | Token::OnelineComment(_) => {
+                    #[cfg(feature = "parse_extras")]
+                    {
                         dest.push_element(spanned_token)
                     }
                 }
@@ -251,6 +257,14 @@ pub fn preprocess<'s>(
                     Token::UnsignedNumber(configs.get_line(&spanned_token.1)),
                     spanned_token.1,
                 )),
+                Token::BlockComment(_)
+                | Token::OnelineComment(_)
+                | Token::Newline => {
+                    #[cfg(feature = "parse_extras")]
+                    {
+                        dest.push_element(spanned_token)
+                    }
+                }
                 token if token.keyword_replace(&configs.curr_standard) => {
                     let new_token = SpannedToken(
                         Token::SimpleIdentifier(token.as_str()),

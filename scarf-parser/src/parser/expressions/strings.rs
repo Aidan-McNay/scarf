@@ -17,20 +17,14 @@ pub fn string_literal_parser<'s>(
             Token::StringLiteral(text) => {
                 Some(StringLiteral::QuotedString(Box::new(QuotedString(
                     text,
-                    Metadata {
-                        span: s.1.clone(),
-                        extra_nodes: Vec::new(),
-                    },
+                    Metadata::new(s.1.clone(), Vec::new()),
                 ))))
             }
             Token::TripleQuoteStringLiteral(text) => {
                 Some(StringLiteral::TripleQuotedString(Box::new(
                     TripleQuotedString(
                         text,
-                        Metadata {
-                            span: s.1.clone(),
-                            extra_nodes: Vec::new(),
-                        },
+                        Metadata::new(s.1.clone(), Vec::new()),
                     ),
                 )))
             }

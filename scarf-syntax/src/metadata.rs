@@ -104,10 +104,29 @@ impl<'a> Span<'a> {
     }
 }
 
+#[cfg(feature = "keep_extras")]
 #[derive(Clone, Debug)]
 pub struct Metadata<'a> {
     pub span: Span<'a>,
     pub extra_nodes: Vec<ExtraNode<'a>>,
+}
+
+#[cfg(not(feature = "keep_extras"))]
+#[derive(Clone, Debug)]
+pub struct Metadata<'a> {
+    pub span: Span<'a>,
+}
+
+impl<'a> Metadata<'a> {
+    #[cfg(feature = "keep_extras")]
+    pub fn new(span: Span<'a>, extra_nodes: Vec<ExtraNode<'a>>) -> Self {
+        Self { span, extra_nodes }
+    }
+
+    #[cfg(not(feature = "keep_extras"))]
+    pub fn new(span: Span<'a>, _: Vec<ExtraNode<'a>>) -> Self {
+        Self { span }
+    }
 }
 
 impl<'a> PartialEq for Metadata<'a> {

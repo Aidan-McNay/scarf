@@ -291,19 +291,13 @@ pub fn time_literal_parser<'s>(
             fixed_point_number_parser.map(|a| {
                 TimeLiteral::TimeLiteralFixedPoint(Box::new((
                     a,
-                    TimeUnit::S(Metadata {
-                        span: Span::default(),
-                        extra_nodes: vec![],
-                    }),
+                    TimeUnit::S(Metadata::new(Span::default(), vec![])),
                 )))
             }),
             unsigned_number_parser.map(|a| {
                 TimeLiteral::TimeLiteralUnsigned(Box::new((
                     a,
-                    TimeUnit::S(Metadata {
-                        span: Span::default(),
-                        extra_nodes: vec![],
-                    }),
+                    TimeUnit::S(Metadata::new(Span::default(), vec![])),
                 )))
             }),
         )),
@@ -325,30 +319,24 @@ fn time_unit_parser<'s>(
 ) -> ModalResult<TimeUnit<'s>, VerboseError<'s>> {
     (
         any.verify_map(|s: &'s SpannedToken<'s>| match s.0 {
-            Token::TimeUnit("s") => Some(TimeUnit::S(Metadata {
-                span: s.1.clone(),
-                extra_nodes: Vec::new(),
-            })),
-            Token::TimeUnit("ms") => Some(TimeUnit::S(Metadata {
-                span: s.1.clone(),
-                extra_nodes: Vec::new(),
-            })),
-            Token::TimeUnit("us") => Some(TimeUnit::S(Metadata {
-                span: s.1.clone(),
-                extra_nodes: Vec::new(),
-            })),
-            Token::TimeUnit("ns") => Some(TimeUnit::S(Metadata {
-                span: s.1.clone(),
-                extra_nodes: Vec::new(),
-            })),
-            Token::TimeUnit("ps") => Some(TimeUnit::S(Metadata {
-                span: s.1.clone(),
-                extra_nodes: Vec::new(),
-            })),
-            Token::TimeUnit("fs") => Some(TimeUnit::S(Metadata {
-                span: s.1.clone(),
-                extra_nodes: Vec::new(),
-            })),
+            Token::TimeUnit("s") => {
+                Some(TimeUnit::S(Metadata::new(s.1.clone(), Vec::new())))
+            }
+            Token::TimeUnit("ms") => {
+                Some(TimeUnit::S(Metadata::new(s.1.clone(), Vec::new())))
+            }
+            Token::TimeUnit("us") => {
+                Some(TimeUnit::S(Metadata::new(s.1.clone(), Vec::new())))
+            }
+            Token::TimeUnit("ns") => {
+                Some(TimeUnit::S(Metadata::new(s.1.clone(), Vec::new())))
+            }
+            Token::TimeUnit("ps") => {
+                Some(TimeUnit::S(Metadata::new(s.1.clone(), Vec::new())))
+            }
+            Token::TimeUnit("fs") => {
+                Some(TimeUnit::S(Metadata::new(s.1.clone(), Vec::new())))
+            }
             _ => None,
         }),
         extra_node_parser,

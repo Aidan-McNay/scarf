@@ -187,14 +187,9 @@ fn double_level_symbol_parser<'s>(
                         expanded_from: metadata.span.expanded_from,
                         included_from: metadata.span.included_from,
                     };
-                    let metadata0 = Metadata {
-                        span: span0,
-                        extra_nodes: vec![],
-                    };
-                    let metadata1 = Metadata {
-                        span: span1,
-                        extra_nodes: metadata.extra_nodes,
-                    };
+                    let metadata0 = Metadata::new(span0, vec![]);
+                    let mut metadata1 = metadata;
+                    metadata1.span = span1;
                     match (
                         text_to_level_symbol(char_vec[0], metadata0),
                         text_to_level_symbol(char_vec[1], metadata1),

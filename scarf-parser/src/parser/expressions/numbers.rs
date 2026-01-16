@@ -39,13 +39,9 @@ pub fn decimal_number_parser<'s>(
 ) -> ModalResult<DecimalNumber<'s>, VerboseError<'s>> {
     let _sized_parser = (
         any.verify_map(|s: &'s SpannedToken<'s>| match s.0 {
-            Token::DecimalNumber(num) => Some((
-                num,
-                Metadata {
-                    span: s.1.clone(),
-                    extra_nodes: vec![],
-                },
-            )),
+            Token::DecimalNumber(num) => {
+                Some((num, Metadata::new(s.1.clone(), vec![])))
+            }
             _ => None,
         }),
         extra_node_parser,
@@ -69,13 +65,9 @@ pub fn binary_number_parser<'s>(
 ) -> ModalResult<BinaryNumber<'s>, VerboseError<'s>> {
     (
         any.verify_map(|s: &'s SpannedToken<'s>| match s.0 {
-            Token::BinaryNumber(num) => Some((
-                num,
-                Metadata {
-                    span: s.1.clone(),
-                    extra_nodes: vec![],
-                },
-            )),
+            Token::BinaryNumber(num) => {
+                Some((num, Metadata::new(s.1.clone(), vec![])))
+            }
             _ => None,
         }),
         extra_node_parser,
@@ -92,13 +84,9 @@ pub fn octal_number_parser<'s>(
 ) -> ModalResult<OctalNumber<'s>, VerboseError<'s>> {
     (
         any.verify_map(|s: &'s SpannedToken<'s>| match s.0 {
-            Token::OctalNumber(num) => Some((
-                num,
-                Metadata {
-                    span: s.1.clone(),
-                    extra_nodes: vec![],
-                },
-            )),
+            Token::OctalNumber(num) => {
+                Some((num, Metadata::new(s.1.clone(), vec![])))
+            }
             _ => None,
         }),
         extra_node_parser,
@@ -115,13 +103,9 @@ pub fn hex_number_parser<'s>(
 ) -> ModalResult<HexNumber<'s>, VerboseError<'s>> {
     (
         any.verify_map(|s: &'s SpannedToken<'s>| match s.0 {
-            Token::HexNumber(num) => Some((
-                num,
-                Metadata {
-                    span: s.1.clone(),
-                    extra_nodes: vec![],
-                },
-            )),
+            Token::HexNumber(num) => {
+                Some((num, Metadata::new(s.1.clone(), vec![])))
+            }
             _ => None,
         }),
         extra_node_parser,
@@ -149,13 +133,9 @@ pub fn fixed_point_number_parser<'s>(
 ) -> ModalResult<FixedPointNumber<'s>, VerboseError<'s>> {
     (
         any.verify_map(|s: &'s SpannedToken<'s>| match s.0 {
-            Token::FixedPointNumber(num) => Some((
-                num,
-                Metadata {
-                    span: s.1.clone(),
-                    extra_nodes: vec![],
-                },
-            )),
+            Token::FixedPointNumber(num) => {
+                Some((num, Metadata::new(s.1.clone(), vec![])))
+            }
             _ => None,
         }),
         extra_node_parser,
@@ -172,13 +152,9 @@ pub fn scientific_number_parser<'s>(
 ) -> ModalResult<ScientificNumber<'s>, VerboseError<'s>> {
     (
         any.verify_map(|s: &'s SpannedToken<'s>| match s.0 {
-            Token::ScientificNumber(num) => Some((
-                num,
-                Metadata {
-                    span: s.1.clone(),
-                    extra_nodes: vec![],
-                },
-            )),
+            Token::ScientificNumber(num) => {
+                Some((num, Metadata::new(s.1.clone(), vec![])))
+            }
             _ => None,
         }),
         extra_node_parser,
@@ -195,13 +171,9 @@ pub fn unsigned_number_parser<'s>(
 ) -> ModalResult<UnsignedNumber<'s>, VerboseError<'s>> {
     (
         any.verify_map(|s: &'s SpannedToken<'s>| match s.0 {
-            Token::UnsignedNumber(num) => Some((
-                num,
-                Metadata {
-                    span: s.1.clone(),
-                    extra_nodes: vec![],
-                },
-            )),
+            Token::UnsignedNumber(num) => {
+                Some((num, Metadata::new(s.1.clone(), vec![])))
+            }
             _ => None,
         }),
         extra_node_parser,
@@ -218,13 +190,9 @@ pub fn unbased_unsized_literal_parser<'s>(
 ) -> ModalResult<UnbasedUnsizedLiteral<'s>, VerboseError<'s>> {
     (
         any.verify_map(|s: &'s SpannedToken<'s>| match s.0 {
-            Token::UnbasedUnsizedLiteral(num) => Some((
-                num,
-                Metadata {
-                    span: s.1.clone(),
-                    extra_nodes: vec![],
-                },
-            )),
+            Token::UnbasedUnsizedLiteral(num) => {
+                Some((num, Metadata::new(s.1.clone(), vec![])))
+            }
             _ => None,
         }),
         extra_node_parser,
