@@ -5,11 +5,10 @@
 
 use crate::*;
 use std::collections::HashMap;
-use std::iter::Peekable;
 use std::vec::IntoIter;
 
 fn get_text_macro_args<'s>(
-    src: &mut Peekable<impl Iterator<Item = SpannedToken<'s>>>,
+    src: &mut TokenIterator<'s, impl Iterator<Item = SpannedToken<'s>>>,
     configs: &mut PreprocessConfigs<'s>,
     define_span: &Span<'s>,
     text_macro: (&'s str, Span<'s>),
@@ -364,8 +363,7 @@ impl<'a> SpanReplacer<'a> {
 }
 
 pub fn preprocess_macro<'s>(
-    src: &mut Peekable<impl Iterator<Item = SpannedToken<'s>>>,
-    dest: &mut Option<&mut Vec<SpannedToken<'s>>>,
+    src: &mut TokenIterator<'s, impl Iterator<Item = SpannedToken<'s>>>,
     configs: &mut PreprocessConfigs<'s>,
     text_macro: (&'s str, Span<'s>),
 ) -> Result<(), PreprocessorError<'s>> {
@@ -395,7 +393,8 @@ pub fn preprocess_macro<'s>(
                 configs.retain_span(macro_span),
                 token_vec.into_iter(),
             );
-            preprocess(&mut token_iter.peekable(), dest, configs)
+            src.add_tokens(token_iter);
+            Ok(())
         }
         None => Err(PreprocessorError::UndefinedMacro(text_macro)),
     }

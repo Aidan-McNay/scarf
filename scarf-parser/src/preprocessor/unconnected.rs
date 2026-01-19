@@ -5,7 +5,6 @@
 
 use crate::Span;
 use crate::*;
-use std::iter::Peekable;
 
 #[derive(Clone, Debug)]
 pub enum UnconnectedDrive {
@@ -15,7 +14,7 @@ pub enum UnconnectedDrive {
 }
 
 fn get_unconnected_drive<'s>(
-    src: &mut Peekable<impl Iterator<Item = SpannedToken<'s>>>,
+    src: &mut TokenIterator<'s, impl Iterator<Item = SpannedToken<'s>>>,
     directive_span: Span<'s>,
 ) -> Result<UnconnectedDrive, PreprocessorError<'s>> {
     let Some(spanned_token) = src.next() else {
@@ -34,7 +33,7 @@ fn get_unconnected_drive<'s>(
 }
 
 pub fn preprocess_unconnected_drive<'s>(
-    src: &mut Peekable<impl Iterator<Item = SpannedToken<'s>>>,
+    src: &mut TokenIterator<'s, impl Iterator<Item = SpannedToken<'s>>>,
     configs: &mut PreprocessConfigs<'s>,
     directive_span: Span<'s>,
 ) -> Result<(), PreprocessorError<'s>> {

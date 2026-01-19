@@ -7,6 +7,7 @@ use crate::*;
 use logos::Span as ByteSpan;
 use logos::{Lexer, SpannedIter};
 
+#[derive(Clone)]
 pub struct TokenMerge<'s> {
     tokens: SpannedIter<'s, Token<'s>>,
     prev_was_num: bool,

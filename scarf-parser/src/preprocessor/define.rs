@@ -5,10 +5,9 @@
 
 use crate::Span;
 use crate::*;
-use std::iter::Peekable;
 
 fn get_define_token<'s>(
-    src: &mut Peekable<impl Iterator<Item = SpannedToken<'s>>>,
+    src: &mut TokenIterator<'s, impl Iterator<Item = SpannedToken<'s>>>,
     err_span: Span<'s>,
 ) -> Result<(SpannedToken<'s>, bool), PreprocessorError<'s>> {
     // Return a token, as well as indicating whether it's the
@@ -33,7 +32,7 @@ fn get_define_token<'s>(
 }
 
 fn get_define_name<'s>(
-    src: &mut Peekable<impl Iterator<Item = SpannedToken<'s>>>,
+    src: &mut TokenIterator<'s, impl Iterator<Item = SpannedToken<'s>>>,
     define_span: Span<'s>,
 ) -> Result<SpannedString<'s>, PreprocessorError<'s>> {
     let Some(spanned_token) = src.next() else {
@@ -56,7 +55,7 @@ fn get_define_name<'s>(
 }
 
 fn get_define_function_args<'s>(
-    src: &mut Peekable<impl Iterator<Item = SpannedToken<'s>>>,
+    src: &mut TokenIterator<'s, impl Iterator<Item = SpannedToken<'s>>>,
     define_name: &'s str,
     configs: &mut PreprocessConfigs<'s>,
 ) -> Result<
@@ -157,7 +156,7 @@ fn get_define_function_args<'s>(
 }
 
 fn get_define_function_arg<'s>(
-    src: &mut Peekable<impl Iterator<Item = SpannedToken<'s>>>,
+    src: &mut TokenIterator<'s, impl Iterator<Item = SpannedToken<'s>>>,
     dest: &mut Vec<(
         SpannedString<'s>,
         Option<(Span<'s>, Vec<SpannedToken<'s>>)>,
@@ -225,7 +224,7 @@ fn get_define_function_arg<'s>(
 }
 
 fn get_define_body<'s>(
-    src: &mut Peekable<impl Iterator<Item = SpannedToken<'s>>>,
+    src: &mut TokenIterator<'s, impl Iterator<Item = SpannedToken<'s>>>,
     configs: &mut PreprocessConfigs<'s>,
 ) -> Result<Option<Vec<SpannedToken<'s>>>, PreprocessorError<'s>> {
     let mut define_body: Vec<SpannedToken<'s>> = vec![];
@@ -240,7 +239,7 @@ fn get_define_body<'s>(
 }
 
 pub fn preprocess_define<'s>(
-    src: &mut Peekable<impl Iterator<Item = SpannedToken<'s>>>,
+    src: &mut TokenIterator<'s, impl Iterator<Item = SpannedToken<'s>>>,
     configs: &mut PreprocessConfigs<'s>,
     define_span: Span<'s>,
 ) -> Result<(), PreprocessorError<'s>> {
@@ -269,7 +268,7 @@ pub fn preprocess_define<'s>(
 }
 
 pub fn preprocess_undefine<'s>(
-    src: &mut Peekable<impl Iterator<Item = SpannedToken<'s>>>,
+    src: &mut TokenIterator<'s, impl Iterator<Item = SpannedToken<'s>>>,
     configs: &mut PreprocessConfigs<'s>,
     define_span: Span<'s>,
 ) -> Result<(), PreprocessorError<'s>> {

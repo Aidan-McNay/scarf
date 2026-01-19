@@ -5,10 +5,9 @@
 
 use crate::Span;
 use crate::*;
-use std::iter::Peekable;
 
 fn get_keyword_standard<'s>(
-    src: &mut Peekable<impl Iterator<Item = SpannedToken<'s>>>,
+    src: &mut TokenIterator<'s, impl Iterator<Item = SpannedToken<'s>>>,
     err_span: Span<'s>,
 ) -> Result<StandardVersion, PreprocessorError<'s>> {
     let Some(spanned_token) = src.next() else {
@@ -37,7 +36,7 @@ fn get_keyword_standard<'s>(
 }
 
 pub fn preprocess_keyword_standard<'s>(
-    src: &mut Peekable<impl Iterator<Item = SpannedToken<'s>>>,
+    src: &mut TokenIterator<'s, impl Iterator<Item = SpannedToken<'s>>>,
     dest: &mut Option<&mut Vec<SpannedToken<'s>>>,
     configs: &mut PreprocessConfigs<'s>,
     begin_span: Span<'s>,

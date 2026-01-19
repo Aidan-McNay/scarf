@@ -43,19 +43,20 @@ pub fn lex<'a>(
     src: &'a str,
     file_name: &'a str,
     included_from: Option<&'a Span<'a>>,
-) -> Vec<(Result<Token<'a>, String>, Span<'a>)> {
+) -> impl Iterator<Item = (Result<Token<'a>, String>, Span<'a>)> {
     let span_mapper = token_span_mapper(file_name, included_from);
-    TokenMerge::new(Token::lexer(src), src)
-        .map(span_mapper)
-        .collect()
+    TokenMerge::new(Token::lexer(src), src).map(span_mapper)
 }
 
-pub fn report_lex_errors<'a>(
-    result: &Vec<(Result<Token<'a>, String>, Span<'a>)>,
+pub fn report_lex_errors<
+    'a,
+    T: Iterator<Item = (Result<Token<'a>, String>, Span<'a>)> + Clone,
+>(
+    result: &T,
 ) -> Vec<Report<'a, (&'a str, ByteSpan)>> {
     let mut reports: Vec<Report<'a, (&'a str, ByteSpan)>> = Vec::new();
-    for (result, span) in result {
-        if let &Err(ref text) = result {
+    for (result, span) in result.clone() {
+        if let Err(ref text) = result {
             let report = if text.len() == 0 {
                 Report::build(
                     ReportKind::Error,
@@ -97,8 +98,11 @@ pub fn report_lex_errors<'a>(
     reports
 }
 
-pub fn dump_lex<'a>(
-    lex_stream: &Vec<(Result<Token<'a>, String>, Span<'a>)>,
+pub fn dump_lex<
+    'a,
+    T: Iterator<Item = (Result<Token<'a>, String>, Span<'a>)> + Clone,
+>(
+    lex_stream: &T,
     file_path: &str,
 ) -> io::Result<()> {
     let file_path = Path::new(file_path);
@@ -107,14 +111,14 @@ pub fn dump_lex<'a>(
     }
     let file = File::create(file_path)?;
     let mut writer = BufWriter::new(file);
-    for (result, span) in lex_stream {
+    for (result, span) in lex_stream.clone() {
         let dump_str = format!(
             "[{:>2}:{:>2}] {}\n",
             span.bytes.start,
             span.bytes.end,
             match result {
                 Ok(token) => token,
-                Err(_) => &Token::Error,
+                Err(_) => Token::Error,
             }
         );
         writer.write_all(dump_str.as_bytes())?;

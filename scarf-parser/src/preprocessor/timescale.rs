@@ -5,7 +5,6 @@
 
 use crate::*;
 use scarf_syntax::SpanRelation;
-use std::iter::Peekable;
 
 #[derive(Clone, Debug)]
 pub enum TimescaleValue {
@@ -50,7 +49,7 @@ impl<'a> Timescale<'a> {
 }
 
 fn get_timescale<'s>(
-    src: &mut Peekable<impl Iterator<Item = SpannedToken<'s>>>,
+    src: &mut TokenIterator<'s, impl Iterator<Item = SpannedToken<'s>>>,
     def_span: Span<'s>,
 ) -> Result<(TimescaleValue, TimescaleUnit), PreprocessorError<'s>> {
     // Return a token, as well as indicating whether it's the
@@ -94,7 +93,7 @@ fn get_timescale<'s>(
 }
 
 fn get_divider<'s>(
-    src: &mut Peekable<impl Iterator<Item = SpannedToken<'s>>>,
+    src: &mut TokenIterator<'s, impl Iterator<Item = SpannedToken<'s>>>,
     def_span: Span<'s>,
 ) -> Result<Span<'s>, PreprocessorError<'s>> {
     let Some(spanned_token) = src.next() else {
@@ -112,7 +111,7 @@ fn get_divider<'s>(
 }
 
 pub fn preprocess_timescale<'s>(
-    src: &mut Peekable<impl Iterator<Item = SpannedToken<'s>>>,
+    src: &mut TokenIterator<'s, impl Iterator<Item = SpannedToken<'s>>>,
     configs: &mut PreprocessConfigs<'s>,
     directive_span: Span<'s>,
 ) -> Result<(), PreprocessorError<'s>> {

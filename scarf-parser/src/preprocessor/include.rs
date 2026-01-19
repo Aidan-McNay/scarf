@@ -5,7 +5,6 @@
 
 use crate::Span;
 use crate::*;
-use std::iter::Peekable;
 
 pub enum IncludePath<'a> {
     ProjectRelative(&'a str),
@@ -13,7 +12,7 @@ pub enum IncludePath<'a> {
 }
 
 fn get_include_path<'s>(
-    src: &mut Peekable<impl Iterator<Item = SpannedToken<'s>>>,
+    src: &mut TokenIterator<'s, impl Iterator<Item = SpannedToken<'s>>>,
     define_span: Span<'s>,
 ) -> Result<(IncludePath<'s>, Span<'s>), PreprocessorError<'s>> {
     let Some(spanned_token) = src.next() else {
@@ -36,7 +35,7 @@ fn get_include_path<'s>(
 }
 
 pub fn preprocess_include<'s>(
-    src: &mut Peekable<impl Iterator<Item = SpannedToken<'s>>>,
+    src: &mut TokenIterator<'s, impl Iterator<Item = SpannedToken<'s>>>,
     dest: &mut Option<&mut Vec<SpannedToken<'s>>>,
     configs: &mut PreprocessConfigs<'s>,
     include_span: &'s Span<'s>,
@@ -56,9 +55,11 @@ pub fn preprocess_include<'s>(
         include_path,
         Some(include_span),
     ));
-    dest.reserve(included_file_contents.len());
+    if let Some(size_hint) = included_file_contents.size_hint().1 {
+        dest.reserve(size_hint);
+    }
     preprocess(
-        &mut included_file_contents.into_iter().peekable(),
+        &mut TokenIterator::new(included_file_contents),
         dest,
         configs,
     )

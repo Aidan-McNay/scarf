@@ -21,7 +21,7 @@ pub use error::*;
 pub use implicit_nettype::*;
 pub use include::*;
 pub use keywords::*;
-use std::iter::Peekable;
+use std::collections::VecDeque;
 pub use text_macro::*;
 pub use timescale::*;
 pub use unconnected::*;
@@ -44,8 +44,51 @@ impl<T> Pushable<T> for Option<&mut Vec<T>> {
     }
 }
 
+pub struct TokenIterator<'s, T: Iterator<Item = SpannedToken<'s>>> {
+    iter: T,
+    extras: VecDeque<SpannedToken<'s>>,
+}
+
+impl<'s, T: Iterator<Item = SpannedToken<'s>>> Iterator
+    for TokenIterator<'s, T>
+{
+    type Item = SpannedToken<'s>;
+    fn next(&mut self) -> Option<Self::Item> {
+        if let Some(extra_token) = self.extras.pop_front() {
+            Some(extra_token)
+        } else {
+            self.iter.next()
+        }
+    }
+}
+
+impl<'s, T: Iterator<Item = SpannedToken<'s>>> TokenIterator<'s, T> {
+    pub fn new(iter: T) -> Self {
+        Self {
+            iter,
+            extras: VecDeque::default(),
+        }
+    }
+
+    pub fn add_tokens<I>(&mut self, extra_tokens: I)
+    where
+        I: Iterator<Item = SpannedToken<'s>>,
+    {
+        self.extras.extend(extra_tokens)
+    }
+
+    pub fn peek(&mut self) -> Option<&SpannedToken<'s>> {
+        if self.extras.is_empty() {
+            if let Some(next_token) = self.iter.next() {
+                self.extras.push_back(next_token);
+            }
+        }
+        self.extras.front()
+    }
+}
+
 pub fn preprocess<'s>(
-    src: &mut Peekable<impl Iterator<Item = SpannedToken<'s>>>,
+    src: &mut TokenIterator<'s, impl Iterator<Item = SpannedToken<'s>>>,
     dest: &mut Option<&mut Vec<SpannedToken<'s>>>,
     configs: &mut PreprocessConfigs<'s>,
 ) -> Result<(), PreprocessorError<'s>> {
@@ -151,7 +194,6 @@ pub fn preprocess<'s>(
                 Token::TextMacro(macro_name) if configs.in_define_arg => {
                     preprocess_macro(
                         src,
-                        dest,
                         configs,
                         (macro_name, spanned_token.1),
                     )?;
@@ -219,7 +261,6 @@ pub fn preprocess<'s>(
                 Token::TextMacro(macro_name) => {
                     preprocess_macro(
                         src,
-                        dest,
                         configs,
                         (macro_name, spanned_token.1),
                     )?;

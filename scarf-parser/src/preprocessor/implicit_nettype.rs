@@ -5,7 +5,6 @@
 
 use crate::Span;
 use crate::*;
-use std::iter::Peekable;
 
 #[derive(Clone, Debug)]
 pub enum DefaultNettype {
@@ -23,7 +22,7 @@ pub enum DefaultNettype {
 }
 
 fn get_nettype<'s>(
-    src: &mut Peekable<impl Iterator<Item = SpannedToken<'s>>>,
+    src: &mut TokenIterator<'s, impl Iterator<Item = SpannedToken<'s>>>,
     define_span: Span<'s>,
 ) -> Result<DefaultNettype, PreprocessorError<'s>> {
     let Some(spanned_token) = src.next() else {
@@ -63,7 +62,7 @@ fn get_nettype<'s>(
 }
 
 pub fn preprocess_default_nettype<'s>(
-    src: &mut Peekable<impl Iterator<Item = SpannedToken<'s>>>,
+    src: &mut TokenIterator<'s, impl Iterator<Item = SpannedToken<'s>>>,
     configs: &mut PreprocessConfigs<'s>,
     directive_span: Span<'s>,
 ) -> Result<(), PreprocessorError<'s>> {

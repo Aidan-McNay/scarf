@@ -22,13 +22,12 @@ pub use scarf_syntax::Span;
 pub use test::*;
 
 pub fn lex_to_parse_stream<'s>(
-    input: Vec<(Result<Token<'s>, String>, Span<'s>)>,
-) -> Vec<SpannedToken<'s>> {
-    let mapped_input = input.into_iter().map(|(tok, span)| match tok {
+    input: impl Iterator<Item = (Result<Token<'s>, String>, Span<'s>)>,
+) -> impl Iterator<Item = SpannedToken<'s>> {
+    input.map(|(tok, span)| match tok {
         Ok(tok) => SpannedToken(tok, span),
         Err(_) => SpannedToken(Token::Error, span),
-    });
-    mapped_input.collect::<Vec<SpannedToken<'s>>>()
+    })
 }
 
 fn get_expansion_string(expansion_depth: u32, is_last: bool) -> String {

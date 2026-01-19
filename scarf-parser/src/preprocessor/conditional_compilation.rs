@@ -6,10 +6,9 @@
 use crate::Span;
 use crate::*;
 use scarf_syntax::*;
-use std::iter::Peekable;
 
 fn get_ifdef_condition<'s>(
-    src: &mut Peekable<impl Iterator<Item = SpannedToken<'s>>>,
+    src: &mut TokenIterator<'s, impl Iterator<Item = SpannedToken<'s>>>,
     ifdef_span: Span<'s>,
 ) -> Result<IfdefCondition<'s>, PreprocessorError<'s>> {
     let Some(spanned_token) = src.next() else {
@@ -73,7 +72,7 @@ fn equivalence_operator_binding_power<'s>() -> (u8, u8) {
 }
 
 fn get_ifdef_macro_expression<'s>(
-    src: &mut Peekable<impl Iterator<Item = SpannedToken<'s>>>,
+    src: &mut TokenIterator<'s, impl Iterator<Item = SpannedToken<'s>>>,
     previous_span: Span<'s>,
     min_bp: u8,
 ) -> Result<IfdefMacroExpression<'s>, PreprocessorError<'s>> {
@@ -212,7 +211,7 @@ fn ifdef_expression_true<'s>(
 }
 
 pub fn preprocess_ifdef<'s>(
-    src: &mut Peekable<impl Iterator<Item = SpannedToken<'s>>>,
+    src: &mut TokenIterator<'s, impl Iterator<Item = SpannedToken<'s>>>,
     dest: &mut Option<&mut Vec<SpannedToken<'s>>>,
     configs: &mut PreprocessConfigs<'s>,
     ifdef_span: Span<'s>,
