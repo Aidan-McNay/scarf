@@ -11,7 +11,7 @@ pub use ariadne::{Report, Source, sources};
 use lexer::*;
 pub use lexer::{Token, dump_lex, lex, report_lex_errors};
 use parser::*;
-pub use parser::{SpannedToken, VerboseError, parse, report_parse_errors};
+pub use parser::{SpannedToken, VerboseError, parse};
 pub use preprocessor::*;
 use winnow::Parser;
 use winnow::stream::TokenSlice;

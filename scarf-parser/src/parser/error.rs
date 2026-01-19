@@ -1,15 +1,24 @@
 // =======================================================================
-// errors.rs
+// error.rs
 // =======================================================================
 // The type of errors used for AST parsing
 
 use crate::*;
+use core::ops::Range;
 use lexer::Token;
 use scarf_syntax::*;
+use std::fs;
 use winnow::{
     error::{AddContext, ParserError},
     stream::Stream,
 };
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum Expectation<'s> {
+    Token(Token<'s>),
+    Label(&'s str),
+    EOI,
+}
 
 #[derive(Debug)]
 pub struct VerboseError<'s> {
@@ -106,6 +115,93 @@ impl<'s> AddContext<Tokens<'s>, &'s str> for VerboseError<'s> {
         self
     }
 }
+
+fn format_expectation<'s>(pattern: &Expectation<'s>) -> String {
+    match pattern {
+        Expectation::Token(token) => token.to_string(),
+        Expectation::Label(label) => label.to_string(),
+        Expectation::EOI => "end of input".to_string(),
+    }
+}
+
+fn format_reason<'s>(error: &VerboseError<'s>) -> String {
+    let found_str = match error.found {
+        Some(tok) => tok.to_string(),
+        None => "end of input".to_owned(),
+    };
+    let mut dedup_expected: Vec<Expectation<'s>> = vec![];
+    for expected in error.expected.iter() {
+        if !dedup_expected.contains(expected) {
+            dedup_expected.push(expected.clone());
+        }
+    }
+    let expected_str = match &dedup_expected[..] {
+        [] => "something else".to_owned(),
+        [expected] => format_expectation(expected),
+        _ => {
+            let mut temp_expected_str = String::new();
+            for expected in &dedup_expected[..dedup_expected.len() - 1] {
+                temp_expected_str
+                    .push_str(format_expectation(expected).as_str());
+                temp_expected_str.push_str(", ");
+            }
+            temp_expected_str.push_str("or ");
+            temp_expected_str.push_str(
+                format_expectation(dedup_expected.last().unwrap()).as_str(),
+            );
+            temp_expected_str
+        }
+    };
+    format!("found {}, expected {}", found_str, expected_str)
+}
+
+fn format_reason_short<'s>(error: &VerboseError<'s>) -> String {
+    match error.found {
+        Some(tok) => format!("Didn't expect {}", tok.to_string()),
+        None => "Didn't expect end of input".to_owned(),
+    }
+}
+
+impl<'s> From<VerboseError<'s>>
+    for Report<'s, (String, std::ops::Range<usize>)>
+{
+    fn from(value: VerboseError<'s>) -> Self {
+        let error_span = if value.is_eoi() {
+            let file_len = fs::metadata(value.span.file)
+                .expect("TODO: Handle file read error")
+                .len();
+            let byte_span = Range {
+                start: file_len as usize,
+                end: file_len as usize,
+            };
+            Span {
+                file: value.span.file,
+                bytes: byte_span,
+                expanded_from: None,
+                included_from: value.span.included_from,
+            }
+        } else {
+            value.span.clone()
+        };
+        let mut report = Report::build(
+            ReportKind::Error,
+            (error_span.file.to_string(), error_span.bytes.clone()),
+        )
+        .with_code("P1")
+        .with_config(
+            ariadne::Config::new().with_index_type(ariadne::IndexType::Byte),
+        )
+        .with_message(format_reason(&value));
+        report = attach_span_label(
+            error_span,
+            Color::Red,
+            format_reason_short(&value),
+            report,
+        );
+        report.finish()
+    }
+}
+
 impl<'s> VerboseError<'s> {
     pub fn or_in_place(&mut self, mut other: Self) {
         // Check for invalid errors
@@ -135,11 +231,4 @@ impl<'s> VerboseError<'s> {
             }
         }
     }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum Expectation<'s> {
-    Token(Token<'s>),
-    Label(&'s str),
-    EOI,
 }

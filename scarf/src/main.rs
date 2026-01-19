@@ -58,19 +58,17 @@ fn format(args: &FormatArgs) {
         let mut error_sources = sources(configs.included_files());
         match preprocess_result {
             Err(err) => {
-                let error: Report<'_, (String, std::ops::Range<usize>)> =
+                let report: Report<'_, (String, std::ops::Range<usize>)> =
                     err.into();
-                error.print(&mut error_sources).unwrap();
+                report.print(&mut error_sources).unwrap();
             }
             _ => (),
         }
         let parsed_src = parse(&preprocessed_stream);
-        let parse_errors = report_parse_errors(&parsed_src, path);
-        if !parse_errors.is_empty() {
-            for report in parse_errors {
-                report.print(&mut error_sources).unwrap()
-            }
-            return;
+        if let Err(err) = parsed_src {
+            let report: Report<'_, (String, std::ops::Range<usize>)> =
+                err.into();
+            report.print(&mut error_sources).unwrap()
         }
         // println!("{:#?}", parsed_src);
     }
