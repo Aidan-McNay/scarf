@@ -50,11 +50,12 @@ impl<'a> Timescale<'a> {
 
 fn get_timescale<'s>(
     src: &mut TokenIterator<'s, impl Iterator<Item = SpannedToken<'s>>>,
+    configs: &mut PreprocessConfigs<'s>,
     def_span: Span<'s>,
 ) -> Result<(TimescaleValue, TimescaleUnit), PreprocessorError<'s>> {
     // Return a token, as well as indicating whether it's the
     // end of the define
-    let Some(spanned_token) = src.next() else {
+    let Some(spanned_token) = preprocess_single(src, configs)? else {
         return Err(PreprocessorError::IncompleteDirective(def_span));
     };
     let timescale_value = match spanned_token.0 {
@@ -70,7 +71,7 @@ fn get_timescale<'s>(
             }));
         }
     };
-    let Some(spanned_token) = src.next() else {
+    let Some(spanned_token) = preprocess_single(src, configs)? else {
         return Err(PreprocessorError::IncompleteDirective(def_span));
     };
     let timescale_unit = match spanned_token.0 {
@@ -94,9 +95,10 @@ fn get_timescale<'s>(
 
 fn get_divider<'s>(
     src: &mut TokenIterator<'s, impl Iterator<Item = SpannedToken<'s>>>,
+    configs: &mut PreprocessConfigs<'s>,
     def_span: Span<'s>,
 ) -> Result<Span<'s>, PreprocessorError<'s>> {
-    let Some(spanned_token) = src.next() else {
+    let Some(spanned_token) = preprocess_single(src, configs)? else {
         return Err(PreprocessorError::IncompleteDirective(def_span));
     };
     match spanned_token.0 {
@@ -115,9 +117,9 @@ pub fn preprocess_timescale<'s>(
     configs: &mut PreprocessConfigs<'s>,
     directive_span: Span<'s>,
 ) -> Result<(), PreprocessorError<'s>> {
-    let timeunit = get_timescale(src, directive_span.clone())?;
-    let _ = get_divider(src, directive_span.clone())?;
-    let timeprecision = get_timescale(src, directive_span.clone())?;
+    let timeunit = get_timescale(src, configs, directive_span.clone())?;
+    let _ = get_divider(src, configs, directive_span.clone())?;
+    let timeprecision = get_timescale(src, configs, directive_span.clone())?;
     configs.add_timescale(directive_span, timeunit, timeprecision);
     Ok(())
 }

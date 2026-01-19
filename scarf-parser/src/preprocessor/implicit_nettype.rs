@@ -23,9 +23,10 @@ pub enum DefaultNettype {
 
 fn get_nettype<'s>(
     src: &mut TokenIterator<'s, impl Iterator<Item = SpannedToken<'s>>>,
+    configs: &mut PreprocessConfigs<'s>,
     define_span: Span<'s>,
 ) -> Result<DefaultNettype, PreprocessorError<'s>> {
-    let Some(spanned_token) = src.next() else {
+    let Some(spanned_token) = preprocess_single(src, configs)? else {
         return Err(PreprocessorError::IncompleteDirective(define_span));
     };
     match spanned_token.0 {
@@ -66,7 +67,7 @@ pub fn preprocess_default_nettype<'s>(
     configs: &mut PreprocessConfigs<'s>,
     directive_span: Span<'s>,
 ) -> Result<(), PreprocessorError<'s>> {
-    let default_nettype = get_nettype(src, directive_span.clone())?;
+    let default_nettype = get_nettype(src, configs, directive_span.clone())?;
     configs.add_default_nettype(directive_span, default_nettype);
     Ok(())
 }

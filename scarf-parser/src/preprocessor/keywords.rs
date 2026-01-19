@@ -8,9 +8,10 @@ use crate::*;
 
 fn get_keyword_standard<'s>(
     src: &mut TokenIterator<'s, impl Iterator<Item = SpannedToken<'s>>>,
+    configs: &mut PreprocessConfigs<'s>,
     err_span: Span<'s>,
 ) -> Result<StandardVersion, PreprocessorError<'s>> {
-    let Some(spanned_token) = src.next() else {
+    let Some(spanned_token) = preprocess_single(src, configs)? else {
         return Err(PreprocessorError::IncompleteDirective(err_span));
     };
     match spanned_token.0 {
@@ -41,7 +42,7 @@ pub fn preprocess_keyword_standard<'s>(
     configs: &mut PreprocessConfigs<'s>,
     begin_span: Span<'s>,
 ) -> Result<(), PreprocessorError<'s>> {
-    let new_standard = get_keyword_standard(src, begin_span.clone())?;
+    let new_standard = get_keyword_standard(src, configs, begin_span.clone())?;
     let old_standard = configs.curr_standard.clone();
     configs.curr_standard = new_standard;
     let result = preprocess(src, dest, configs);

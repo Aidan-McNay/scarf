@@ -36,18 +36,18 @@ fn format(args: &FormatArgs) {
         let mut configs = PreprocessConfigs::new(&string_cache);
         let (_, src) = configs.retain_file(path.clone(), src);
         let lexed_src = lex(src, path.as_str(), None).collect::<Vec<_>>();
-        // match dump_lex(&lexed_src.clone().into_iter(), "./scarf_debug/lex.txt")
-        // {
-        //     Ok(_) => (),
-        //     Err(err) => println!("{}", err),
-        // }
-        // let lex_errors = report_lex_errors(&lexed_src.clone().into_iter());
-        // if !lex_errors.is_empty() {
-        //     for report in lex_errors {
-        //         report.print((path.as_str(), Source::from(src))).unwrap()
-        //     }
-        //     return;
-        // }
+        match dump_lex(&lexed_src.clone().into_iter(), "./scarf_debug/lex.txt")
+        {
+            Ok(_) => (),
+            Err(err) => println!("{}", err),
+        }
+        let lex_errors = report_lex_errors(&lexed_src.clone().into_iter());
+        if !lex_errors.is_empty() {
+            for report in lex_errors {
+                report.print((path.as_str(), Source::from(src))).unwrap()
+            }
+            return;
+        }
         let token_stream = lex_to_parse_stream(lexed_src.into_iter());
         let mut preprocessed_stream: Vec<SpannedToken<'_>> = vec![];
         let preprocess_result = preprocess(

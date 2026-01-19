@@ -13,9 +13,10 @@ pub enum IncludePath<'a> {
 
 fn get_include_path<'s>(
     src: &mut TokenIterator<'s, impl Iterator<Item = SpannedToken<'s>>>,
+    configs: &mut PreprocessConfigs<'s>,
     define_span: Span<'s>,
 ) -> Result<(IncludePath<'s>, Span<'s>), PreprocessorError<'s>> {
-    let Some(spanned_token) = src.next() else {
+    let Some(spanned_token) = preprocess_single(src, configs)? else {
         return Err(PreprocessorError::IncompleteDirective(define_span));
     };
     match spanned_token.0 {
@@ -40,7 +41,8 @@ pub fn preprocess_include<'s>(
     configs: &mut PreprocessConfigs<'s>,
     include_span: &'s Span<'s>,
 ) -> Result<(), PreprocessorError<'s>> {
-    let (include_path_text, _) = get_include_path(src, include_span.clone())?;
+    let (include_path_text, _) =
+        get_include_path(src, configs, include_span.clone())?;
     // Treat both include types as the same
     let include_path_text = match include_path_text {
         IncludePath::ProjectRelative(text) => text,

@@ -185,12 +185,7 @@ pub fn preprocess<'s>(
                         dest.push_element(spanned_token)
                     }
                 }
-                Token::BlockComment(_) | Token::OnelineComment(_) => {
-                    #[cfg(feature = "parse_extras")]
-                    {
-                        dest.push_element(spanned_token)
-                    }
-                }
+                Token::BlockComment(_) | Token::OnelineComment(_) => (),
                 Token::TextMacro(macro_name) if configs.in_define_arg => {
                     preprocess_macro(
                         src,
@@ -317,5 +312,23 @@ pub fn preprocess<'s>(
             }
         }
         Ok(())
+    }
+}
+
+pub(crate) fn preprocess_single<'s>(
+    src: &mut TokenIterator<'s, impl Iterator<Item = SpannedToken<'s>>>,
+    configs: &mut PreprocessConfigs<'s>,
+) -> Result<Option<SpannedToken<'s>>, PreprocessorError<'s>> {
+    loop {
+        match src.next() {
+            None => {
+                break Ok(None);
+            }
+            Some(SpannedToken(Token::BlockComment(_), _)) => (),
+            Some(SpannedToken(Token::TextMacro(macro_name), macro_span)) => {
+                preprocess_macro(src, configs, (macro_name, macro_span))?;
+            }
+            other => break Ok(other),
+        }
     }
 }
