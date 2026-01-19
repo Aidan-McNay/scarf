@@ -10,6 +10,7 @@ pub mod error;
 pub mod implicit_nettype;
 pub mod include;
 pub mod keywords;
+pub mod line;
 pub mod text_macro;
 pub mod timescale;
 pub mod unconnected;
@@ -21,6 +22,7 @@ pub use error::*;
 pub use implicit_nettype::*;
 pub use include::*;
 pub use keywords::*;
+pub use line::*;
 use std::collections::VecDeque;
 pub use text_macro::*;
 pub use timescale::*;
@@ -285,12 +287,19 @@ pub fn preprocess<'s>(
                 Token::DirEndcelldefine => {
                     configs.add_cell_define(false, spanned_token.1);
                 }
+                Token::DirLine => {
+                    preprocess_line(src, configs, spanned_token.1)?;
+                }
                 Token::DirUnderscoreFile => dest.push_element(SpannedToken(
-                    Token::SimpleIdentifier(configs.get_file(&spanned_token.1)),
+                    Token::StringLiteral(
+                        configs.get_line_directive_file(&spanned_token.1),
+                    ),
                     spanned_token.1,
                 )),
                 Token::DirUnderscoreLine => dest.push_element(SpannedToken(
-                    Token::UnsignedNumber(configs.get_line(&spanned_token.1)),
+                    Token::UnsignedNumber(
+                        configs.get_line_directive_line(&spanned_token.1),
+                    ),
                     spanned_token.1,
                 )),
                 Token::BlockComment(_)

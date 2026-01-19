@@ -53,8 +53,6 @@ fn get_timescale<'s>(
     configs: &mut PreprocessConfigs<'s>,
     def_span: Span<'s>,
 ) -> Result<(TimescaleValue, TimescaleUnit), PreprocessorError<'s>> {
-    // Return a token, as well as indicating whether it's the
-    // end of the define
     let Some(spanned_token) = preprocess_single(src, configs)? else {
         return Err(PreprocessorError::IncompleteDirective(def_span));
     };

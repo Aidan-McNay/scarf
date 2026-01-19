@@ -43,6 +43,7 @@ pub struct PreprocessConfigs<'a> {
     default_nettypes: Vec<(DefaultNettype, Span<'a>)>,
     unconnected_drives: Vec<(UnconnectedDrive, Span<'a>)>,
     cell_defines: Vec<(bool, Span<'a>)>,
+    line_directives: Vec<LineDirective<'a>>,
     included_files: HashMap<&'a str, &'a str>,
     pub cache: &'a PreprocessorCache<'a>,
     pub curr_standard: StandardVersion,
@@ -113,6 +114,14 @@ impl<'a> DefineBody<'a> {
     }
 }
 
+#[derive(Clone)]
+struct LineDirective<'a> {
+    pub directive_file_name: &'a str,
+    pub directive_line_number: usize,
+    pub original_span: Span<'a>,
+    pub original_line_num: usize,
+}
+
 impl<'a> PreprocessConfigs<'a> {
     pub fn new(string_cache: &'a PreprocessorCache<'a>) -> Self {
         Self {
@@ -122,6 +131,7 @@ impl<'a> PreprocessConfigs<'a> {
             default_nettypes: vec![],
             unconnected_drives: vec![],
             cell_defines: vec![],
+            line_directives: vec![],
             included_files: HashMap::new(),
             cache: string_cache,
             curr_standard: StandardVersion::default(),
@@ -334,17 +344,65 @@ impl<'a> PreprocessConfigs<'a> {
         false
     }
 
+    /// Add a line directive to affect future __LINE__/__FILE__ directives
+    pub fn add_line_directive(
+        &mut self,
+        file_name: &'a str,
+        line_number: &'a str,
+        dir_span: Span<'a>,
+    ) {
+        let offset = dir_span.bytes.end;
+        let file_contents: &str =
+            self.included_files.get(dir_span.file).unwrap();
+        let line_num = file_contents[..offset].lines().count();
+        let new_line_directive = LineDirective {
+            directive_file_name: file_name,
+            directive_line_number: line_number.parse().unwrap(),
+            original_span: dir_span,
+            original_line_num: line_num,
+        };
+        self.line_directives.push(new_line_directive);
+    }
+
     /// Get the file from a Span
-    pub fn get_file(&self, span: &Span<'a>) -> &'a str {
-        span.file
+    pub fn get_line_directive_file(&self, span: &Span<'a>) -> &'a str {
+        let Some(line_directive) = self
+            .line_directives
+            .iter()
+            .rev()
+            .filter(|line_directive| {
+                (line_directive.original_span.file == span.file)
+                    && (line_directive.original_span.bytes.start
+                        < span.bytes.start) // Only relevant if file is included twice
+            })
+            .next()
+        else {
+            return span.file;
+        };
+        line_directive.directive_file_name
     }
 
     /// Get the line number of a Span
-    pub fn get_line(&mut self, span: &Span<'a>) -> &'a str {
-        let offset = span.bytes.start;
+    pub fn get_line_directive_line(&mut self, span: &Span<'a>) -> &'a str {
+        let offset = span.bytes.end;
         let file_contents: &str = self.included_files.get(span.file).unwrap();
-        let line_num = file_contents[..offset].lines().count() + 1;
-        self.cache.retain_string(line_num.to_string())
+        let line_num = file_contents[..offset].lines().count();
+        let Some(line_directive) = self
+            .line_directives
+            .iter()
+            .rev()
+            .filter(|line_directive| {
+                (line_directive.original_span.file == span.file)
+                    && (line_directive.original_span.bytes.start
+                        < span.bytes.start) // Only relevant if file is included twice
+            })
+            .next()
+        else {
+            return self.cache.retain_string(line_num.to_string());
+        };
+        let new_line_num = (line_num + line_directive.directive_line_number)
+            - (line_directive.original_line_num + 1);
+        self.cache.retain_string(new_line_num.to_string())
     }
 
     pub fn retain_string(&mut self, string: String) -> &'a str {

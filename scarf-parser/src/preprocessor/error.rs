@@ -227,8 +227,8 @@ impl<'s> From<PreprocessorError<'s>>
                   ReportKind::Error,
               ).finish()
             }
-            PreprocessorError::Error(_verbose_error) => {
-              todo!("Implement VerboseError::into<Report>")
+            PreprocessorError::Error(verbose_error) => {
+              verbose_error.into()
             },
             PreprocessorError::NewlineInDefine(newline_span) => make_report(
               newline_span,
