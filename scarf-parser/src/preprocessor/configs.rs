@@ -405,6 +405,11 @@ impl<'a> PreprocessConfigs<'a> {
         self.cache.retain_string(new_line_num.to_string())
     }
 
+    pub fn get_slice(&self, span: &Span<'a>) -> Option<&'a str> {
+        let file_contents: &str = self.included_files.get(span.file)?;
+        Some(&file_contents[span.bytes.start..span.bytes.end])
+    }
+
     pub fn retain_string(&mut self, string: String) -> &'a str {
         self.cache.retain_string(string)
     }

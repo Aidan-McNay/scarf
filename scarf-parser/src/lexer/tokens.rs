@@ -544,7 +544,6 @@ pub enum Token<'a> {
     DirIfndef,
     #[token("`include")]
     DirInclude,
-    DirIncludeToolPath(&'a str), // Formed in post-processing
     #[token("`line")]
     DirLine,
     #[token("`nounconnected_drive")]
@@ -1123,7 +1122,6 @@ impl<'a> Token<'a> {
             Token::DirIfdef => "`ifdef",
             Token::DirIfndef => "`ifndef",
             Token::DirInclude => "`include",
-            Token::DirIncludeToolPath(_text) => "<tool-relative include path>",
             Token::DirLine => "`line",
             Token::DirNounconnectedDrive => "`nounconnected_drive",
             Token::DirPragma => "`pragma",
@@ -1327,10 +1325,6 @@ impl<'a> fmt::Display for Token<'a> {
             }
             Token::PreprocessorIdentifier(text) => {
                 temp_str = format!("preprocessor identifier '{}'", text);
-                temp_str.as_str()
-            }
-            Token::DirIncludeToolPath(text) => {
-                temp_str = format!("include path '{}'", text);
                 temp_str.as_str()
             }
             Token::TextMacro(text) => {

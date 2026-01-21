@@ -5,7 +5,6 @@
 
 pub mod callbacks;
 pub mod keywords;
-pub mod merge;
 pub mod tokens;
 use ariadne::Report;
 pub use ariadne::{Color, Label, ReportKind};
@@ -13,7 +12,6 @@ pub use callbacks::*;
 pub use keywords::*;
 pub use logos::Logos;
 pub use logos::Span as ByteSpan;
-use merge::TokenMerge;
 use scarf_syntax::Span;
 use std::fs::{self, File};
 use std::io::{self, BufWriter, Write};
@@ -45,7 +43,7 @@ pub fn lex<'a>(
     included_from: Option<&'a Span<'a>>,
 ) -> impl Iterator<Item = (Result<Token<'a>, String>, Span<'a>)> {
     let span_mapper = token_span_mapper(file_name, included_from);
-    TokenMerge::new(Token::lexer(src), src).map(span_mapper)
+    Token::lexer(src).spanned().map(span_mapper)
 }
 
 pub fn report_lex_errors<

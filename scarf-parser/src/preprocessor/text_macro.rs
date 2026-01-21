@@ -136,7 +136,6 @@ fn get_identifier_substitute<'a>(
             | Token::TextMacro(_)
             | Token::StringLiteral(_)
             | Token::TripleQuoteStringLiteral(_)
-            | Token::DirIncludeToolPath(_)
             | Token::Newline => {
                 return Err(PreprocessorError::InvalidIdentifierFormation((
                     arg_name,
@@ -195,7 +194,6 @@ fn get_string_substitute<'a>(
             | Token::BlockComment(_)
             | Token::PreprocessorIdentifier(_)
             | Token::TextMacro(_)
-            | Token::DirIncludeToolPath(_)
             | Token::Newline => {
                 return Err(PreprocessorError::InvalidIdentifierFormation((
                     id_name,

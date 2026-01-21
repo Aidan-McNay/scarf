@@ -23,9 +23,36 @@ fn get_include_path<'s>(
         Token::StringLiteral(id_str) => {
             Ok((IncludePath::ProjectRelative(id_str), spanned_token.1))
         }
-        Token::DirIncludeToolPath(id_str) => {
-            Ok((IncludePath::ToolRelative(id_str), spanned_token.1))
-        }
+        Token::Lt => loop {
+            let Some(next_token) = preprocess_single(src, configs)? else {
+                break Err(PreprocessorError::Error(VerboseError {
+                    valid: true,
+                    span: spanned_token.1,
+                    found: Some(spanned_token.0),
+                    expected: vec![Expectation::Label("an include path")],
+                }));
+            };
+            match next_token.0 {
+                Token::Newline => {
+                    break Err(PreprocessorError::Error(VerboseError {
+                        valid: true,
+                        span: spanned_token.1,
+                        found: Some(spanned_token.0),
+                        expected: vec![Expectation::Label("an include path")],
+                    }));
+                }
+                Token::Gt => {
+                    let mut path_span = spanned_token.1.clone();
+                    path_span.bytes.start = spanned_token.1.bytes.end;
+                    path_span.bytes.end = next_token.1.bytes.start;
+                    let path = configs.get_slice(&path_span).unwrap();
+                    let mut overall_span = next_token.1;
+                    overall_span.bytes.start = spanned_token.1.bytes.start;
+                    break Ok((IncludePath::ToolRelative(path), overall_span));
+                }
+                _ => (),
+            }
+        },
         _ => Err(PreprocessorError::Error(VerboseError {
             valid: true,
             span: spanned_token.1,
