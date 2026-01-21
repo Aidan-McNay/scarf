@@ -10,7 +10,6 @@ use logos::{Lexer, SpannedIter};
 #[derive(Clone)]
 pub struct TokenMerge<'s> {
     tokens: SpannedIter<'s, Token<'s>>,
-    prev_was_num: bool,
     prev_include_span: Option<ByteSpan>,
     text: &'s str,
 }
@@ -19,7 +18,6 @@ impl<'s> TokenMerge<'s> {
     pub fn new(src_lexer: Lexer<'s, Token<'s>>, src_text: &'s str) -> Self {
         Self {
             tokens: src_lexer.spanned(),
-            prev_was_num: false,
             prev_include_span: None,
             text: src_text,
         }
@@ -74,36 +72,11 @@ impl<'s> Iterator for TokenMerge<'s> {
             return result;
         }
         match self.tokens.next() {
-            Some((Ok(Token::UnsignedNumber(num_str)), num_span)) => {
-                self.prev_was_num = true;
-                Some((Ok(Token::UnsignedNumber(num_str)), num_span))
-            }
-            Some((Ok(Token::FixedPointNumber(num_str)), num_span)) => {
-                self.prev_was_num = true;
-                Some((Ok(Token::FixedPointNumber(num_str)), num_span))
-            }
             Some((Ok(Token::DirInclude), include_span)) => {
-                self.prev_was_num = false;
                 self.prev_include_span = Some(include_span.clone());
                 Some((Ok(Token::DirInclude), include_span))
             }
-            Some((Ok(Token::SimpleIdentifier(text)), span)) => {
-                if self.prev_was_num {
-                    self.prev_was_num = false;
-                    match text {
-                        "s" | "ms" | "us" | "ns" | "ps" | "fs" => {
-                            Some((Ok(Token::TimeUnit(text)), span))
-                        }
-                        _ => Some((Ok(Token::SimpleIdentifier(text)), span)),
-                    }
-                } else {
-                    Some((Ok(Token::SimpleIdentifier(text)), span))
-                }
-            }
-            other => {
-                self.prev_was_num = false;
-                other
-            }
+            other => other,
         }
     }
 }

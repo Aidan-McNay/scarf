@@ -73,12 +73,12 @@ fn get_timescale<'s>(
         return Err(PreprocessorError::IncompleteDirective(def_span));
     };
     let timescale_unit = match spanned_token.0 {
-        Token::TimeUnit("s") => TimescaleUnit::S,
-        Token::TimeUnit("ms") => TimescaleUnit::MS,
-        Token::TimeUnit("us") => TimescaleUnit::US,
-        Token::TimeUnit("ns") => TimescaleUnit::NS,
-        Token::TimeUnit("ps") => TimescaleUnit::PS,
-        Token::TimeUnit("fs") => TimescaleUnit::FS,
+        Token::SimpleIdentifier("s") => TimescaleUnit::S,
+        Token::SimpleIdentifier("ms") => TimescaleUnit::MS,
+        Token::SimpleIdentifier("us") => TimescaleUnit::US,
+        Token::SimpleIdentifier("ns") => TimescaleUnit::NS,
+        Token::SimpleIdentifier("ps") => TimescaleUnit::PS,
+        Token::SimpleIdentifier("fs") => TimescaleUnit::FS,
         _ => {
             return Err(PreprocessorError::Error(VerboseError {
                 valid: true,

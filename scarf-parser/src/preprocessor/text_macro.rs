@@ -129,8 +129,7 @@ fn get_identifier_substitute<'a>(
             | Token::UnbasedUnsizedLiteral(text)
             | Token::SystemTfIdentifier(text)
             | Token::SimpleIdentifier(text)
-            | Token::EscapedIdentifier(text)
-            | Token::TimeUnit(text) => Ok(text),
+            | Token::EscapedIdentifier(text) => Ok(text),
             Token::OnelineComment(_)
             | Token::BlockComment(_)
             | Token::PreprocessorIdentifier(_)
@@ -176,8 +175,7 @@ fn get_string_substitute<'a>(
             | Token::UnbasedUnsizedLiteral(text)
             | Token::SystemTfIdentifier(text)
             | Token::SimpleIdentifier(text)
-            | Token::EscapedIdentifier(text)
-            | Token::TimeUnit(text) => {
+            | Token::EscapedIdentifier(text) => {
                 *str_to_append += text;
                 Ok(())
             }

@@ -811,7 +811,6 @@ pub enum Token<'a> {
     #[regex(r"`[a-zA-Z_][a-zA-Z0-9_\$]*", text_macro)]
     #[regex(r"`\\[!-~]+", text_macro)]
     TextMacro(&'a str),
-    TimeUnit(&'a str), // Created in post-processing
     #[token(r#"""#, string_literal)]
     StringLiteral(&'a str),
     #[token(r#"`""#, preprocessor_string_literal)]
@@ -1254,7 +1253,6 @@ impl<'a> Token<'a> {
             Token::EscapedIdentifier(_text) => "<escaped identifier>",
             Token::PreprocessorIdentifier(_text) => "<preprocessor identifier>",
             Token::TextMacro(_text) => "<text macro>",
-            Token::TimeUnit(_text) => "<time unit>",
             Token::StringLiteral(_text) => "<string>",
             Token::PreprocessorStringLiteral(_text) => "<preprocessor string>",
             Token::TripleQuoteStringLiteral(_text) => "<triple-quote string>",
@@ -1337,10 +1335,6 @@ impl<'a> fmt::Display for Token<'a> {
             }
             Token::TextMacro(text) => {
                 temp_str = format!("text macro '{}'", text);
-                temp_str.as_str()
-            }
-            Token::TimeUnit(text) => {
-                temp_str = format!("time unit '{}'", text);
                 temp_str.as_str()
             }
             Token::StringLiteral(text) => {

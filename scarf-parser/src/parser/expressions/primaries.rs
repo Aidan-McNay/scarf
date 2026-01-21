@@ -319,22 +319,22 @@ fn time_unit_parser<'s>(
 ) -> ModalResult<TimeUnit<'s>, VerboseError<'s>> {
     (
         any.verify_map(|s: &'s SpannedToken<'s>| match s.0 {
-            Token::TimeUnit("s") => {
+            Token::SimpleIdentifier("s") => {
                 Some(TimeUnit::S(Metadata::new(s.1.clone(), Vec::new())))
             }
-            Token::TimeUnit("ms") => {
+            Token::SimpleIdentifier("ms") => {
                 Some(TimeUnit::S(Metadata::new(s.1.clone(), Vec::new())))
             }
-            Token::TimeUnit("us") => {
+            Token::SimpleIdentifier("us") => {
                 Some(TimeUnit::S(Metadata::new(s.1.clone(), Vec::new())))
             }
-            Token::TimeUnit("ns") => {
+            Token::SimpleIdentifier("ns") => {
                 Some(TimeUnit::S(Metadata::new(s.1.clone(), Vec::new())))
             }
-            Token::TimeUnit("ps") => {
+            Token::SimpleIdentifier("ps") => {
                 Some(TimeUnit::S(Metadata::new(s.1.clone(), Vec::new())))
             }
-            Token::TimeUnit("fs") => {
+            Token::SimpleIdentifier("fs") => {
                 Some(TimeUnit::S(Metadata::new(s.1.clone(), Vec::new())))
             }
             _ => None,
