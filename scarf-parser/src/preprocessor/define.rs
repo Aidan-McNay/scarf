@@ -208,7 +208,7 @@ fn get_define_function_arg<'s>(
     let mut default_arg_text: Vec<SpannedToken<'s>> = vec![];
     configs.in_define = true;
     configs.in_define_arg = true;
-    let result = preprocess(src, &mut Some(&mut default_arg_text), configs);
+    let result = preprocess(src, &mut default_arg_text, configs);
     configs.in_define = false;
     configs.in_define_arg = false;
     match result {
@@ -229,7 +229,7 @@ fn get_define_body<'s>(
 ) -> Result<Option<Vec<SpannedToken<'s>>>, PreprocessorError<'s>> {
     let mut define_body: Vec<SpannedToken<'s>> = vec![];
     configs.in_define = true;
-    let result = preprocess(src, &mut Some(&mut define_body), configs);
+    let result = preprocess(src, &mut define_body, configs);
     configs.in_define = false;
     match result {
         Ok(()) => Ok(Some(define_body)),

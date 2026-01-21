@@ -52,7 +52,7 @@ fn format(args: &FormatArgs) {
         let mut preprocessed_stream: Vec<SpannedToken<'_>> = vec![];
         let preprocess_result = preprocess(
             &mut TokenIterator::new(token_stream.into_iter()),
-            &mut Some(&mut preprocessed_stream),
+            &mut preprocessed_stream,
             &mut configs,
         );
         let mut error_sources = sources(configs.included_files());

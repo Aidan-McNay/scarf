@@ -64,7 +64,7 @@ fn get_include_path<'s>(
 
 pub fn preprocess_include<'s>(
     src: &mut TokenIterator<'s, impl Iterator<Item = SpannedToken<'s>>>,
-    dest: &mut Option<&mut Vec<SpannedToken<'s>>>,
+    dest: &mut Vec<SpannedToken<'s>>,
     configs: &mut PreprocessConfigs<'s>,
     include_span: &'s Span<'s>,
 ) -> Result<(), PreprocessorError<'s>> {

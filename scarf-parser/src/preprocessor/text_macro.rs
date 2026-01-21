@@ -31,7 +31,7 @@ fn get_text_macro_args<'s>(
     let end_span = loop {
         let mut new_arg: Vec<SpannedToken<'s>> = vec![];
         configs.in_define_arg = true;
-        let result = preprocess(src, &mut Some(&mut new_arg), configs);
+        let result = preprocess(src, &mut new_arg, configs);
         configs.in_define_arg = false;
         match result {
             Ok(()) => {

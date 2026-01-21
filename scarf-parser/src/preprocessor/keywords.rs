@@ -38,7 +38,7 @@ fn get_keyword_standard<'s>(
 
 pub fn preprocess_keyword_standard<'s>(
     src: &mut TokenIterator<'s, impl Iterator<Item = SpannedToken<'s>>>,
-    dest: &mut Option<&mut Vec<SpannedToken<'s>>>,
+    dest: &mut Vec<SpannedToken<'s>>,
     configs: &mut PreprocessConfigs<'s>,
     begin_span: Span<'s>,
 ) -> Result<(), PreprocessorError<'s>> {

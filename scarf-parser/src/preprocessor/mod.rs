@@ -28,24 +28,6 @@ pub use text_macro::*;
 pub use timescale::*;
 pub use unconnected::*;
 
-pub(crate) trait Pushable<T> {
-    fn push_element(&mut self, item: T);
-    fn reserve(&mut self, additional: usize);
-}
-
-impl<T> Pushable<T> for Option<&mut Vec<T>> {
-    fn push_element(&mut self, item: T) {
-        if let Some(inner_vec) = self {
-            inner_vec.push(item);
-        }
-    }
-    fn reserve(&mut self, additional: usize) {
-        if let Some(inner_vec) = self {
-            inner_vec.reserve(additional);
-        }
-    }
-}
-
 pub struct TokenIterator<'s, T: Iterator<Item = SpannedToken<'s>>> {
     iter: T,
     extras: VecDeque<SpannedToken<'s>>,
@@ -91,7 +73,7 @@ impl<'s, T: Iterator<Item = SpannedToken<'s>>> TokenIterator<'s, T> {
 
 pub fn preprocess<'s>(
     src: &mut TokenIterator<'s, impl Iterator<Item = SpannedToken<'s>>>,
-    dest: &mut Option<&mut Vec<SpannedToken<'s>>>,
+    dest: &mut Vec<SpannedToken<'s>>,
     configs: &mut PreprocessConfigs<'s>,
 ) -> Result<(), PreprocessorError<'s>> {
     let mut enclosures: Vec<Token<'s>> = vec![];
@@ -100,17 +82,17 @@ pub fn preprocess<'s>(
             match spanned_token.0 {
                 Token::Bslash => loop {
                     match src.next() {
-                        None => dest.push_element(spanned_token),
+                        None => dest.push(spanned_token),
                         Some(next_token) => match next_token.0 {
                             Token::Newline => (),
                             Token::Bslash => {
-                                dest.push_element(spanned_token);
+                                dest.push(spanned_token);
                                 spanned_token = next_token;
                                 continue;
                             }
                             _ => {
-                                dest.push_element(spanned_token);
-                                dest.push_element(next_token)
+                                dest.push(spanned_token);
+                                dest.push(next_token)
                             }
                         },
                     };
@@ -123,19 +105,19 @@ pub fn preprocess<'s>(
                 }
                 Token::Paren if configs.in_define_arg => {
                     enclosures.push(Token::Paren);
-                    dest.push_element(spanned_token);
+                    dest.push(spanned_token);
                 }
                 Token::Bracket if configs.in_define_arg => {
                     enclosures.push(Token::Bracket);
-                    dest.push_element(spanned_token);
+                    dest.push(spanned_token);
                 }
                 Token::Brace if configs.in_define_arg => {
                     enclosures.push(Token::Brace);
-                    dest.push_element(spanned_token);
+                    dest.push(spanned_token);
                 }
                 Token::EParen if configs.in_define_arg => {
                     match enclosures.pop() {
-                        Some(Token::Paren) => dest.push_element(spanned_token),
+                        Some(Token::Paren) => dest.push(spanned_token),
                         None => {
                             return Err(
                                 PreprocessorError::EndOfFunctionArgument(
@@ -154,9 +136,7 @@ pub fn preprocess<'s>(
                 }
                 Token::EBracket if configs.in_define_arg => {
                     match enclosures.pop() {
-                        Some(Token::Bracket) => {
-                            dest.push_element(spanned_token)
-                        }
+                        Some(Token::Bracket) => dest.push(spanned_token),
                         _ => {
                             return Err(
                                 PreprocessorError::IncompleteMacroWithToken(
@@ -168,7 +148,7 @@ pub fn preprocess<'s>(
                 }
                 Token::EBrace if configs.in_define_arg => {
                     match enclosures.pop() {
-                        Some(Token::Brace) => dest.push_element(spanned_token),
+                        Some(Token::Brace) => dest.push(spanned_token),
                         _ => {
                             return Err(
                                 PreprocessorError::IncompleteMacroWithToken(
@@ -184,7 +164,7 @@ pub fn preprocess<'s>(
                             spanned_token,
                         ));
                     } else {
-                        dest.push_element(spanned_token)
+                        dest.push(spanned_token)
                     }
                 }
                 Token::BlockComment(_) | Token::OnelineComment(_) => (),
@@ -195,7 +175,7 @@ pub fn preprocess<'s>(
                         (macro_name, spanned_token.1),
                     )?;
                 }
-                _ => dest.push_element(spanned_token),
+                _ => dest.push(spanned_token),
             }
         }
         Ok(())
@@ -290,13 +270,13 @@ pub fn preprocess<'s>(
                 Token::DirLine => {
                     preprocess_line(src, configs, spanned_token.1)?;
                 }
-                Token::DirUnderscoreFile => dest.push_element(SpannedToken(
+                Token::DirUnderscoreFile => dest.push(SpannedToken(
                     Token::StringLiteral(
                         configs.get_line_directive_file(&spanned_token.1),
                     ),
                     spanned_token.1,
                 )),
-                Token::DirUnderscoreLine => dest.push_element(SpannedToken(
+                Token::DirUnderscoreLine => dest.push(SpannedToken(
                     Token::UnsignedNumber(
                         configs.get_line_directive_line(&spanned_token.1),
                     ),
@@ -315,9 +295,9 @@ pub fn preprocess<'s>(
                         Token::SimpleIdentifier(token.as_str()),
                         spanned_token.1,
                     );
-                    dest.push_element(new_token)
+                    dest.push(new_token)
                 }
-                _ => dest.push_element(spanned_token),
+                _ => dest.push(spanned_token),
             }
         }
         Ok(())

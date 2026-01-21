@@ -7,6 +7,42 @@ use crate::Span;
 use crate::*;
 use scarf_syntax::*;
 
+fn preprocess_untaken_conditional<'s>(
+    src: &mut TokenIterator<'s, impl Iterator<Item = SpannedToken<'s>>>,
+) -> Result<(), PreprocessorError<'s>> {
+    loop {
+        match src.next() {
+            None => {
+                break Ok(());
+            }
+            Some(SpannedToken(Token::DirEndif, endif_span)) => {
+                break Err(PreprocessorError::Endif(endif_span));
+            }
+            Some(SpannedToken(Token::DirElse, else_span)) => {
+                break Err(PreprocessorError::Else(else_span));
+            }
+            Some(SpannedToken(Token::DirElsif, elsif_span)) => {
+                break Err(PreprocessorError::Elsif(elsif_span));
+            }
+            Some(SpannedToken(Token::DirIfdef, _))
+            | Some(SpannedToken(Token::DirIfndef, _)) => {
+                'inner_conditional: loop {
+                    match preprocess_untaken_conditional(src) {
+                        Ok(()) => {
+                            return Ok(());
+                        }
+                        Err(PreprocessorError::EndKeywords(_)) => {
+                            break 'inner_conditional;
+                        }
+                        _ => (),
+                    }
+                }
+            }
+            _ => (),
+        }
+    }
+}
+
 fn get_ifdef_condition<'s>(
     src: &mut TokenIterator<'s, impl Iterator<Item = SpannedToken<'s>>>,
     ifdef_span: Span<'s>,
@@ -212,7 +248,7 @@ fn ifdef_expression_true<'s>(
 
 pub fn preprocess_ifdef<'s>(
     src: &mut TokenIterator<'s, impl Iterator<Item = SpannedToken<'s>>>,
-    dest: &mut Option<&mut Vec<SpannedToken<'s>>>,
+    dest: &mut Vec<SpannedToken<'s>>,
     configs: &mut PreprocessConfigs<'s>,
     ifdef_span: Span<'s>,
     is_ifdef: bool, // False for ifndef
@@ -222,17 +258,12 @@ pub fn preprocess_ifdef<'s>(
         ifdef_condition_true(ifdef_condition, configs) ^ !is_ifdef;
     let mut curr_condition_valid = valid_condition_found;
     loop {
-        let output_dest = if curr_condition_valid {
-            &mut *dest
+        let result = if curr_condition_valid {
+            preprocess(src, dest, configs)
         } else {
-            &mut None
+            preprocess_untaken_conditional(src)
         };
-        let curr_configs = if curr_condition_valid {
-            &mut *configs
-        } else {
-            &mut PreprocessConfigs::new(configs.cache)
-        };
-        match preprocess(src, output_dest, curr_configs) {
+        match result {
             Ok(()) => {
                 let conditional_token = if is_ifdef {
                     Token::DirIfdef
@@ -251,23 +282,18 @@ pub fn preprocess_ifdef<'s>(
                     curr_condition_valid = false;
                 } else {
                     curr_condition_valid =
-                        ifdef_condition_true(ifdef_condition, curr_configs);
+                        ifdef_condition_true(ifdef_condition, configs);
                     valid_condition_found = curr_condition_valid;
                 };
                 ()
             }
             Err(PreprocessorError::Else(else_span)) => {
-                let output_dest = if !valid_condition_found {
-                    dest
+                let result = if !valid_condition_found {
+                    preprocess(src, dest, configs)
                 } else {
-                    &mut None
+                    preprocess_untaken_conditional(src)
                 };
-                let curr_configs = if !valid_condition_found {
-                    configs
-                } else {
-                    &mut PreprocessConfigs::new(configs.cache)
-                };
-                match preprocess(src, output_dest, curr_configs) {
+                match result {
                     Ok(()) => {
                         return Err(PreprocessorError::NoEndif(
                             Token::DirElse,
