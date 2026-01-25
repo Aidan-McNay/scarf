@@ -87,7 +87,7 @@ where
             Err(err) => match err {
                 ErrMode::Backtrack(verbose_error) => {
                     input.reset(&start);
-                    input.state.or_in_place(verbose_error);
+                    input.state.add_error(verbose_error);
                     return Ok(res);
                 }
                 _ => return Err(err),
@@ -109,7 +109,7 @@ where
             Err(err) => match err {
                 ErrMode::Backtrack(verbose_error) => {
                     input.reset(&start);
-                    input.state.or_in_place(verbose_error);
+                    input.state.add_error(verbose_error);
                     return Ok(None);
                 }
                 _ => return Err(err),

@@ -17,7 +17,7 @@ pub fn check_parser<'s, T: std::cmp::PartialEq + std::fmt::Debug>(
         lex_to_parse_stream(lex(input, "<test>", None)).collect();
     let mut stateful_parser_input = Tokens {
         input: TokenSlice::new(&parser_stream[..]),
-        state: VerboseError::default(),
+        state: ParserState::new(),
     };
     let result = parser.parse_next(&mut stateful_parser_input);
     match result {
@@ -36,7 +36,7 @@ pub fn apply_parser<'s, T>(
         lex_to_parse_stream(lex(input, "<test>", None)).collect();
     let mut stateful_parser_input = Tokens {
         input: TokenSlice::new(&parser_stream[..]),
-        state: VerboseError::default(),
+        state: ParserState::new(),
     };
     parser.parse_next(&mut stateful_parser_input).unwrap()
 }

@@ -64,12 +64,12 @@ fn format(args: &FormatArgs) {
             }
             _ => (),
         }
-        let parsed_src = parse(&preprocessed_stream);
-        if let Err(err) = parsed_src {
-            let report: Report<'_, (String, std::ops::Range<usize>)> =
-                err.into();
-            report.print(&mut error_sources).unwrap()
-        }
+        // let parsed_src = parse(&preprocessed_stream);
+        // if let Err(err) = parsed_src {
+        //     let report: Report<'_, (String, std::ops::Range<usize>)> =
+        //         err.into();
+        //     report.print(&mut error_sources).unwrap()
+        // }
         // println!("{:#?}", parsed_src);
     }
 }

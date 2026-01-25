@@ -24,9 +24,25 @@ impl<'s> From<(Token<'s>, Span<'s>)> for SpannedToken<'s> {
     }
 }
 
+#[derive(Debug)]
+pub struct ParserState<'a> {
+    pub last_error: VerboseError<'a>,
+}
+
+impl<'a> ParserState<'a> {
+    pub fn new() -> Self {
+        Self {
+            last_error: VerboseError::default(),
+        }
+    }
+    pub fn add_error(&mut self, new_err: VerboseError<'a>) {
+        self.last_error.or_in_place(new_err);
+    }
+}
+
 // Keep track of the largest error we've seen in repeat/opt branches
 pub type Tokens<'s> =
-    Stateful<TokenSlice<'s, SpannedToken<'s>>, VerboseError<'s>>;
+    Stateful<TokenSlice<'s, SpannedToken<'s>>, ParserState<'s>>;
 impl<'s> Parser<Tokens<'s>, &'s SpannedToken<'s>, ErrMode<VerboseError<'s>>>
     for Token<'s>
 {

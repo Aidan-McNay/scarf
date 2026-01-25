@@ -40,11 +40,13 @@ pub fn parse<'s>(
 ) -> Result<SourceText<'s>, VerboseError<'s>> {
     let mut stateful_input = Tokens {
         input: TokenSlice::new(input),
-        state: VerboseError::default(),
+        state: ParserState::new(),
     };
     match source_text_parser.parse_next(&mut stateful_input) {
         Ok(source_text) => Ok(source_text),
-        Err(ErrMode::Backtrack(err)) => Err(err.or(stateful_input.state)),
+        Err(ErrMode::Backtrack(err)) => {
+            Err(err.or(stateful_input.state.last_error))
+        }
         Err(ErrMode::Cut(err)) => Err(err),
         Err(ErrMode::Incomplete(_)) => {
             panic!("Produced 'incomplete', an unsupported error")
