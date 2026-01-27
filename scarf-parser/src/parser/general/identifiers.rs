@@ -40,7 +40,7 @@ pub fn c_identifier_parser<'s>(
     (
         any.verify_map(|s: &'s SpannedToken<'s>| match s.0 {
             Token::SimpleIdentifier(text) => {
-                if !(text.contains("&")) {
+                if !(text.contains("$")) {
                     Some(CIdentifier(text, Metadata::new(s.1.clone(), vec![])))
                 } else {
                     None
@@ -58,6 +58,40 @@ pub fn c_identifier_parser<'s>(
         })
         .context("a C identifier")
         .parse_next(input)
+}
+
+#[cfg(test)]
+mod c_identifier {
+    use super::*;
+
+    #[test]
+    fn basic() {
+        check_parser!(
+            "basic_identifier0",
+            c_identifier_parser,
+            CIdentifier("basic_identifier0", test_metadata())
+        )
+    }
+
+    #[test]
+    #[should_panic]
+    fn no_dollar() {
+        check_parser!(
+            "bad_identifier$",
+            c_identifier_parser,
+            CIdentifier("bad_identifier$", test_metadata())
+        )
+    }
+
+    #[test]
+    #[should_panic]
+    fn no_number_start() {
+        check_parser!(
+            "1bad_identifier",
+            c_identifier_parser,
+            CIdentifier("1bad_identifier", test_metadata())
+        )
+    }
 }
 
 pub fn cell_identifier_parser<'s>(
@@ -256,6 +290,136 @@ pub fn hierarchical_identifier_parser<'s>(
         .parse_next(input)
 }
 
+#[cfg(test)]
+mod hierarchical_identifier {
+    use super::*;
+
+    #[test]
+    fn basic() {
+        let mut storage = vec![];
+        check_parser!(
+            "test",
+            hierarchical_identifier_parser,
+            HierarchicalIdentifier(
+                None,
+                vec![],
+                apply_parser!("test", identifier_parser, &mut storage)
+            )
+        )
+    }
+
+    #[test]
+    fn hierarchy() {
+        let mut storage_parent = vec![];
+        let mut storage_child1 = vec![];
+        let mut storage_child2 = vec![];
+        check_parser!(
+            "parent.child1.child2",
+            hierarchical_identifier_parser,
+            HierarchicalIdentifier(
+                None,
+                vec![
+                    (
+                        apply_parser!(
+                            "parent",
+                            identifier_parser,
+                            &mut storage_parent
+                        ),
+                        ConstantBitSelect(vec![]),
+                        test_metadata()
+                    ),
+                    (
+                        apply_parser!(
+                            "child1",
+                            identifier_parser,
+                            &mut storage_child1
+                        ),
+                        ConstantBitSelect(vec![]),
+                        test_metadata()
+                    )
+                ],
+                apply_parser!("child2", identifier_parser, &mut storage_child2)
+            )
+        )
+    }
+
+    #[test]
+    fn select_hierarchy() {
+        let mut storage_food = vec![];
+        let mut storage_food_idx = vec![];
+        let mut storage_fruit = vec![];
+        let mut storage_fruit_idx = vec![];
+        let mut storage_apple = vec![];
+        check_parser!(
+            "food[0].fruit[3].apple",
+            hierarchical_identifier_parser,
+            HierarchicalIdentifier(
+                None,
+                vec![
+                    (
+                        apply_parser!(
+                            "food",
+                            identifier_parser,
+                            &mut storage_food
+                        ),
+                        ConstantBitSelect(vec![(
+                            test_metadata(),
+                            apply_parser!(
+                                "0",
+                                constant_expression_parser,
+                                &mut storage_food_idx
+                            ),
+                            test_metadata()
+                        )]),
+                        test_metadata()
+                    ),
+                    (
+                        apply_parser!(
+                            "fruit",
+                            identifier_parser,
+                            &mut storage_fruit
+                        ),
+                        ConstantBitSelect(vec![(
+                            test_metadata(),
+                            apply_parser!(
+                                "3",
+                                constant_expression_parser,
+                                &mut storage_fruit_idx
+                            ),
+                            test_metadata()
+                        )]),
+                        test_metadata()
+                    )
+                ],
+                apply_parser!("apple", identifier_parser, &mut storage_apple)
+            )
+        )
+    }
+
+    #[test]
+    fn root_hierarchy() {
+        let mut storage_trunk = vec![];
+        let mut storage_branch = vec![];
+        check_parser!(
+            "$root.trunk.branch",
+            hierarchical_identifier_parser,
+            HierarchicalIdentifier(
+                Some((test_metadata(), test_metadata())),
+                vec![(
+                    apply_parser!(
+                        "trunk",
+                        identifier_parser,
+                        &mut storage_trunk
+                    ),
+                    ConstantBitSelect(vec![]),
+                    test_metadata()
+                )],
+                apply_parser!("branch", identifier_parser, &mut storage_branch)
+            )
+        )
+    }
+}
+
 pub fn hierarchical_net_identifier_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<HierarchicalNetIdentifier<'s>, VerboseError<'s>> {
@@ -351,25 +515,49 @@ pub fn identifier_parser<'s>(
         .parse_next(input)
 }
 
-#[test]
-fn simple_identifier() {
-    check_parser!(
-        "test",
-        identifier_parser,
-        Identifier::SimpleIdentifier(("test", test_metadata()))
-    )
-}
+#[cfg(test)]
+mod identifier {
+    use super::*;
+    #[test]
+    fn simple_identifier() {
+        check_parser!(
+            "test",
+            identifier_parser,
+            Identifier::SimpleIdentifier(("test", test_metadata()))
+        )
+    }
 
-#[test]
-fn escaped_identifier() {
-    check_parser!(
-        "\\test/identifier+#$",
-        identifier_parser,
-        Identifier::EscapedIdentifier((
+    #[test]
+    fn escaped_identifier() {
+        check_parser!(
             "\\test/identifier+#$",
-            test_metadata()
-        ))
-    )
+            identifier_parser,
+            Identifier::EscapedIdentifier((
+                "\\test/identifier+#$",
+                test_metadata()
+            ))
+        )
+    }
+
+    #[test]
+    #[should_panic]
+    fn no_number_start() {
+        check_parser!(
+            "1bad_test",
+            identifier_parser,
+            Identifier::SimpleIdentifier(("1bad_test", test_metadata()))
+        )
+    }
+
+    #[test]
+    #[should_panic]
+    fn no_dollar_start() {
+        check_parser!(
+            "$bad_test",
+            identifier_parser,
+            Identifier::SimpleIdentifier(("$bad_test", test_metadata()))
+        )
+    }
 }
 
 pub fn index_variable_identifier_parser<'s>(
@@ -501,6 +689,37 @@ pub fn package_scope_parser<'s>(
     let _unit_parser = (token(Token::DollarUnit), token(Token::ColonColon))
         .map(|(a, b)| PackageScope::Unit(Box::new((a, b))));
     alt((_identifier_parser, _unit_parser)).parse_next(input)
+}
+
+#[cfg(test)]
+mod package_scope {
+    use super::*;
+
+    #[test]
+    fn unit() {
+        check_parser!(
+            "$unit::",
+            package_scope_parser,
+            PackageScope::Unit(Box::new((test_metadata(), test_metadata())))
+        );
+    }
+
+    #[test]
+    fn identifier() {
+        let mut storage = vec![];
+        check_parser!(
+            "my_package::",
+            package_scope_parser,
+            PackageScope::Identifier(Box::new((
+                apply_parser!(
+                    "my_package",
+                    package_identifier_parser,
+                    &mut storage
+                ),
+                test_metadata()
+            )))
+        )
+    }
 }
 
 pub fn parameter_identifier_parser<'s>(
