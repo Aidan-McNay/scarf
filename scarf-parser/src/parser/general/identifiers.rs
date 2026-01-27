@@ -351,6 +351,27 @@ pub fn identifier_parser<'s>(
         .parse_next(input)
 }
 
+#[test]
+fn simple_identifier() {
+    check_parser!(
+        "test",
+        identifier_parser,
+        Identifier::SimpleIdentifier(("test", test_metadata()))
+    )
+}
+
+#[test]
+fn escaped_identifier() {
+    check_parser!(
+        "\\test/identifier+#$",
+        identifier_parser,
+        Identifier::EscapedIdentifier((
+            "\\test/identifier+#$",
+            test_metadata()
+        ))
+    )
+}
+
 pub fn index_variable_identifier_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<IndexVariableIdentifier<'s>, VerboseError<'s>> {

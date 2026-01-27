@@ -3,40 +3,34 @@
 // =======================================================================
 // Utilities for testing parsers
 
-use crate::*;
-use winnow::{ModalResult, Parser, error::ErrMode};
+use scarf_syntax::*;
 
-pub fn check_parser<'s, T: std::cmp::PartialEq + std::fmt::Debug>(
-    mut parser: impl FnMut(
-        &mut Tokens<'_>,
-    ) -> ModalResult<T, ErrMode<VerboseError<'s>>>,
-    input: &'s str,
-    expected: T,
-) {
-    let parser_stream: Vec<SpannedToken<'_>> =
-        lex_to_parse_stream(lex(input, "<test>", None)).collect();
-    let mut stateful_parser_input = Tokens {
-        input: TokenSlice::new(&parser_stream[..]),
-        state: VerboseError::default(),
-    };
-    let result = parser.parse_next(&mut stateful_parser_input);
-    match result {
-        Ok(parsed) => assert_eq!(parsed, expected),
-        Err(error) => panic!("{}", error),
-    }
+#[macro_export]
+macro_rules! apply_parser {
+    ($input:literal, $parser:ident, $storage:expr) => {{
+        *$storage = lex_to_parse_stream(lex($input, "<test>", None))
+            .collect::<Vec<_>>();
+        let mut tokens = Tokens {
+            input: TokenSlice::new(&$storage[..]),
+            state: VerboseError::default(),
+        };
+        $parser(&mut tokens).unwrap()
+    }};
 }
 
-pub fn apply_parser<'s, T>(
-    mut parser: impl FnMut(
-        &mut Tokens<'_>,
-    ) -> ModalResult<T, ErrMode<VerboseError<'s>>>,
-    input: &'s str,
-) -> T {
-    let parser_stream: Vec<SpannedToken<'_>> =
-        lex_to_parse_stream(lex(input, "<test>", None)).collect();
-    let mut stateful_parser_input = Tokens {
-        input: TokenSlice::new(&parser_stream[..]),
-        state: VerboseError::default(),
-    };
-    parser.parse_next(&mut stateful_parser_input).unwrap()
+#[macro_export]
+macro_rules! check_parser {
+    ($input:literal, $parser:ident, $expected:expr) => {{
+        let input = lex_to_parse_stream(lex($input, "<test>", None))
+            .collect::<Vec<_>>();
+        let mut tokens = Tokens {
+            input: TokenSlice::new(&input[..]),
+            state: VerboseError::default(),
+        };
+        assert_eq!($parser(&mut tokens).unwrap(), $expected)
+    }};
+}
+
+pub fn test_metadata<'s>() -> Metadata<'s> {
+    Metadata::new(Span::default(), vec![])
 }
