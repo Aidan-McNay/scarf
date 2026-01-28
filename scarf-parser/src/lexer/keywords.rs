@@ -8,8 +8,8 @@ use crate::*;
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Debug)]
 pub enum StandardVersion {
     IEEE1364_1995,
-    IEEE1364_2001Noconfig,
     IEEE1364_2001,
+    IEEE1364_2001Noconfig,
     IEEE1364_2005,
     IEEE1800_2005,
     IEEE1800_2009,
@@ -43,7 +43,7 @@ impl<'a> Token<'a> {
             | Token::PulsestyleOnevent
             | Token::Showcancelled
             | Token::Signed
-            | Token::Unsigned => *standard > StandardVersion::IEEE1364_2001,
+            | Token::Unsigned => *standard >= StandardVersion::IEEE1364_2001,
             Token::Cell
             | Token::Config
             | Token::Design

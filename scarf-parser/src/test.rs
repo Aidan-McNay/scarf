@@ -7,7 +7,7 @@ use scarf_syntax::*;
 
 #[macro_export]
 macro_rules! check_preprocessor {
-    ($input:literal, $expected:expr) => {{
+    ($input:expr, $expected:expr) => {{
         let input = lex_to_parse_stream(lex($input, "<test>", None))
             .collect::<Vec<_>>();
         let string_cache = PreprocessorCache::default();
