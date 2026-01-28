@@ -122,6 +122,24 @@ fn get_ifdef_macro_expression<'s>(
         Token::EscapedIdentifier(id_str) => IfdefMacroExpression::Text(
             Box::new(TextMacroIdentifier(id_str, spanned_token.1)),
         ),
+        Token::Paren => {
+            let inner_expression =
+                get_ifdef_macro_expression(src, previous_span.clone(), 0)?;
+            let Some(SpannedToken(Token::EParen, eparen_span)) = src.next()
+            else {
+                return Err(PreprocessorError::Error(VerboseError {
+                    valid: true,
+                    span: spanned_token.1,
+                    found: Some(Token::Paren),
+                    expected: vec![Expectation::Label("a closing parenthesis")],
+                }));
+            };
+            IfdefMacroExpression::Paren(Box::new((
+                spanned_token.1,
+                inner_expression,
+                eparen_span,
+            )))
+        }
         Token::Exclamation => {
             let negated_expr =
                 get_ifdef_macro_expression(src, previous_span.clone(), 255)?;
@@ -307,4 +325,329 @@ pub fn preprocess_ifdef<'s>(
             Err(err) => return Err(err),
         }
     }
+}
+
+#[test]
+fn basic_ifdef() {
+    check_preprocessor!(
+        "`define TEST
+        `ifdef TEST
+        this_should_be_included
+        `endif",
+        vec![Token::SimpleIdentifier("this_should_be_included")]
+    )
+}
+
+#[test]
+fn basic_ifndef() {
+    check_preprocessor!(
+        "`ifndef TEST
+        this_should_be_included
+        `endif",
+        vec![Token::SimpleIdentifier("this_should_be_included")]
+    )
+}
+
+#[test]
+fn stripped_ifdef() {
+    check_preprocessor!(
+        "
+        `ifdef TEST
+        this_shouldnt_be_included
+        `endif",
+        Vec::<Token<'_>>::new()
+    )
+}
+
+#[test]
+fn stripped_ifndef() {
+    check_preprocessor!(
+        "`define TEST
+        `ifndef TEST
+        this_shouldnt_be_included
+        `endif",
+        Vec::<Token<'_>>::new()
+    )
+}
+
+#[test]
+fn else_used() {
+    check_preprocessor!(
+        "
+        `ifdef FAKE_MATH
+        1 + 1 = 3
+        `else
+        1 + 1 = 2
+        `endif",
+        vec![
+            Token::UnsignedNumber("1"),
+            Token::Plus,
+            Token::UnsignedNumber("1"),
+            Token::Eq,
+            Token::UnsignedNumber("2")
+        ]
+    )
+}
+
+#[test]
+fn else_unused() {
+    check_preprocessor!(
+        "`define FIRST_EXPR
+        `ifdef FIRST_EXPR
+        use_this_signal
+        `else
+        use_other_signal
+        `endif",
+        vec![Token::SimpleIdentifier("use_this_signal"),]
+    )
+}
+
+#[test]
+fn elsif() {
+    check_preprocessor!(
+        "`define REAL_MATH
+        `ifdef FAKE_MATH
+        1 + 1 = 3
+        `elsif REAL_MATH
+        1 + 1 = 2
+        `elsif OTHER
+        1 + 1 = 1'bx
+        `else
+        1 + 1 = ?
+        `endif",
+        vec![
+            Token::UnsignedNumber("1"),
+            Token::Plus,
+            Token::UnsignedNumber("1"),
+            Token::Eq,
+            Token::UnsignedNumber("2")
+        ]
+    )
+}
+
+#[test]
+#[should_panic]
+fn empty_ifdef() {
+    check_preprocessor!(
+        "`ifdef
+        `endif",
+        Vec::<Token<'_>>::new()
+    )
+}
+
+#[test]
+#[should_panic]
+fn empty_ifndef() {
+    check_preprocessor!(
+        "`ifndef
+        `endif",
+        Vec::<Token<'_>>::new()
+    )
+}
+
+#[test]
+#[should_panic]
+fn empty_elsif() {
+    check_preprocessor!(
+        "`ifdef TEST
+        `elsif
+        `endif",
+        Vec::<Token<'_>>::new()
+    )
+}
+
+#[test]
+#[should_panic]
+fn no_endif() {
+    check_preprocessor!("`ifdef", Vec::<Token<'_>>::new())
+}
+
+#[test]
+fn negate_expression() {
+    check_preprocessor!(
+        "
+        `ifdef ( !TEST )
+        bruh_just_use_ifndef
+        `endif",
+        vec![Token::SimpleIdentifier("bruh_just_use_ifndef")]
+    )
+}
+
+#[test]
+fn and_expression() {
+    check_preprocessor!(
+        "`define APPLE
+        `define BANANA
+        `ifdef (APPLE && BANANA)
+        both_true
+        `endif
+        `ifdef (APPLE && PEAR)
+        one_true
+        `endif
+        `ifdef (PEAR && ORANGE)
+        none_true
+        `endif",
+        vec![Token::SimpleIdentifier("both_true")]
+    )
+}
+
+#[test]
+fn or_expression() {
+    check_preprocessor!(
+        "`define APPLE
+        `define BANANA
+        `ifdef (APPLE || BANANA)
+        both_true
+        `endif
+        `ifdef (APPLE || PEAR)
+        one_true
+        `endif
+        `ifdef (PEAR || ORANGE)
+        none_true
+        `endif",
+        vec![
+            Token::SimpleIdentifier("both_true"),
+            Token::SimpleIdentifier("one_true")
+        ]
+    )
+}
+
+#[test]
+fn implication_expression() {
+    check_preprocessor!(
+        "`define APPLE
+        `define BANANA
+        `ifdef (APPLE -> BANANA)
+        true_implies_true
+        `endif
+        `ifdef (APPLE -> PEAR)
+        true_implies_false
+        `endif
+        `ifdef (PEAR -> BANANA)
+        false_implies_true
+        `endif
+        `ifdef (PEAR -> ORANGE)
+        false_implies_false
+        `endif",
+        vec![
+            Token::SimpleIdentifier("true_implies_true"),
+            Token::SimpleIdentifier("false_implies_true"),
+            Token::SimpleIdentifier("false_implies_false"),
+        ]
+    )
+}
+
+#[test]
+fn equivalence_expression() {
+    check_preprocessor!(
+        "`define APPLE
+        `define BANANA
+        `ifdef (APPLE <-> BANANA)
+        true_true
+        `endif
+        `ifdef (APPLE <-> PEAR)
+        true_false
+        `endif
+        `ifdef (PEAR <-> BANANA)
+        false_true
+        `endif
+        `ifdef (PEAR <-> ORANGE)
+        false_false
+        `endif",
+        vec![
+            Token::SimpleIdentifier("true_true"),
+            Token::SimpleIdentifier("false_false"),
+        ]
+    )
+}
+
+#[test]
+fn elsif_expression() {
+    check_preprocessor!(
+        "`define APPLES
+        `ifdef (APPLES && BANANAS)
+        should_i_use_and
+        `elsif (APPLES || BANANAS)
+        oh_no_wait_use_or
+        `endif",
+        vec![Token::SimpleIdentifier("oh_no_wait_use_or")]
+    )
+}
+
+#[test]
+fn composite_expression() {
+    check_preprocessor!(
+        "`define APPLE
+        `ifdef ((APPLE -> (BANANA || ORANGE)) <-> PEAR)
+        whoa_multiple_operators
+        `endif",
+        vec![Token::SimpleIdentifier("whoa_multiple_operators")]
+    )
+}
+
+#[test]
+fn associativity() {
+    check_preprocessor!(
+        "`define MIDDLE
+        `ifdef (BEGIN -> MIDDLE -> END)
+        right_associative
+        `else
+        left_associative
+        `endif",
+        vec![Token::SimpleIdentifier("right_associative")]
+    );
+    // Equal precedence
+    check_preprocessor!(
+        "
+        `ifdef (BEGIN -> MIDDLE <-> END)
+        right_associative
+        `else
+        left_associative
+        `endif",
+        vec![Token::SimpleIdentifier("right_associative")]
+    );
+    check_preprocessor!(
+        "`define MIDDLE
+        `define END
+        `ifdef (BEGIN <-> MIDDLE -> END)
+        left_associative
+        `else
+        right_associative
+        `endif",
+        vec![Token::SimpleIdentifier("right_associative")]
+    )
+}
+
+#[test]
+fn precedence() {
+    check_preprocessor!(
+        "`define BEGIN
+        `define END
+        `ifdef (BEGIN && MIDDLE || END)
+        and_higher_than_or
+        `else
+        or_higher_than_and
+        `endif",
+        vec![Token::SimpleIdentifier("and_higher_than_or")]
+    );
+    check_preprocessor!(
+        "
+        `define APPLE
+        `define BANANA
+        `ifdef (APPLE -> BANANA || CHERRY -> DATE)
+        implication_higher_than_or
+        `else
+        or_higher_than_implication
+        `endif",
+        vec![Token::SimpleIdentifier("or_higher_than_implication")]
+    );
+    check_preprocessor!(
+        "`define APPLE
+        `ifdef (APPLE || BANANA <-> CHERRY)
+        equivalence_higher_than_or
+        `else
+        or_higher_than_equivalence
+        `endif",
+        vec![Token::SimpleIdentifier("or_higher_than_equivalence")]
+    )
 }

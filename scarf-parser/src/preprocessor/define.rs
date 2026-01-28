@@ -282,3 +282,71 @@ pub fn preprocess_undefine<'s>(
         Ok(())
     }
 }
+
+#[test]
+fn basic() {
+    check_preprocessor!(
+        "`define TEST 1
+        `TEST",
+        vec![Token::UnsignedNumber("1")]
+    )
+}
+
+#[test]
+fn multi_token() {
+    check_preprocessor!(
+        "`define TEST 1 + 1 = 2
+        `TEST",
+        vec![
+            Token::UnsignedNumber("1"),
+            Token::Plus,
+            Token::UnsignedNumber("1"),
+            Token::Eq,
+            Token::UnsignedNumber("2")
+        ]
+    )
+}
+
+#[test]
+fn empty() {
+    check_preprocessor!(
+        "`define TEST
+        2
+        `TEST
+        `TEST
+        `TEST",
+        vec![Token::UnsignedNumber("2"),]
+    )
+}
+
+#[test]
+fn escaped_newlines() {
+    check_preprocessor!(
+        "`define TEST \
+        assign        \
+        test_signal   \
+        =             \
+        1
+        2
+        3
+        `TEST",
+        vec![
+            Token::UnsignedNumber("2"),
+            Token::UnsignedNumber("3"),
+            Token::Assign,
+            Token::SimpleIdentifier("test_signal"),
+            Token::Eq,
+            Token::UnsignedNumber("1"),
+        ]
+    )
+}
+
+#[test]
+#[should_panic]
+fn illegal_name() {
+    check_preprocessor!(
+        "`define logic 2
+        ",
+        Vec::<Token<'_>>::new()
+    )
+}

@@ -8,6 +8,7 @@ use ariadne::ReportBuilder;
 
 const NOTE_COLOR: Color = Color::Fixed(81);
 
+#[derive(Debug)]
 pub enum PreprocessorError<'a> {
     // Errors that can be exposed outside preprocess
     Endif(Span<'a>),
