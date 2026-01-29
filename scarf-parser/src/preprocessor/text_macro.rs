@@ -308,13 +308,16 @@ fn replace_macro_arguments<'a>(
                 span,
             ) => {
                 result_vec.push(SpannedToken(
-                    Token::TripleQuoteStringLiteral(configs.retain_string(
-                        get_replacement_string(
-                            id.to_string(),
-                            configs,
-                            &arguments,
-                        )?,
-                    )),
+                    Token::TripleQuoteStringLiteral(
+                        configs.retain_string(
+                            get_replacement_string(
+                                id.to_string(),
+                                configs,
+                                &arguments,
+                            )?
+                            .replace("\\\n", "\n"),
+                        ),
+                    ),
                     span,
                 ));
             }

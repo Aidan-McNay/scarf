@@ -98,7 +98,7 @@ enum PreprocessorMultilineStringToken {
 enum BlockCommentToken {
     #[token("*/")]
     Delimeter,
-    #[regex(r".")]
+    #[regex(r"[\s\S]")]
     Other,
 }
 
@@ -266,4 +266,98 @@ pub fn preprocessor_multiline_string_literal<'a>(
 
 pub fn text_macro<'a>(lex: &mut Lexer<'a, Token<'a>>) -> Option<&'a str> {
     lex.slice().strip_prefix("`")
+}
+
+#[test]
+fn comments() {
+    check_lexer!(
+        "// This is a single-line comment
+        /* This is a block comment */
+        /* Block comments
+        can be
+        on multiple
+        lines */",
+        vec![
+            Token::OnelineComment(" This is a single-line comment"),
+            Token::Newline,
+            Token::BlockComment(" This is a block comment "),
+            Token::Newline,
+            Token::BlockComment(
+                " Block comments
+        can be
+        on multiple
+        lines "
+            )
+        ]
+    )
+}
+
+#[test]
+fn string() {
+    check_lexer!(
+        "\" This is a string \"",
+        vec![Token::StringLiteral(" This is a string ")]
+    );
+    check_lexer!(
+        "\" This is a \\\n multiline string \"",
+        vec![Token::StringLiteral(" This is a \\\n multiline string ")]
+    )
+}
+
+#[test]
+fn multiline_string() {
+    check_lexer!(
+        "\"\"\"This string
+        spans multiple
+        lines!\"\"\"",
+        vec![Token::TripleQuoteStringLiteral(
+            "This string
+        spans multiple
+        lines!"
+        )]
+    )
+}
+
+#[test]
+fn preprocessor_string() {
+    check_lexer!(
+        "`\" This is a preprocessor string `\"",
+        vec![Token::PreprocessorStringLiteral(
+            " This is a preprocessor string "
+        )]
+    );
+    check_lexer!(
+        "`\" This is a \\\n multiline preprocessor string `\"",
+        vec![Token::PreprocessorStringLiteral(
+            " This is a \\\n multiline preprocessor string "
+        )]
+    )
+}
+
+#[test]
+fn preprocessor_multiline_string() {
+    check_lexer!(
+        "`\"\"\"This string \\\n spans multiple \\\n lines!`\"\"\"",
+        vec![Token::PreprocessorTripleQuoteStringLiteral(
+            "This string \\\n spans multiple \\\n lines!"
+        )]
+    )
+}
+
+#[test]
+fn text_macros() {
+    check_lexer!(
+        "`TEST_MACRO
+        `TEST_FUNCTION(ARGA, ARGB)",
+        vec![
+            Token::TextMacro("TEST_MACRO"),
+            Token::Newline,
+            Token::TextMacro("TEST_FUNCTION"),
+            Token::Paren,
+            Token::SimpleIdentifier("ARGA"),
+            Token::Comma,
+            Token::SimpleIdentifier("ARGB"),
+            Token::EParen
+        ]
+    )
 }

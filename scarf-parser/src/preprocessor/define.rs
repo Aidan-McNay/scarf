@@ -342,7 +342,7 @@ fn escaped_newlines() {
 }
 
 #[test]
-#[should_panic]
+#[should_panic(expected = "a preprocessor macro name")]
 fn illegal_name() {
     check_preprocessor!(
         "`define logic 2

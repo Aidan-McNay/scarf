@@ -9,7 +9,7 @@ use scarf_syntax::*;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
-const DEFAULT_TIMESCALE: Timescale = Timescale::new(
+const DEFAULT_TIMESCALE: Timescale = Timescale::new_unchecked(
     Span::empty(),
     (TimescaleValue::One, TimescaleUnit::NS),
     (TimescaleValue::One, TimescaleUnit::NS),
@@ -143,9 +143,12 @@ impl<'a> PreprocessConfigs<'a> {
     /// Reset all resetable configs
     pub fn reset_all(&mut self, reset_all_span: Span<'a>) {
         self.add_timescale(
-            reset_all_span.clone(),
-            DEFAULT_TIMESCALE.unit,
-            DEFAULT_TIMESCALE.precision,
+            Timescale::new(
+                reset_all_span.clone(),
+                DEFAULT_TIMESCALE.unit,
+                DEFAULT_TIMESCALE.precision,
+            )
+            .unwrap(),
         );
         self.add_default_nettype(reset_all_span.clone(), DEFAULT_NETTYPE);
         self.add_unconnected_drive(
@@ -243,14 +246,8 @@ impl<'a> PreprocessConfigs<'a> {
     }
 
     /// Add a compiler directive timescale
-    pub fn add_timescale(
-        &mut self,
-        def_span: Span<'a>,
-        unit: (TimescaleValue, TimescaleUnit),
-        precision: (TimescaleValue, TimescaleUnit),
-    ) {
-        self.timescales
-            .push(Timescale::new(def_span, unit, precision));
+    pub fn add_timescale(&mut self, timescale: Timescale<'a>) {
+        self.timescales.push(timescale);
     }
 
     /// Get the correct compiler timescale, based on a span

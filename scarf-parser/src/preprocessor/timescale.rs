@@ -6,21 +6,21 @@
 use crate::*;
 use scarf_syntax::SpanRelation;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum TimescaleValue {
     One,
     Ten,
     Hundred,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum TimescaleUnit {
-    S,
-    MS,
-    US,
-    NS,
-    PS,
     FS,
+    PS,
+    NS,
+    US,
+    MS,
+    S,
 }
 
 #[derive(Clone, Debug)]
@@ -31,7 +31,7 @@ pub struct Timescale<'a> {
 }
 
 impl<'a> Timescale<'a> {
-    pub const fn new(
+    pub const fn new_unchecked(
         def_span: Span<'a>,
         unit: (TimescaleValue, TimescaleUnit),
         precision: (TimescaleValue, TimescaleUnit),
@@ -40,6 +40,32 @@ impl<'a> Timescale<'a> {
             def_span,
             unit,
             precision,
+        }
+    }
+
+    pub fn new(
+        def_span: Span<'a>,
+        unit: (TimescaleValue, TimescaleUnit),
+        precision: (TimescaleValue, TimescaleUnit),
+    ) -> Result<Timescale<'a>, PreprocessorError<'a>> {
+        if unit.1 > precision.1 {
+            Ok(Timescale {
+                def_span,
+                unit,
+                precision,
+            })
+        } else if unit.1 < precision.1 {
+            Err(PreprocessorError::InvalidRelativeTimescales(def_span))
+        } else {
+            if precision.0 > unit.0 {
+                Err(PreprocessorError::InvalidRelativeTimescales(def_span))
+            } else {
+                Ok(Timescale {
+                    def_span,
+                    unit,
+                    precision,
+                })
+            }
         }
     }
 
@@ -84,7 +110,7 @@ fn get_timescale<'s>(
                 valid: true,
                 span: spanned_token.1,
                 found: Some(spanned_token.0),
-                expected: vec![Expectation::Label("a unit of time")],
+                expected: vec![Expectation::Label("a recognized unit of time")],
             }));
         }
     };
@@ -118,6 +144,67 @@ pub fn preprocess_timescale<'s>(
     let timeunit = get_timescale(src, configs, directive_span.clone())?;
     let _ = get_divider(src, configs, directive_span.clone())?;
     let timeprecision = get_timescale(src, configs, directive_span.clone())?;
-    configs.add_timescale(directive_span, timeunit, timeprecision);
+    configs.add_timescale(Timescale::new(
+        directive_span,
+        timeunit,
+        timeprecision,
+    )?);
     Ok(())
+}
+
+#[test]
+fn timescale() {
+    check_preprocessor!(
+        "`timescale 1 ns / 1 ps
+        `timescale 10s / 100us
+        `timescale 100 ms     / 1fs",
+        Vec::<Token<'_>>::new()
+    )
+}
+
+#[test]
+#[should_panic(expected = "Slash")]
+fn no_divider() {
+    check_preprocessor!("`timescale 1 ns 1 ps", Vec::<Token<'_>>::new())
+}
+
+#[test]
+#[should_panic(expected = "IncompleteDirective")]
+fn no_first_measurement() {
+    check_preprocessor!("`timescale", Vec::<Token<'_>>::new())
+}
+
+#[test]
+#[should_panic(expected = "IncompleteDirective")]
+fn no_second_measurement() {
+    check_preprocessor!("`timescale 1 fs", Vec::<Token<'_>>::new())
+}
+
+#[test]
+#[should_panic(expected = "1, 10, or 100")]
+fn invalid_magnitude() {
+    check_preprocessor!("`timescale 23 fs", Vec::<Token<'_>>::new())
+}
+
+#[test]
+#[should_panic(expected = "a recognized unit of time")]
+fn invalid_unit() {
+    check_preprocessor!("`timescale 10 bananas", Vec::<Token<'_>>::new())
+}
+
+#[test]
+fn equal_timescales() {
+    check_preprocessor!("`timescale 10 s / 10 s", Vec::<Token<'_>>::new())
+}
+
+#[test]
+#[should_panic(expected = "InvalidRelativeTimescales")]
+fn larger_precision_unit() {
+    check_preprocessor!("`timescale 100 fs / 1 s", Vec::<Token<'_>>::new())
+}
+
+#[test]
+#[should_panic(expected = "InvalidRelativeTimescales")]
+fn larger_precision_value() {
+    check_preprocessor!("`timescale 10 fs / 100 fs", Vec::<Token<'_>>::new())
 }

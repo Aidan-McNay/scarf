@@ -29,6 +29,7 @@ pub enum PreprocessorError<'a> {
     TooManyMacroArguments((Span<'a>, (&'a str, usize, usize, Span<'a>))),
     MissingMacroArgument((Span<'a>, (&'a str, Span<'a>))),
     InvalidIdentifierFormation((&'a str, Span<'a>)),
+    InvalidRelativeTimescales(Span<'a>),
     IncompleteMacroWithToken(SpannedToken<'a>),
     Error(VerboseError<'a>),
     // Internal "errors" used for communication
@@ -219,10 +220,19 @@ impl<'s> From<PreprocessorError<'s>>
                     ReportKind::Error,
                 ).finish()
             }
+            PreprocessorError::InvalidRelativeTimescales(timescale_span) => {
+                make_report(
+                    timescale_span,
+                    "PP18",
+                    "Time precision is larger than the time unit".to_string(),
+                    "Cannot have delay unit be smaller than precision".to_string(),
+                    ReportKind::Error,
+                ).finish()
+            }
             PreprocessorError::IncompleteMacroWithToken(err_spanned_token) => {
                 make_report(
                   err_spanned_token.1,
-                  "PP18",
+                  "PP19",
                   format!("Usage of {} is incomplete", err_spanned_token.0),
                   "Expected a complete macro argument or escaped newline after".to_string(),
                   ReportKind::Error,

@@ -91,6 +91,6 @@ pub fn preprocess_line<'s>(
     let (new_filename, _) =
         get_line_file(src, configs, directive_span.clone())?;
     let _ = get_line_level(src, configs, directive_span.clone())?; // Not currently used
-    configs.add_line_directive(new_filename, new_number, directive_span);
+    configs.add_line_directive(new_filename, new_number, directive_span); // TODO: Handle bad input
     Ok(())
 }

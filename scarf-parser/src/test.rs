@@ -6,6 +6,16 @@
 use scarf_syntax::*;
 
 #[macro_export]
+macro_rules! check_lexer {
+    ($input:expr, $expected:expr) => {{
+        let input = lex($input, "<test>", None)
+            .map(|a| a.0.unwrap())
+            .collect::<Vec<_>>();
+        assert_eq!(input, $expected)
+    }};
+}
+
+#[macro_export]
 macro_rules! check_preprocessor {
     ($input:expr, $expected:expr) => {{
         let input = lex_to_parse_stream(lex($input, "<test>", None))

@@ -27,7 +27,7 @@ fn get_unconnected_drive<'s>(
             valid: true,
             span: spanned_token.1,
             found: Some(spanned_token.0),
-            expected: vec![Expectation::Label("a preprocessor macro name")],
+            expected: vec![Expectation::Label("a valid unconnected drive")],
         })),
     }
 }
@@ -49,4 +49,25 @@ pub fn preprocess_nounconnected_drive<'s>(
     configs
         .add_unconnected_drive(directive_span, UnconnectedDrive::NoUnconnected);
     Ok(())
+}
+
+#[test]
+fn unconnected_pull0() {
+    check_preprocessor!("`unconnected_drive pull0", Vec::<Token<'_>>::new())
+}
+
+#[test]
+fn unconnected_pull1() {
+    check_preprocessor!("`unconnected_drive pull1", Vec::<Token<'_>>::new())
+}
+
+#[test]
+#[should_panic(expected = "a valid unconnected drive")]
+fn invalid_unconnected_drive() {
+    check_preprocessor!("`unconnected_drive logic", Vec::<Token<'_>>::new())
+}
+
+#[test]
+fn nounconnected() {
+    check_preprocessor!("`nounconnected_drive", Vec::<Token<'_>>::new())
 }

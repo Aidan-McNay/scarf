@@ -426,7 +426,7 @@ fn elsif() {
 }
 
 #[test]
-#[should_panic]
+#[should_panic(expected = "a preprocessor macro expression")]
 fn empty_ifdef() {
     check_preprocessor!(
         "`ifdef
@@ -436,7 +436,7 @@ fn empty_ifdef() {
 }
 
 #[test]
-#[should_panic]
+#[should_panic(expected = "a preprocessor macro expression")]
 fn empty_ifndef() {
     check_preprocessor!(
         "`ifndef
@@ -446,7 +446,7 @@ fn empty_ifndef() {
 }
 
 #[test]
-#[should_panic]
+#[should_panic(expected = "a preprocessor macro expression")]
 fn empty_elsif() {
     check_preprocessor!(
         "`ifdef TEST
@@ -457,9 +457,15 @@ fn empty_elsif() {
 }
 
 #[test]
-#[should_panic]
-fn no_endif() {
+#[should_panic(expected = "IncompleteDirective")]
+fn no_tokens() {
     check_preprocessor!("`ifdef", Vec::<Token<'_>>::new())
+}
+
+#[test]
+#[should_panic(expected = "NoEndif")]
+fn no_endif() {
+    check_preprocessor!("`ifdef TEST", Vec::<Token<'_>>::new())
 }
 
 #[test]
@@ -621,7 +627,16 @@ fn associativity() {
 #[test]
 fn precedence() {
     check_preprocessor!(
-        "`define BEGIN
+        "`define FIRST
+        `ifdef ( !FIRST && SECOND )
+        and_higher_than_not
+        `else
+        not_higher_than_and
+        `endif",
+        vec![Token::SimpleIdentifier("not_higher_than_and")]
+    );
+    check_preprocessor!(
+        "
         `define END
         `ifdef (BEGIN && MIDDLE || END)
         and_higher_than_or
