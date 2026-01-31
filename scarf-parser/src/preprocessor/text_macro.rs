@@ -398,3 +398,22 @@ pub fn preprocess_macro<'s>(
         None => Err(PreprocessorError::UndefinedMacro(text_macro)),
     }
 }
+
+#[test]
+fn basic() {
+    check_preprocessor!(
+        "`define TEST_MACRO 1
+        `TEST_MACRO `TEST_MACRO `TEST_MACRO",
+        vec![
+            Token::UnsignedNumber("1"),
+            Token::UnsignedNumber("1"),
+            Token::UnsignedNumber("1")
+        ]
+    )
+}
+
+#[test]
+#[should_panic(expected = "UndefinedMacro")]
+fn undefined() {
+    check_preprocessor!("`UNDEFINED_MACRO", Vec::<Token<'_>>::new())
+}

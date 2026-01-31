@@ -71,3 +71,58 @@ pub fn preprocess_default_nettype<'s>(
     configs.add_default_nettype(directive_span, default_nettype);
     Ok(())
 }
+
+#[test]
+fn wire() {
+    check_preprocessor!("`default_nettype wire", Vec::<Token<'_>>::new())
+}
+
+#[test]
+fn tri() {
+    check_preprocessor!("`default_nettype tri", Vec::<Token<'_>>::new())
+}
+
+#[test]
+fn tri0() {
+    check_preprocessor!("`default_nettype tri0", Vec::<Token<'_>>::new())
+}
+
+#[test]
+fn tri1() {
+    check_preprocessor!("`default_nettype tri1", Vec::<Token<'_>>::new())
+}
+
+#[test]
+fn wand() {
+    check_preprocessor!("`default_nettype wand", Vec::<Token<'_>>::new())
+}
+
+#[test]
+fn triand() {
+    check_preprocessor!("`default_nettype triand", Vec::<Token<'_>>::new())
+}
+
+#[test]
+fn wor() {
+    check_preprocessor!("`default_nettype wor", Vec::<Token<'_>>::new())
+}
+
+#[test]
+fn trior() {
+    check_preprocessor!("`default_nettype trior", Vec::<Token<'_>>::new())
+}
+
+#[test]
+fn trireg() {
+    check_preprocessor!("`default_nettype trireg", Vec::<Token<'_>>::new())
+}
+
+#[test]
+fn uwire() {
+    check_preprocessor!("`default_nettype uwire", Vec::<Token<'_>>::new())
+}
+
+#[test]
+fn none() {
+    check_preprocessor!("`default_nettype none", Vec::<Token<'_>>::new())
+}

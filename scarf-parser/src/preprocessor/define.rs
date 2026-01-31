@@ -350,3 +350,18 @@ fn illegal_name() {
         Vec::<Token<'_>>::new()
     )
 }
+
+#[test]
+fn undefine() {
+    check_preprocessor!(
+        "`define TEST 1
+        `undef TEST",
+        Vec::<Token<'_>>::new()
+    )
+}
+
+#[test]
+#[should_panic(expected = "NotPreviouslyDefinedMacro")]
+fn undef_without_defining() {
+    check_preprocessor!("`undef TEST", Vec::<Token<'_>>::new())
+}
