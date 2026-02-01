@@ -45,10 +45,10 @@ pub struct PreprocessConfigs<'a> {
     cell_defines: Vec<(bool, Span<'a>)>,
     line_directives: Vec<LineDirective<'a>>,
     included_files: HashMap<&'a str, &'a str>,
+    in_define: bool,
+    in_define_arg: bool,
     pub cache: &'a PreprocessorCache<'a>,
     pub curr_standard: StandardVersion,
-    pub in_define: bool,
-    pub in_define_arg: bool,
     pub include_line_directives: bool,
 }
 
@@ -161,6 +161,48 @@ impl<'a> PreprocessConfigs<'a> {
     /// Check whether the given macro is defined
     pub fn is_defined(&self, macro_name: &'a str) -> bool {
         self.defines.iter().any(|d| d.name.0 == macro_name)
+    }
+
+    /// Get the previous definition span, if any
+    pub fn get_define_decl(&self, macro_name: &'a str) -> Option<Span<'a>> {
+        match self.defines.iter().find(|d| d.name.0 == macro_name) {
+            None => None,
+            Some(define) => Some(define.name.1.clone()),
+        }
+    }
+
+    #[inline]
+    pub fn enter_define(&mut self) -> bool {
+        let prev_in_define = self.in_define;
+        self.in_define = true;
+        prev_in_define
+    }
+
+    #[inline]
+    pub fn exit_define(&mut self, prev_in_define: bool) {
+        self.in_define = prev_in_define;
+    }
+
+    #[inline]
+    pub fn in_define(&self) -> bool {
+        self.in_define
+    }
+
+    #[inline]
+    pub fn enter_define_arg(&mut self) -> bool {
+        let prev_in_define_arg = self.in_define_arg;
+        self.in_define_arg = true;
+        prev_in_define_arg
+    }
+
+    #[inline]
+    pub fn exit_define_arg(&mut self, prev_in_define_arg: bool) {
+        self.in_define_arg = prev_in_define_arg;
+    }
+
+    #[inline]
+    pub fn in_define_arg(&self) -> bool {
+        self.in_define_arg
     }
 
     /// Remove a given macro, evaluating to whether a macro was removed

@@ -77,6 +77,7 @@ fn get_define_function_args<'s>(
     match spanned_token.0 {
         Token::Paren => {
             let paren_span = src.next().unwrap().1;
+            let mut started_defaults = None;
             let mut function_args: Vec<(
                 SpannedString<'s>,
                 Option<(Span, Vec<SpannedToken<'s>>)>,
@@ -87,6 +88,7 @@ fn get_define_function_args<'s>(
                     &mut function_args,
                     configs,
                     define_name,
+                    &mut started_defaults,
                     paren_span.clone(),
                 ) {
                     Ok(()) => {
@@ -163,6 +165,7 @@ fn get_define_function_arg<'s>(
     )>,
     configs: &mut PreprocessConfigs<'s>,
     define_name: &'s str,
+    started_defaults: &mut Option<SpannedString<'s>>,
     paren_span: Span<'s>,
 ) -> Result<(), PreprocessorError<'s>> {
     let arg_id = loop {
@@ -200,22 +203,29 @@ fn get_define_function_arg<'s>(
                 break eq_span;
             }
             Some(_) => {
+                if let Some(last_define_arg) = started_defaults {
+                    return Err(PreprocessorError::NoDefaultAfterDefault((
+                        last_define_arg.clone(),
+                        arg_id,
+                    )));
+                }
                 dest.push((arg_id, None));
                 return Ok(());
             }
         }
     };
     let mut default_arg_text: Vec<SpannedToken<'s>> = vec![];
-    configs.in_define = true;
-    configs.in_define_arg = true;
+    let prev_in_define = configs.enter_define();
+    let prev_in_define_arg = configs.enter_define_arg();
     let result = preprocess(src, &mut default_arg_text, configs);
-    configs.in_define = false;
-    configs.in_define_arg = false;
+    configs.exit_define(prev_in_define);
+    configs.exit_define_arg(prev_in_define_arg);
     match result {
         Ok(()) => Err(PreprocessorError::IncompleteDirectiveWithToken(
             SpannedToken(Token::Paren, paren_span),
         )),
         Err(PreprocessorError::EndOfFunctionArgument(spanned_token)) => {
+            *started_defaults = Some(arg_id.clone());
             dest.push((arg_id, Some((eq_span, default_arg_text))));
             Err(PreprocessorError::EndOfFunctionArgument(spanned_token))
         }
@@ -228,9 +238,9 @@ fn get_define_body<'s>(
     configs: &mut PreprocessConfigs<'s>,
 ) -> Result<Option<Vec<SpannedToken<'s>>>, PreprocessorError<'s>> {
     let mut define_body: Vec<SpannedToken<'s>> = vec![];
-    configs.in_define = true;
+    let prev_in_define = configs.enter_define();
     let result = preprocess(src, &mut define_body, configs);
-    configs.in_define = false;
+    configs.exit_define(prev_in_define);
     match result {
         Ok(()) => Ok(Some(define_body)),
         Err(PreprocessorError::NewlineInDefine(_)) => Ok(Some(define_body)),
@@ -244,6 +254,13 @@ pub fn preprocess_define<'s>(
     define_span: Span<'s>,
 ) -> Result<(), PreprocessorError<'s>> {
     let define_name = get_define_name(src, define_span)?;
+    if let Some(prev_def_span) = configs.get_define_decl(define_name.0) {
+        return Err(PreprocessorError::RedefinedMacro((
+            define_name.0,
+            define_name.1,
+            prev_def_span,
+        )));
+    }
     let function_args = get_define_function_args(src, define_name.0, configs)?;
     let define_text = get_define_body(src, configs)?;
     let (define_body, define_span) = match function_args {
@@ -364,4 +381,42 @@ fn undefine() {
 #[should_panic(expected = "NotPreviouslyDefinedMacro")]
 fn undef_without_defining() {
     check_preprocessor!("`undef TEST", Vec::<Token<'_>>::new())
+}
+
+#[test]
+#[should_panic(expected = "RedefinedMacro")]
+fn redefining() {
+    check_preprocessor!(
+        "`define TEST 1
+        `define TEST",
+        Vec::<Token<'_>>::new()
+    )
+}
+
+#[test]
+fn function() {
+    check_preprocessor!("`define TEST(a, b) a + b", Vec::<Token<'_>>::new())
+}
+
+#[test]
+#[should_panic(expected = "InvalidDefineParamete")]
+fn empty_function() {
+    check_preprocessor!("`define TEST()", Vec::<Token<'_>>::new())
+}
+
+#[test]
+fn function_with_defaults() {
+    check_preprocessor!(
+        "`define TEST(a, b = 1 + 2) a - b",
+        Vec::<Token<'_>>::new()
+    )
+}
+
+#[test]
+#[should_panic(expected = "NoDefaultAfterDefault")]
+fn function_with_no_default_after_default() {
+    check_preprocessor!(
+        "`define TEST(a, b = 1 + 2, c) a - b + c",
+        Vec::<Token<'_>>::new()
+    )
 }

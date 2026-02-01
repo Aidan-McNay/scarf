@@ -77,7 +77,7 @@ pub fn preprocess<'s>(
     configs: &mut PreprocessConfigs<'s>,
 ) -> Result<(), PreprocessorError<'s>> {
     let mut enclosures: Vec<Token<'s>> = vec![];
-    if configs.in_define || configs.in_define_arg {
+    if configs.in_define() || configs.in_define_arg() {
         while let Some(mut spanned_token) = src.next() {
             match spanned_token.0 {
                 Token::Bslash => loop {
@@ -103,19 +103,19 @@ pub fn preprocess<'s>(
                         spanned_token.1,
                     ));
                 }
-                Token::Paren if configs.in_define_arg => {
+                Token::Paren if configs.in_define_arg() => {
                     enclosures.push(Token::Paren);
                     dest.push(spanned_token);
                 }
-                Token::Bracket if configs.in_define_arg => {
+                Token::Bracket if configs.in_define_arg() => {
                     enclosures.push(Token::Bracket);
                     dest.push(spanned_token);
                 }
-                Token::Brace if configs.in_define_arg => {
+                Token::Brace if configs.in_define_arg() => {
                     enclosures.push(Token::Brace);
                     dest.push(spanned_token);
                 }
-                Token::EParen if configs.in_define_arg => {
+                Token::EParen if configs.in_define_arg() => {
                     match enclosures.pop() {
                         Some(Token::Paren) => dest.push(spanned_token),
                         None => {
@@ -134,7 +134,7 @@ pub fn preprocess<'s>(
                         }
                     }
                 }
-                Token::EBracket if configs.in_define_arg => {
+                Token::EBracket if configs.in_define_arg() => {
                     match enclosures.pop() {
                         Some(Token::Bracket) => dest.push(spanned_token),
                         _ => {
@@ -146,7 +146,7 @@ pub fn preprocess<'s>(
                         }
                     }
                 }
-                Token::EBrace if configs.in_define_arg => {
+                Token::EBrace if configs.in_define_arg() => {
                     match enclosures.pop() {
                         Some(Token::Brace) => dest.push(spanned_token),
                         _ => {
@@ -158,7 +158,7 @@ pub fn preprocess<'s>(
                         }
                     }
                 }
-                Token::Comma if configs.in_define_arg => {
+                Token::Comma if configs.in_define_arg() => {
                     if enclosures.is_empty() {
                         return Err(PreprocessorError::EndOfFunctionArgument(
                             spanned_token,
@@ -168,7 +168,7 @@ pub fn preprocess<'s>(
                     }
                 }
                 Token::BlockComment(_) | Token::OnelineComment(_) => (),
-                Token::TextMacro(macro_name) if configs.in_define_arg => {
+                Token::TextMacro(macro_name) if configs.in_define_arg() => {
                     preprocess_macro(
                         src,
                         configs,

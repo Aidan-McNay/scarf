@@ -30,9 +30,9 @@ fn get_text_macro_args<'s>(
     let mut arg_vec: Vec<Vec<SpannedToken<'s>>> = vec![];
     let end_span = loop {
         let mut new_arg: Vec<SpannedToken<'s>> = vec![];
-        configs.in_define_arg = true;
+        let prev_in_define_arg = configs.enter_define_arg();
         let result = preprocess(src, &mut new_arg, configs);
-        configs.in_define_arg = false;
+        configs.exit_define_arg(prev_in_define_arg);
         match result {
             Ok(()) => {
                 return Err(PreprocessorError::IncompleteDirective(paren_span));
@@ -254,7 +254,7 @@ fn get_replacement_string<'a>(
     Ok(initial_string)
 }
 
-fn replace_macro_arguments<'a>(
+fn replace_macro_tokens<'a>(
     original_stream: IntoIter<SpannedToken<'a>>,
     arguments: HashMap<&'a str, (Span<'a>, Vec<SpannedToken<'a>>)>,
     configs: &mut PreprocessConfigs<'a>,
@@ -369,7 +369,7 @@ pub fn preprocess_macro<'s>(
     match configs.get_macro_tokens(text_macro.0) {
         Some((define_span, (mut token_vec, define_args))) => {
             let mut macro_span = text_macro.1.clone();
-            if let Some(define_args) = define_args {
+            let arguments = if let Some(define_args) = define_args {
                 let (function_args, function_macro_span) = get_text_macro_args(
                     src,
                     configs,
@@ -377,17 +377,20 @@ pub fn preprocess_macro<'s>(
                     text_macro.clone(),
                 )?;
                 macro_span = function_macro_span;
-                token_vec = replace_macro_arguments(
-                    token_vec.into_iter(),
-                    resolve_text_macro_args(
-                        function_args,
-                        define_args,
-                        &define_span,
-                        text_macro,
-                    )?,
-                    configs,
-                )?;
-            }
+                resolve_text_macro_args(
+                    function_args,
+                    define_args,
+                    &define_span,
+                    text_macro,
+                )?
+            } else {
+                HashMap::new()
+            };
+            token_vec = replace_macro_tokens(
+                token_vec.into_iter(),
+                arguments,
+                configs,
+            )?;
             let token_iter = SpanReplacer::new(
                 configs.retain_span(macro_span),
                 token_vec.into_iter(),
@@ -417,3 +420,46 @@ fn basic() {
 fn undefined() {
     check_preprocessor!("`UNDEFINED_MACRO", Vec::<Token<'_>>::new())
 }
+
+#[test]
+fn function() {
+    check_preprocessor!(
+        "`define TEST(a, b) a + b
+        `TEST(1, 2)
+        `TEST(3, 4)",
+        vec![
+            Token::UnsignedNumber("1"),
+            Token::Plus,
+            Token::UnsignedNumber("2"),
+            Token::UnsignedNumber("3"),
+            Token::Plus,
+            Token::UnsignedNumber("4"),
+        ]
+    )
+}
+
+#[test]
+fn nested_function() {
+    check_preprocessor!(
+        "`define TOP(a,b) a + b
+        `TOP( `TOP(b,1), `TOP(42,a) )",
+        vec![
+            Token::SimpleIdentifier("b"),
+            Token::Plus,
+            Token::UnsignedNumber("1"),
+            Token::Plus,
+            Token::UnsignedNumber("42"),
+            Token::Plus,
+            Token::SimpleIdentifier("a")
+        ]
+    )
+}
+
+// TODO: Make sure to check nested
+// TODO: Handle preproc strings for non-function macros
+// TODO:
+//  - functions
+//  - invalid args
+//  - wrong number of args
+//  - no args
+//  - special replacement tokens

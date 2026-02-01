@@ -23,8 +23,10 @@ pub enum PreprocessorError<'a> {
     IncompleteDirective(Span<'a>),
     IncompleteDirectiveWithToken(SpannedToken<'a>),
     UndefinedMacro((&'a str, Span<'a>)),
+    RedefinedMacro((&'a str, Span<'a>, Span<'a>)),
     NotPreviouslyDefinedMacro((&'a str, Span<'a>)),
     DuplicateMacroParameter((&'a str, &'a str, Span<'a>, Span<'a>)),
+    NoDefaultAfterDefault((SpannedString<'a>, SpannedString<'a>)),
     NoMacroArguments((Span<'a>, (&'a str, Span<'a>))),
     TooManyMacroArguments((Span<'a>, (&'a str, usize, usize, Span<'a>))),
     MissingMacroArgument((Span<'a>, (&'a str, Span<'a>))),
@@ -165,12 +167,21 @@ impl<'s> From<PreprocessorError<'s>>
                     ReportKind::Error,
                 ).finish()
             }
+            PreprocessorError::RedefinedMacro((macro_name, macro_span, prev_span)) => {
+                attach_span_label(prev_span, NOTE_COLOR, "Previously defined here", make_report(
+                    macro_span,
+                    "PP12",
+                    format!("Redefining {macro_name}"),
+                    "New definition".to_string(),
+                    ReportKind::Warning,
+                )).finish()
+            }
             PreprocessorError::NotPreviouslyDefinedMacro((
                 macro_name,
                 macro_span,
             )) => make_report(
                 macro_span,
-                "PP12",
+                "PP13",
                 format!("Undefining {macro_name}, which has not been previously defined"),
                 "Not previously defined".to_string(),
                 ReportKind::Warning,
@@ -178,16 +189,25 @@ impl<'s> From<PreprocessorError<'s>>
             PreprocessorError::DuplicateMacroParameter((define_name, arg_name, arg_span, prev_span)) => {
                 attach_span_label(prev_span, NOTE_COLOR, "Previously declared here", make_report(
                     arg_span,
-                    "PP13",
+                    "PP14",
                     format!("'{arg_name}' was already declared as a macro parameter for {define_name}"),
                     "Duplicate parameter declaration".to_string(),
+                    ReportKind::Error,
+                )).finish()
+            }
+            PreprocessorError::NoDefaultAfterDefault((last_default_arg, no_default_arg)) => {
+                attach_span_label(last_default_arg.1, NOTE_COLOR, format!("{} had a default specified", last_default_arg.0), make_report(
+                    no_default_arg.1,
+                    "PP15",
+                    format!("No default specified for argument after one with a default"),
+                    "No default specified".to_string(),
                     ReportKind::Error,
                 )).finish()
             }
             PreprocessorError::NoMacroArguments((define_span, (macro_name, macro_span))) => {
                 attach_span_label(define_span, NOTE_COLOR, "Macro defined here", make_report(
                     macro_span,
-                    "PP14",
+                    "PP16",
                     format!("Expected arguments when using {macro_name}"),
                     "Expected arguments not present".to_string(),
                     ReportKind::Error,
@@ -196,7 +216,7 @@ impl<'s> From<PreprocessorError<'s>>
             PreprocessorError::TooManyMacroArguments((define_span, (macro_name, expected, found, macro_span))) => {
                 attach_span_label(define_span, NOTE_COLOR, format!("Macro definition expects {expected} arguments"), make_report(
                     macro_span,
-                    "PP15",
+                    "PP17",
                     format!("{} expected {} arguments, but {} were provided", macro_name, expected, found),
                     format!("{found} arguments provided"),
                     ReportKind::Error,
@@ -205,7 +225,7 @@ impl<'s> From<PreprocessorError<'s>>
             PreprocessorError::MissingMacroArgument((define_span, (arg_name, macro_span))) => {
                 attach_span_label(define_span, NOTE_COLOR, "Macro defined here", make_report(
                     macro_span,
-                    "PP16",
+                    "PP18",
                     format!("'{arg_name}' wasn't specified and has no default"),
                     "Missing argument".to_string(),
                     ReportKind::Error,
@@ -214,7 +234,7 @@ impl<'s> From<PreprocessorError<'s>>
             PreprocessorError::InvalidIdentifierFormation((arg_name, arg_span)) => {
                 make_report(
                     arg_span,
-                    "PP17",
+                    "PP19",
                     format!("The argument for '{arg_name}' cannot be concatenated into an identifier"),
                     "No valid conversion to identifier".to_string(),
                     ReportKind::Error,
@@ -223,7 +243,7 @@ impl<'s> From<PreprocessorError<'s>>
             PreprocessorError::InvalidRelativeTimescales(timescale_span) => {
                 make_report(
                     timescale_span,
-                    "PP18",
+                    "PP20",
                     "Time precision is larger than the time unit".to_string(),
                     "Cannot have delay unit be smaller than precision".to_string(),
                     ReportKind::Error,
@@ -232,7 +252,7 @@ impl<'s> From<PreprocessorError<'s>>
             PreprocessorError::IncompleteMacroWithToken(err_spanned_token) => {
                 make_report(
                   err_spanned_token.1,
-                  "PP19",
+                  "PP21",
                   format!("Usage of {} is incomplete", err_spanned_token.0),
                   "Expected a complete macro argument or escaped newline after".to_string(),
                   ReportKind::Error,
