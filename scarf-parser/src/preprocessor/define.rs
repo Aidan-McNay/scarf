@@ -378,6 +378,17 @@ fn undefine() {
 }
 
 #[test]
+fn undefine_redefine() {
+    check_preprocessor!(
+        "`define TEST 1
+        `undef TEST
+        `define TEST 2
+        `TEST",
+        vec![Token::UnsignedNumber("2")]
+    )
+}
+
+#[test]
 #[should_panic(expected = "NotPreviouslyDefinedMacro")]
 fn undef_without_defining() {
     check_preprocessor!("`undef TEST", Vec::<Token<'_>>::new())
@@ -399,7 +410,7 @@ fn function() {
 }
 
 #[test]
-#[should_panic(expected = "InvalidDefineParamete")]
+#[should_panic(expected = "InvalidDefineParameter")]
 fn empty_function() {
     check_preprocessor!("`define TEST()", Vec::<Token<'_>>::new())
 }

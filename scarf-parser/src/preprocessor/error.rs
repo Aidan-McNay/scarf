@@ -172,7 +172,7 @@ impl<'s> From<PreprocessorError<'s>>
                     macro_span,
                     "PP12",
                     format!("Redefining {macro_name}"),
-                    "New definition".to_string(),
+                    "Redefined here".to_string(),
                     ReportKind::Warning,
                 )).finish()
             }

@@ -416,6 +416,26 @@ fn basic() {
 }
 
 #[test]
+fn string_replacement() {
+    check_preprocessor!(
+        "`define TEST 1
+        `define TARGET `\"`TEST`\"
+        `undef TEST
+        `define TEST 2
+        `TARGET",
+        vec![Token::StringLiteral("2")]
+    );
+    check_preprocessor!(
+        "`define TEST whoops
+        `define TARGET `\"\"\"This test looks `TEST`\"\"\"
+        `undef TEST
+        `define TEST correct
+        `TARGET",
+        vec![Token::TripleQuoteStringLiteral("This test looks correct")]
+    )
+}
+
+#[test]
 #[should_panic(expected = "UndefinedMacro")]
 fn undefined() {
     check_preprocessor!("`UNDEFINED_MACRO", Vec::<Token<'_>>::new())
@@ -455,11 +475,71 @@ fn nested_function() {
     )
 }
 
-// TODO: Make sure to check nested
-// TODO: Handle preproc strings for non-function macros
-// TODO:
-//  - functions
-//  - invalid args
-//  - wrong number of args
-//  - no args
-//  - special replacement tokens
+#[test]
+fn function_string_replacement() {
+    check_preprocessor!(
+        "`define TEST 1
+        `define TARGET(a) `\"a = `TEST`\"
+        `undef TEST
+        `define TEST 2
+        `TARGET(2)",
+        vec![Token::StringLiteral("2 = 2")]
+    );
+    check_preprocessor!(
+        "`define TEST whoops
+        `define TARGET(test_name) `\"\"\"This test_name looks `TEST`\"\"\"
+        `undef TEST
+        `define TEST correct
+        `TARGET(basic_test)",
+        vec![Token::TripleQuoteStringLiteral(
+            "This basic_test looks correct"
+        )]
+    )
+}
+
+#[test]
+fn default_function() {
+    check_preprocessor!(
+        "`define TEST(a, b = 2) a + b
+        `TEST(6, 7)
+        `TEST(32)",
+        vec![
+            Token::UnsignedNumber("6"),
+            Token::Plus,
+            Token::UnsignedNumber("7"),
+            Token::UnsignedNumber("32"),
+            Token::Plus,
+            Token::UnsignedNumber("2")
+        ]
+    )
+}
+
+#[test]
+#[should_panic(expected = "NoMacroArguments")]
+fn funtion_no_args() {
+    check_preprocessor!(
+        "`define TEST(a, b) a + b
+        `TEST",
+        Vec::<Token<'_>>::new()
+    )
+}
+
+#[test]
+#[should_panic(expected = "MissingMacroArgument")]
+fn function_fewer_args() {
+    check_preprocessor!(
+        "`define TEST(a, b) a + b
+        `TEST(42)",
+        Vec::<Token<'_>>::new()
+    )
+}
+
+#[test]
+#[should_panic(expected = "TooManyMacroArguments")]
+fn function_more_args() {
+    check_preprocessor!(
+        "`define TEST(a, b) a + b
+        `TEST(42, 97, 33)",
+        Vec::<Token<'_>>::new()
+    )
+}
