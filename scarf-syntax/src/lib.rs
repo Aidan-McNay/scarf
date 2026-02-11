@@ -3,12 +3,15 @@
 // =======================================================================
 // The top-level collection of AST nodes
 
+include!(concat!(env!("OUT_DIR"), "/nodes.rs"));
+
 pub mod behavioral_statements;
 pub mod compiler_directives;
 pub mod declarations;
 pub mod expressions;
 pub mod general;
 pub mod instantiations;
+pub mod iter;
 pub mod metadata;
 pub mod primitive_instances;
 pub mod source_text;
@@ -20,6 +23,7 @@ pub use declarations::*;
 pub use expressions::*;
 pub use general::*;
 pub use instantiations::*;
+pub use iter::*;
 pub use metadata::*;
 pub use primitive_instances::*;
 pub use source_text::*;

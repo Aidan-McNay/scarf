@@ -93,3 +93,13 @@ pub fn preprocess_include<'s>(
         configs,
     )
 }
+
+#[test]
+fn include_in_untaken_conditional() {
+    check_preprocessor!(
+        "`ifdef NOT_DEFINED
+        `include \"dont/get/this/file.v\"
+        `endif",
+        Vec::<Token<'_>>::new()
+    )
+}

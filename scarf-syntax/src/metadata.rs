@@ -137,6 +137,31 @@ impl<'a> PartialEq for Metadata<'a> {
     }
 }
 
+// Metadata never returns any Nodes when iterating
+impl<'a> IntoIterator for Metadata<'a> {
+    type Item = Node<'a>;
+    type IntoIter = std::iter::Empty<Node<'a>>;
+    fn into_iter(self) -> Self::IntoIter {
+        std::iter::empty()
+    }
+}
+
+impl<'a> IntoIterator for &'a Metadata<'a> {
+    type Item = Node<'a>;
+    type IntoIter = std::iter::Empty<Node<'a>>;
+    fn into_iter(self) -> Self::IntoIter {
+        std::iter::empty()
+    }
+}
+
+impl<'a> IntoIterator for &'a mut Metadata<'a> {
+    type Item = Node<'a>;
+    type IntoIter = std::iter::Empty<Node<'a>>;
+    fn into_iter(self) -> Self::IntoIter {
+        std::iter::empty()
+    }
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub enum ExtraNode<'a> {
     OnelineComment((&'a str, Span<'a>)),
