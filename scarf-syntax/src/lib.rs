@@ -23,7 +23,7 @@ pub use declarations::*;
 pub use expressions::*;
 pub use general::*;
 pub use instantiations::*;
-pub use iter::*;
+use iter::*;
 pub use metadata::*;
 pub use primitive_instances::*;
 pub use source_text::*;

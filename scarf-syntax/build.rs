@@ -58,24 +58,59 @@ fn main() {
     let output_path =
         Path::new(&std::env::var("OUT_DIR").unwrap()).join("nodes.rs");
     let node_enum_def = quote! {
-      #[derive(Clone)]
-      pub enum Node<'a> {
-        #( #node_names(&'a #node_names<'a>) ),*
+      #[derive(Debug, Clone)]
+      pub enum Node<'a: 'b, 'b> {
+        #( #node_names(&'b #node_names<'a>) ),*
       }
 
-      impl<'a> Nodes<'a> for Node<'a> {
-        fn nodes(&'a self) -> NodeIter<'a> {
+      impl<'a: 'b, 'b> Nodes<'a, 'b> for Node<'a, 'b> {
+        fn nodes(&'b self) -> NodeIter<'a, 'b> {
+            self.iter()
+        }
+      }
+
+      impl<'a: 'b, 'b> IntoIterator for Node<'a, 'b> {
+        type Item = Node<'a, 'b>;
+        type IntoIter = NodeIter<'a, 'b>;
+        fn into_iter(self) -> Self::IntoIter {
+            self.into()
+        }
+      }
+
+      impl<'a: 'b, 'b> Node<'a, 'b> {
+        pub fn iter(&self) -> NodeIter<'a, 'b> {
+            self.clone().into()
+        }
+        fn children(&self) -> Vec<Node<'a, 'b>> {
             match self {
-                #( Node::#node_names(inner_ref) => { inner_ref.nodes() } )*
+                #( Node::#node_names(inner_ref) => { inner_ref.children() } )*
+            }
+        }
+        pub fn name(&self) -> &str {
+            match self {
+                #( Node::#node_names(_) => { stringify!(#node_names) } )*
             }
         }
       }
     };
     let node_defs = quote! {
         #(
-            impl<'a> From<&'a #node_names<'a>> for Node<'a> {
-                fn from(value: &'a #node_names) -> Self {
+            impl<'a: 'b, 'b> From<&'b #node_names<'a>> for Node<'a, 'b> {
+                fn from(value: &'b #node_names<'a>) -> Self {
                     Node::#node_names(value)
+                }
+            }
+            impl<'a: 'b, 'b> IntoIterator for &'b #node_names<'a> {
+                type Item = Node<'a, 'b>;
+                type IntoIter = NodeIter<'a, 'b>;
+                fn into_iter(self) -> Self::IntoIter {
+                    self.iter()
+                }
+            }
+
+            impl<'a: 'b, 'b> #node_names<'a> {
+                pub fn iter(&'b self) -> NodeIter<'a, 'b> {
+                    Into::<Node<'a, 'b>>::into(self).iter()
                 }
             }
         )*
@@ -130,10 +165,15 @@ fn main() {
             }
         });
         node_impls.extend(quote! {
-            impl<'a> Nodes<'a> for #ident<'a> {
-                fn nodes(&'a self) -> NodeIter<'a> {
+            impl<'a: 'b, 'b> Nodes<'a, 'b> for #ident<'a> {
+                fn nodes(&'b self) -> NodeIter<'a, 'b> {
+                    Into::<NodeIter<'a, 'b>>::into(Into::<Node<'a, 'b>>::into(self))
+                }
+            }
+            impl<'a: 'b, 'b> #ident<'a> {
+                fn children(&'b self) -> Vec<Node<'a, 'b>> {
                     match self {
-                        #( #ident::#variants(#variant_expansions) => { Into::<NodeIter<'a>>::into(Into::<Node<'a>>::into(self)) + #variant_children } )*
+                        #( #ident::#variants(#variant_expansions) => { (#variant_children).into() } )*
                     }
                 }
             }
@@ -152,11 +192,16 @@ fn main() {
                 let index = syn::Index::from(i);
                 quote! {#index}
             });
+        let indices_clone = indices.clone();
         node_impls.extend(quote! {
-            impl<'a> Nodes<'a> for #ident<'a> {
-                fn nodes(&'a self) -> NodeIter<'a> {
-                    Into::<NodeIter<'a>>::into(Into::<Node<'a>>::into(self)) +
-                    #( self.#indices.nodes() )+*
+            impl<'a: 'b, 'b> Nodes<'a, 'b> for #ident<'a> {
+                fn nodes(&'b self) -> NodeIter<'a, 'b> {
+                    Into::<NodeIter<'a, 'b>>::into(Into::<Node<'a, 'b>>::into(self))
+                }
+            }
+            impl<'a: 'b, 'b> #ident<'a> {
+                fn children(&'b self) -> Vec<Node<'a, 'b>> {
+                    (#( self.#indices_clone.nodes() )+*).into()
                 }
             }
         })

@@ -6,35 +6,35 @@
 use crate::*;
 use std::ops::Add;
 
-pub struct NodeIter<'a> {
-    nodes: Vec<Node<'a>>,
+pub struct NodeIter<'a, 'b> {
+    nodes: Vec<Node<'a, 'b>>,
 }
 
-impl<'a> Default for NodeIter<'a> {
+impl<'a: 'b, 'b> Default for NodeIter<'a, 'b> {
     fn default() -> Self {
         NodeIter { nodes: Vec::new() }
     }
 }
 
-impl<'a> From<Vec<Node<'a>>> for NodeIter<'a> {
-    fn from(value: Vec<Node<'a>>) -> Self {
+impl<'a: 'b, 'b> From<Vec<Node<'a, 'b>>> for NodeIter<'a, 'b> {
+    fn from(value: Vec<Node<'a, 'b>>) -> Self {
         NodeIter { nodes: value }
     }
 }
 
-impl<'a> Into<Vec<Node<'a>>> for NodeIter<'a> {
-    fn into(self) -> Vec<Node<'a>> {
+impl<'a: 'b, 'b> Into<Vec<Node<'a, 'b>>> for NodeIter<'a, 'b> {
+    fn into(self) -> Vec<Node<'a, 'b>> {
         self.nodes
     }
 }
 
-impl<'a> From<Node<'a>> for NodeIter<'a> {
-    fn from(value: Node<'a>) -> Self {
+impl<'a: 'b, 'b> From<Node<'a, 'b>> for NodeIter<'a, 'b> {
+    fn from(value: Node<'a, 'b>) -> Self {
         NodeIter { nodes: vec![value] }
     }
 }
 
-impl<'a> Add for NodeIter<'a> {
+impl<'a: 'b, 'b> Add for NodeIter<'a, 'b> {
     type Output = Self;
     fn add(mut self, rhs: Self) -> Self::Output {
         self.nodes.extend(rhs.nodes);
@@ -42,12 +42,12 @@ impl<'a> Add for NodeIter<'a> {
     }
 }
 
-impl<'a> Iterator for NodeIter<'a> {
-    type Item = Node<'a>;
+impl<'a: 'b, 'b> Iterator for NodeIter<'a, 'b> {
+    type Item = Node<'a, 'b>;
     fn next(&mut self) -> Option<Self::Item> {
         let next = self.nodes.pop();
         if let Some(node) = next.clone() {
-            let mut new_nodes: Vec<Node<'a>> = node.nodes().into();
+            let mut new_nodes: Vec<Node<'a, 'b>> = node.children();
             new_nodes.reverse();
             self.nodes.append(&mut new_nodes);
         };
@@ -56,32 +56,32 @@ impl<'a> Iterator for NodeIter<'a> {
 }
 
 /// An object that can be represented as a collection of AST nodes
-pub trait Nodes<'a> {
+pub trait Nodes<'a: 'b, 'b> {
     /// The nodes of the object
     ///
     /// This includes the object itself, as well as any children nodes
-    fn nodes(&'a self) -> NodeIter<'a>;
+    fn nodes(&'b self) -> NodeIter<'a, 'b>;
 
     /// Iterate over the nodes for an object
-    fn iter(&'a self) -> NodeIter<'a> {
+    fn iter(&'b self) -> NodeIter<'a, 'b> {
         self.nodes()
     }
 }
 
-impl<'a, T> Nodes<'a> for Box<T>
+impl<'a: 'b, 'b, T> Nodes<'a, 'b> for Box<T>
 where
-    T: Nodes<'a>,
+    T: Nodes<'a, 'b>,
 {
-    fn nodes(&'a self) -> NodeIter<'a> {
+    fn nodes(&'b self) -> NodeIter<'a, 'b> {
         self.as_ref().nodes()
     }
 }
 
-impl<'a, T> Nodes<'a> for Option<T>
+impl<'a: 'b, 'b, T> Nodes<'a, 'b> for Option<T>
 where
-    T: Nodes<'a>,
+    T: Nodes<'a, 'b>,
 {
-    fn nodes(&'a self) -> NodeIter<'a> {
+    fn nodes(&'b self) -> NodeIter<'a, 'b> {
         match self {
             Some(data) => data.nodes(),
             None => NodeIter::default(),
@@ -89,12 +89,12 @@ where
     }
 }
 
-impl<'a, T> Nodes<'a> for Vec<T>
+impl<'a: 'b, 'b, T> Nodes<'a, 'b> for Vec<T>
 where
-    T: Nodes<'a>,
+    T: Nodes<'a, 'b>,
 {
-    fn nodes(&'a self) -> NodeIter<'a> {
-        let mut ret: NodeIter<'a> = NodeIter::default();
+    fn nodes(&'b self) -> NodeIter<'a, 'b> {
+        let mut ret: NodeIter<'a, 'b> = NodeIter::default();
         for member in self {
             ret = ret + member.nodes().into();
         }
@@ -102,49 +102,48 @@ where
     }
 }
 
-impl<'a, T0: 'a, T1: 'a> Nodes<'a> for (T0, T1)
+impl<'a: 'b, 'b, T0, T1> Nodes<'a, 'b> for (T0, T1)
 where
-    T0: Nodes<'a>,
-    T1: Nodes<'a>,
+    T0: Nodes<'a, 'b>,
+    T1: Nodes<'a, 'b>,
 {
-    fn nodes(&'a self) -> NodeIter<'a> {
+    fn nodes(&'b self) -> NodeIter<'a, 'b> {
         self.0.nodes() + self.1.nodes()
     }
 }
 
-impl<'a, T0: 'a, T1: 'a, T2: 'a> Nodes<'a> for (T0, T1, T2)
+impl<'a: 'b, 'b, T0, T1, T2> Nodes<'a, 'b> for (T0, T1, T2)
 where
-    T0: Nodes<'a>,
-    T1: Nodes<'a>,
-    T2: Nodes<'a>,
+    T0: Nodes<'a, 'b>,
+    T1: Nodes<'a, 'b>,
+    T2: Nodes<'a, 'b>,
 {
-    fn nodes(&'a self) -> NodeIter<'a> {
+    fn nodes(&'b self) -> NodeIter<'a, 'b> {
         self.0.nodes() + self.1.nodes() + self.2.nodes()
     }
 }
 
-impl<'a, T0: 'a, T1: 'a, T2: 'a, T3: 'a> Nodes<'a> for (T0, T1, T2, T3)
+impl<'a: 'b, 'b, T0, T1, T2, T3: 'a> Nodes<'a, 'b> for (T0, T1, T2, T3)
 where
-    T0: Nodes<'a>,
-    T1: Nodes<'a>,
-    T2: Nodes<'a>,
-    T3: Nodes<'a>,
+    T0: Nodes<'a, 'b>,
+    T1: Nodes<'a, 'b>,
+    T2: Nodes<'a, 'b>,
+    T3: Nodes<'a, 'b>,
 {
-    fn nodes(&'a self) -> NodeIter<'a> {
+    fn nodes(&'b self) -> NodeIter<'a, 'b> {
         self.0.nodes() + self.1.nodes() + self.2.nodes() + self.3.nodes()
     }
 }
 
-impl<'a, T0: 'a, T1: 'a, T2: 'a, T3: 'a, T4: 'a> Nodes<'a>
-    for (T0, T1, T2, T3, T4)
+impl<'a: 'b, 'b, T0, T1, T2, T3, T4: 'a> Nodes<'a, 'b> for (T0, T1, T2, T3, T4)
 where
-    T0: Nodes<'a>,
-    T1: Nodes<'a>,
-    T2: Nodes<'a>,
-    T3: Nodes<'a>,
-    T4: Nodes<'a>,
+    T0: Nodes<'a, 'b>,
+    T1: Nodes<'a, 'b>,
+    T2: Nodes<'a, 'b>,
+    T3: Nodes<'a, 'b>,
+    T4: Nodes<'a, 'b>,
 {
-    fn nodes(&'a self) -> NodeIter<'a> {
+    fn nodes(&'b self) -> NodeIter<'a, 'b> {
         self.0.nodes()
             + self.1.nodes()
             + self.2.nodes()
@@ -153,17 +152,17 @@ where
     }
 }
 
-impl<'a, T0: 'a, T1: 'a, T2: 'a, T3: 'a, T4: 'a, T5: 'a> Nodes<'a>
+impl<'a: 'b, 'b, T0, T1, T2, T3, T4, T5: 'a> Nodes<'a, 'b>
     for (T0, T1, T2, T3, T4, T5)
 where
-    T0: Nodes<'a>,
-    T1: Nodes<'a>,
-    T2: Nodes<'a>,
-    T3: Nodes<'a>,
-    T4: Nodes<'a>,
-    T5: Nodes<'a>,
+    T0: Nodes<'a, 'b>,
+    T1: Nodes<'a, 'b>,
+    T2: Nodes<'a, 'b>,
+    T3: Nodes<'a, 'b>,
+    T4: Nodes<'a, 'b>,
+    T5: Nodes<'a, 'b>,
 {
-    fn nodes(&'a self) -> NodeIter<'a> {
+    fn nodes(&'b self) -> NodeIter<'a, 'b> {
         self.0.nodes()
             + self.1.nodes()
             + self.2.nodes()
@@ -173,18 +172,18 @@ where
     }
 }
 
-impl<'a, T0: 'a, T1: 'a, T2: 'a, T3: 'a, T4: 'a, T5: 'a, T6: 'a> Nodes<'a>
+impl<'a: 'b, 'b, T0, T1, T2, T3, T4, T5, T6: 'a> Nodes<'a, 'b>
     for (T0, T1, T2, T3, T4, T5, T6)
 where
-    T0: Nodes<'a>,
-    T1: Nodes<'a>,
-    T2: Nodes<'a>,
-    T3: Nodes<'a>,
-    T4: Nodes<'a>,
-    T5: Nodes<'a>,
-    T6: Nodes<'a>,
+    T0: Nodes<'a, 'b>,
+    T1: Nodes<'a, 'b>,
+    T2: Nodes<'a, 'b>,
+    T3: Nodes<'a, 'b>,
+    T4: Nodes<'a, 'b>,
+    T5: Nodes<'a, 'b>,
+    T6: Nodes<'a, 'b>,
 {
-    fn nodes(&'a self) -> NodeIter<'a> {
+    fn nodes(&'b self) -> NodeIter<'a, 'b> {
         self.0.nodes()
             + self.1.nodes()
             + self.2.nodes()
@@ -195,19 +194,19 @@ where
     }
 }
 
-impl<'a, T0: 'a, T1: 'a, T2: 'a, T3: 'a, T4: 'a, T5: 'a, T6: 'a, T7: 'a>
-    Nodes<'a> for (T0, T1, T2, T3, T4, T5, T6, T7)
+impl<'a: 'b, 'b, T0, T1, T2, T3, T4, T5, T6, T7: 'a> Nodes<'a, 'b>
+    for (T0, T1, T2, T3, T4, T5, T6, T7)
 where
-    T0: Nodes<'a>,
-    T1: Nodes<'a>,
-    T2: Nodes<'a>,
-    T3: Nodes<'a>,
-    T4: Nodes<'a>,
-    T5: Nodes<'a>,
-    T6: Nodes<'a>,
-    T7: Nodes<'a>,
+    T0: Nodes<'a, 'b>,
+    T1: Nodes<'a, 'b>,
+    T2: Nodes<'a, 'b>,
+    T3: Nodes<'a, 'b>,
+    T4: Nodes<'a, 'b>,
+    T5: Nodes<'a, 'b>,
+    T6: Nodes<'a, 'b>,
+    T7: Nodes<'a, 'b>,
 {
-    fn nodes(&'a self) -> NodeIter<'a> {
+    fn nodes(&'b self) -> NodeIter<'a, 'b> {
         self.0.nodes()
             + self.1.nodes()
             + self.2.nodes()
@@ -219,20 +218,20 @@ where
     }
 }
 
-impl<'a, T0: 'a, T1: 'a, T2: 'a, T3: 'a, T4: 'a, T5: 'a, T6: 'a, T7: 'a, T8: 'a>
-    Nodes<'a> for (T0, T1, T2, T3, T4, T5, T6, T7, T8)
+impl<'a: 'b, 'b, T0, T1, T2, T3, T4, T5, T6, T7, T8> Nodes<'a, 'b>
+    for (T0, T1, T2, T3, T4, T5, T6, T7, T8)
 where
-    T0: Nodes<'a>,
-    T1: Nodes<'a>,
-    T2: Nodes<'a>,
-    T3: Nodes<'a>,
-    T4: Nodes<'a>,
-    T5: Nodes<'a>,
-    T6: Nodes<'a>,
-    T7: Nodes<'a>,
-    T8: Nodes<'a>,
+    T0: Nodes<'a, 'b>,
+    T1: Nodes<'a, 'b>,
+    T2: Nodes<'a, 'b>,
+    T3: Nodes<'a, 'b>,
+    T4: Nodes<'a, 'b>,
+    T5: Nodes<'a, 'b>,
+    T6: Nodes<'a, 'b>,
+    T7: Nodes<'a, 'b>,
+    T8: Nodes<'a, 'b>,
 {
-    fn nodes(&'a self) -> NodeIter<'a> {
+    fn nodes(&'b self) -> NodeIter<'a, 'b> {
         self.0.nodes()
             + self.1.nodes()
             + self.2.nodes()
@@ -245,32 +244,21 @@ where
     }
 }
 
-impl<
-    'a,
-    T0: 'a,
-    T1: 'a,
-    T2: 'a,
-    T3: 'a,
-    T4: 'a,
-    T5: 'a,
-    T6: 'a,
-    T7: 'a,
-    T8: 'a,
-    T9: 'a,
-> Nodes<'a> for (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9)
+impl<'a: 'b, 'b, T0, T1, T2, T3, T4, T5, T6, T7, T8, T9> Nodes<'a, 'b>
+    for (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9)
 where
-    T0: Nodes<'a>,
-    T1: Nodes<'a>,
-    T2: Nodes<'a>,
-    T3: Nodes<'a>,
-    T4: Nodes<'a>,
-    T5: Nodes<'a>,
-    T6: Nodes<'a>,
-    T7: Nodes<'a>,
-    T8: Nodes<'a>,
-    T9: Nodes<'a>,
+    T0: Nodes<'a, 'b>,
+    T1: Nodes<'a, 'b>,
+    T2: Nodes<'a, 'b>,
+    T3: Nodes<'a, 'b>,
+    T4: Nodes<'a, 'b>,
+    T5: Nodes<'a, 'b>,
+    T6: Nodes<'a, 'b>,
+    T7: Nodes<'a, 'b>,
+    T8: Nodes<'a, 'b>,
+    T9: Nodes<'a, 'b>,
 {
-    fn nodes(&'a self) -> NodeIter<'a> {
+    fn nodes(&'b self) -> NodeIter<'a, 'b> {
         self.0.nodes()
             + self.1.nodes()
             + self.2.nodes()
@@ -284,34 +272,22 @@ where
     }
 }
 
-impl<
-    'a,
-    T0: 'a,
-    T1: 'a,
-    T2: 'a,
-    T3: 'a,
-    T4: 'a,
-    T5: 'a,
-    T6: 'a,
-    T7: 'a,
-    T8: 'a,
-    T9: 'a,
-    T10: 'a,
-> Nodes<'a> for (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10)
+impl<'a: 'b, 'b, T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> Nodes<'a, 'b>
+    for (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10)
 where
-    T0: Nodes<'a>,
-    T1: Nodes<'a>,
-    T2: Nodes<'a>,
-    T3: Nodes<'a>,
-    T4: Nodes<'a>,
-    T5: Nodes<'a>,
-    T6: Nodes<'a>,
-    T7: Nodes<'a>,
-    T8: Nodes<'a>,
-    T9: Nodes<'a>,
-    T10: Nodes<'a>,
+    T0: Nodes<'a, 'b>,
+    T1: Nodes<'a, 'b>,
+    T2: Nodes<'a, 'b>,
+    T3: Nodes<'a, 'b>,
+    T4: Nodes<'a, 'b>,
+    T5: Nodes<'a, 'b>,
+    T6: Nodes<'a, 'b>,
+    T7: Nodes<'a, 'b>,
+    T8: Nodes<'a, 'b>,
+    T9: Nodes<'a, 'b>,
+    T10: Nodes<'a, 'b>,
 {
-    fn nodes(&'a self) -> NodeIter<'a> {
+    fn nodes(&'b self) -> NodeIter<'a, 'b> {
         self.0.nodes()
             + self.1.nodes()
             + self.2.nodes()
@@ -326,36 +302,23 @@ where
     }
 }
 
-impl<
-    'a,
-    T0: 'a,
-    T1: 'a,
-    T2: 'a,
-    T3: 'a,
-    T4: 'a,
-    T5: 'a,
-    T6: 'a,
-    T7: 'a,
-    T8: 'a,
-    T9: 'a,
-    T10: 'a,
-    T11: 'a,
-> Nodes<'a> for (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11)
+impl<'a: 'b, 'b, T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> Nodes<'a, 'b>
+    for (T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11)
 where
-    T0: Nodes<'a>,
-    T1: Nodes<'a>,
-    T2: Nodes<'a>,
-    T3: Nodes<'a>,
-    T4: Nodes<'a>,
-    T5: Nodes<'a>,
-    T6: Nodes<'a>,
-    T7: Nodes<'a>,
-    T8: Nodes<'a>,
-    T9: Nodes<'a>,
-    T10: Nodes<'a>,
-    T11: Nodes<'a>,
+    T0: Nodes<'a, 'b>,
+    T1: Nodes<'a, 'b>,
+    T2: Nodes<'a, 'b>,
+    T3: Nodes<'a, 'b>,
+    T4: Nodes<'a, 'b>,
+    T5: Nodes<'a, 'b>,
+    T6: Nodes<'a, 'b>,
+    T7: Nodes<'a, 'b>,
+    T8: Nodes<'a, 'b>,
+    T9: Nodes<'a, 'b>,
+    T10: Nodes<'a, 'b>,
+    T11: Nodes<'a, 'b>,
 {
-    fn nodes(&'a self) -> NodeIter<'a> {
+    fn nodes(&'b self) -> NodeIter<'a, 'b> {
         self.0.nodes()
             + self.1.nodes()
             + self.2.nodes()
@@ -371,29 +334,20 @@ where
     }
 }
 
-impl<'a> Nodes<'a> for Metadata<'a> {
-    fn nodes(&self) -> NodeIter<'a> {
+impl<'a: 'b, 'b> Nodes<'a, 'b> for Metadata<'a> {
+    fn nodes(&self) -> NodeIter<'a, 'b> {
         NodeIter::default()
     }
 }
 
-impl<'a> Nodes<'a> for ExtraNode<'a> {
-    fn nodes(&self) -> NodeIter<'a> {
+impl<'a: 'b, 'b> Nodes<'a, 'b> for ExtraNode<'a> {
+    fn nodes(&self) -> NodeIter<'a, 'b> {
         NodeIter::default()
     }
 }
 
-// impl<'a, T: 'a> Nodes<'a> for &'a T
-// where
-//     T: Nodes<'a>,
-// {
-//     fn nodes(&'a self) -> NodeIter<'a> {
-//         (*self).nodes()
-//     }
-// }
-
-impl<'a> Nodes<'a> for &'a str {
-    fn nodes(&self) -> NodeIter<'a> {
+impl<'a: 'b, 'b> Nodes<'a, 'b> for &'a str {
+    fn nodes(&self) -> NodeIter<'a, 'b> {
         NodeIter::default()
     }
 }

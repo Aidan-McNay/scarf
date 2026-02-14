@@ -7,11 +7,11 @@ use scarf_parser::*;
 use std::env;
 
 fn main() {
-    let mut args: Vec<String> = env::args().collect();
-    if args.len() != 1 {
+    let args: Vec<String> = env::args().collect();
+    if args.len() != 2 {
         panic!("Usage: iter_tree source.sv")
     }
-    let path = args.pop().unwrap();
+    let path = args.get(1).unwrap();
     let src = std::fs::read_to_string(&path).unwrap();
     let string_cache = PreprocessorCache::default();
     let mut configs = PreprocessConfigs::new(&string_cache);
@@ -47,6 +47,11 @@ fn main() {
     let parsed_src = parse(&preprocessed_stream);
     if let Err(err) = parsed_src {
         let report: Report<'_, (String, std::ops::Range<usize>)> = err.into();
-        report.print(&mut error_sources).unwrap()
+        report.print(&mut error_sources).unwrap();
+        return;
+    }
+    let source_text = parsed_src.unwrap();
+    for node in source_text.iter() {
+        println!("{}", node.name());
     }
 }
