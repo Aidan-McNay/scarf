@@ -1,29 +1,75 @@
 // =======================================================================
 // lib.rs
 // =======================================================================
-// The top-level collection of AST nodes
+// The top-level collection of CST nodes
+
+//! A SystemVerilog (concrete) syntax tree for representing
+//! [1800-2023](https://ieeexplore.ieee.org/document/10458102) syntax.
+//!
+//! Each syntactic category is represented as a struct or enum with the
+//! same name as appears in Annex A, with additional types as needed for
+//! unnamed alternatives.
+//!
+//! While the tree can be treated as a normal data structure, it can
+//! also be iterated across (depth-first). Iterating produces [`Node`]s,
+//! which reference a specific data structure in the tree
+//!
+//! ```rust
+//! # use scarf_syntax::*;
+//! fn is_always_comb_block<'a, 'b>(node: Node<'a, 'b>) -> bool {
+//!   matches!(node, Node::AlwaysConstruct(AlwaysConstruct(AlwaysKeyword::AlwaysComb(_), _)))
+//! }
+//!
+//! fn num_inferred_latches<'a>(source: &SourceText<'a>) -> i32 {
+//!   let mut count = 0;
+//!   for node in source.find(is_always_comb_block) {
+//!       for child_node in node.iter() {
+//!           if let Node::BlockingAssignment(_) = child_node {
+//!               count += 1;
+//!           }
+//!       }
+//!   }
+//!   count
+//! }
+//! ```
+//!
+//! Compiler directives are not supported due to their arbitrary
+//! location/semantics in a syntax tree.
+//!
+//! ## Features
+//!
+//!  - `lossless`: Allows for whitespace/comments to be preserved in [`Metadata`]
 
 include!(concat!(env!("OUT_DIR"), "/nodes.rs"));
 
+/// CST Nodes from 1800-2023 A.6
 pub mod behavioral_statements;
-pub mod compiler_directives;
+/// CST Nodes from 1800-2023 A.2
 pub mod declarations;
+/// CST Nodes from 1800-2023 A.8
 pub mod expressions;
+/// CST Nodes from 1800-2023 A.9
 pub mod general;
+/// CST Nodes from 1800-2023 A.4
 pub mod instantiations;
+/// Iterating over a CST
 pub mod iter;
+/// Extra metadata attached to leaf nodes to encode a CST
 pub mod metadata;
+/// CST Nodes from 1800-2023 A.3
 pub mod primitive_instances;
+/// CST Nodes from 1800-2023 A.1
 pub mod source_text;
+/// CST Nodes from 1800-2023 A.7
 pub mod specify_section;
+/// CST Nodes from 1800-2023 A.5
 pub mod udp_declaration_and_instantiation;
 pub use behavioral_statements::*;
-pub use compiler_directives::*;
 pub use declarations::*;
 pub use expressions::*;
 pub use general::*;
 pub use instantiations::*;
-use iter::*;
+pub use iter::*;
 pub use metadata::*;
 pub use primitive_instances::*;
 pub use source_text::*;

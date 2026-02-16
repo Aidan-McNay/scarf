@@ -12,11 +12,14 @@ categories = ["development-tools", "parsing"]
 
 [dependencies]
 ariadne = { version = "0.5.1", features = ["auto-color"] }
-scarf-syntax = { version = "0.1.0", path = "../scarf-syntax" }
+scarf-syntax = { version = "0.2.0", path = "../scarf-syntax" }
 logos = "0.16.0"
 winnow = "0.7.13"
 elsa = "1.11.2"
 
+[dev-dependencies]
+clap = { version = "4.5.39", features = ["derive"] }
+
 [features]
-parse_extras = ["keep_extras"]
-keep_extras = ["scarf-syntax/keep_extras"]
+parse_lossless = ["lossless"]
+lossless = ["scarf-syntax/lossless"]

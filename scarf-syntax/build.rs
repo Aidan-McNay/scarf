@@ -59,40 +59,62 @@ fn main() {
         Path::new(&std::env::var("OUT_DIR").unwrap()).join("nodes.rs");
     let node_enum_def = quote! {
       #[derive(Debug, Clone)]
+      /// A reference to a data structure in a SystemVerilog CST
       pub enum Node<'a: 'b, 'b> {
         #( #node_names(&'b #node_names<'a>) ),*
       }
 
       impl<'a: 'b, 'b> Nodes<'a, 'b> for Node<'a, 'b> {
-        fn nodes(&'b self) -> NodeIter<'a, 'b> {
-            self.iter()
-        }
+          fn nodes(&'b self) -> NodeIter<'a, 'b> {
+              self.iter()
+          }
+          fn add_nodes(&'b self, dest: &mut Vec<Node<'a, 'b>>, pred: fn(Node<'a, 'b>) -> bool)
+          {
+            match self {
+                #( Node::#node_names(inner_ref) => { inner_ref.add_nodes(dest, pred) } )*
+            }
+          }
       }
 
       impl<'a: 'b, 'b> IntoIterator for Node<'a, 'b> {
-        type Item = Node<'a, 'b>;
-        type IntoIter = NodeIter<'a, 'b>;
-        fn into_iter(self) -> Self::IntoIter {
-            self.into()
-        }
+          type Item = Node<'a, 'b>;
+          type IntoIter = NodeIter<'a, 'b>;
+          fn into_iter(self) -> Self::IntoIter {
+              self.into()
+          }
       }
 
       impl<'a: 'b, 'b> Node<'a, 'b> {
-        pub fn iter(&self) -> NodeIter<'a, 'b> {
-            self.clone().into()
-        }
-        fn children(&self) -> Vec<Node<'a, 'b>> {
-            match self {
-                #( Node::#node_names(inner_ref) => { inner_ref.children() } )*
-            }
-        }
-        pub fn name(&self) -> &str {
-            match self {
-                #( Node::#node_names(_) => { stringify!(#node_names) } )*
-            }
-        }
+          /// Iterate over the current [`Node`] and all child [`Node`]s
+          pub fn iter(&self) -> NodeIter<'a, 'b> {
+              self.clone().into()
+          }
+          /// The child nodes of a given [`Node`]
+          fn children(&self) -> Vec<Node<'a, 'b>> {
+              match self {
+                  #( Node::#node_names(inner_ref) => { inner_ref.children() } )*
+              }
+          }
+          /// The name of the data structure the [`Node`] references (as well
+          /// as the name of the [`Node`] variant)
+          ///
+          /// ```rust
+          /// # use scarf_syntax::*;
+          /// let identifier = Identifier::SimpleIdentifier((
+          ///     "my_signal",
+          ///     Metadata::default()
+          /// ));
+          /// let node: Node<'_, '_> = (&identifier).into();
+          /// assert_eq!(node.name(), "Identifier");
+          /// ```
+          pub fn name(&self) -> &str {
+              match self {
+                  #( Node::#node_names(_) => { stringify!(#node_names) } )*
+              }
+          }
       }
     };
+    let iter_doc = node_names.iter().map(|ident| format!{"Iterate across the [`{}`] and its children", ident.to_string()});
     let node_defs = quote! {
         #(
             impl<'a: 'b, 'b> From<&'b #node_names<'a>> for Node<'a, 'b> {
@@ -109,6 +131,7 @@ fn main() {
             }
 
             impl<'a: 'b, 'b> #node_names<'a> {
+                #[doc = #iter_doc]
                 pub fn iter(&'b self) -> NodeIter<'a, 'b> {
                     Into::<Node<'a, 'b>>::into(self).iter()
                 }
@@ -164,16 +187,50 @@ fn main() {
                 res
             }
         });
+        let variant_add_nodes = item_enum.variants.iter().map(|v| {
+            let syn::Fields::Unnamed(ref unnamed_fields) = v.fields else {
+                panic!(
+                    "Syntax tree enum with named fields: {}",
+                    ident.to_string()
+                );
+            };
+            let expansion_string = unnamed_fields
+                .unnamed
+                .iter()
+                .enumerate()
+                .map(|(i, _)| format!("v{}.add_nodes(dest, pred)", i))
+                .collect::<Vec<_>>()
+                .join("; ");
+            if expansion_string.is_empty() {
+                quote!(NodeIter::default())
+            } else {
+                let res: TokenStream = expansion_string
+                    .parse()
+                    .expect("Unable to parse enum expansion");
+                res
+            }
+        });
+        let variants_clone = variants.clone();
+        let variant_expansions_clone = variant_expansions.clone();
         node_impls.extend(quote! {
             impl<'a: 'b, 'b> Nodes<'a, 'b> for #ident<'a> {
                 fn nodes(&'b self) -> NodeIter<'a, 'b> {
                     Into::<NodeIter<'a, 'b>>::into(Into::<Node<'a, 'b>>::into(self))
                 }
+                fn add_nodes(&'b self, dest: &mut Vec<Node<'a, 'b>>, pred: fn(Node<'a, 'b>) -> bool)
+                {
+                    if pred(Into::<Node<'a, 'b>>::into(self)) {
+                        dest.push(Into::<Node<'a, 'b>>::into(self))
+                    }
+                    match self {
+                        #( #ident::#variants(#variant_expansions) => { #variant_add_nodes; } )*
+                    }
+                }
             }
             impl<'a: 'b, 'b> #ident<'a> {
                 fn children(&'b self) -> Vec<Node<'a, 'b>> {
                     match self {
-                        #( #ident::#variants(#variant_expansions) => { (#variant_children).into() } )*
+                        #( #ident::#variants_clone(#variant_expansions_clone) => { (#variant_children).raw() } )*
                     }
                 }
             }
@@ -198,10 +255,17 @@ fn main() {
                 fn nodes(&'b self) -> NodeIter<'a, 'b> {
                     Into::<NodeIter<'a, 'b>>::into(Into::<Node<'a, 'b>>::into(self))
                 }
+                fn add_nodes(&'b self, dest: &mut Vec<Node<'a, 'b>>, pred: fn(Node<'a, 'b>) -> bool)
+                {
+                    if pred(Into::<Node<'a, 'b>>::into(self)) {
+                        dest.push(Into::<Node<'a, 'b>>::into(self))
+                    }
+                    #( self.#indices.add_nodes(dest, pred); )*
+                }
             }
             impl<'a: 'b, 'b> #ident<'a> {
                 fn children(&'b self) -> Vec<Node<'a, 'b>> {
-                    (#( self.#indices_clone.nodes() )+*).into()
+                    (#( self.#indices_clone.nodes() )+*).raw()
                 }
             }
         })

@@ -5,7 +5,7 @@
 
 use crate::*;
 use elsa::FrozenVec;
-use scarf_syntax::*;
+use scarf_syntax::SpanRelation;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 

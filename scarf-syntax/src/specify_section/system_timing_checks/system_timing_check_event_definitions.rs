@@ -1,8 +1,7 @@
 // =======================================================================
 // specify_timing_check_event_definitions.rs
 // =======================================================================
-// AST Nodes from 1800-2023 A.7.5.3
-
+// CST Nodes from 1800-2023 A.7.5.3
 use crate::*;
 
 #[derive(Clone, Debug, PartialEq)]

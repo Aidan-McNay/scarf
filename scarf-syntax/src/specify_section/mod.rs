@@ -1,8 +1,7 @@
 // =======================================================================
 // mod.rs
 // =======================================================================
-// AST Nodes from 1800-2023 A.7
-
+// CST Nodes from 1800-2023 A.7
 pub mod specify_block_declaration;
 pub mod specify_block_terminals;
 pub mod specify_path_declarations;

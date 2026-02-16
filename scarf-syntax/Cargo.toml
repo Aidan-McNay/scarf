@@ -1,7 +1,7 @@
 [package]
 name = "scarf-syntax"
 description = "A helper crate of scarf for expressing a SystemVerilog concrete syntax tree"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Aidan McNay <aidanmcnay@gmail.com>"]
 edition = "2024"
 license = "GPL-3.0-or-later"
@@ -19,4 +19,4 @@ walkdir = "2.3"
 proc-macro2 = "1.0"
 
 [features]
-keep_extras = []
+lossless = []

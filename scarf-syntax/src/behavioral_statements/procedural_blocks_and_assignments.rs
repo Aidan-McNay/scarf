@@ -1,8 +1,7 @@
 // =======================================================================
 // procedural_blocks_and_assignments.rs
 // =======================================================================
-// AST Nodes from 1800-2023 A.6.2
-
+// CST Nodes from 1800-2023 A.6.2
 use crate::*;
 
 #[derive(Clone, Debug, PartialEq)]

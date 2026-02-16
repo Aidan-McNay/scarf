@@ -1,8 +1,7 @@
 // =======================================================================
 // mod.rs
 // =======================================================================
-// AST Nodes from 1800-2023 A.4.1
-
+// CST Nodes from 1800-2023 A.4.1
 pub mod checker_instantiation;
 pub mod interface_instantiation;
 pub mod module_instantiation;

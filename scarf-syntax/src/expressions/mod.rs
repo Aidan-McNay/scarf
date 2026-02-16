@@ -1,8 +1,7 @@
 // =======================================================================
 // mod.rs
 // =======================================================================
-// AST Nodes from 1800-2023 A.8
-
+// CST Nodes from 1800-2023 A.8
 pub mod concatenations;
 pub mod expression_left_side_values;
 pub mod expressions;

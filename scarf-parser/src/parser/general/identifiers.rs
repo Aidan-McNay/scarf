@@ -48,12 +48,12 @@ pub fn c_identifier_parser<'s>(
             }
             _ => None,
         }),
-        extra_node_parser,
+        non_trivia_parser,
     )
-        .map(|(c_identifier, extra_nodes)| {
+        .map(|(c_identifier, non_trivia)| {
             CIdentifier(
                 c_identifier.0,
-                replace_nodes(c_identifier.1, extra_nodes),
+                replace_non_trivia(c_identifier.1, non_trivia),
             )
         })
         .context("a C identifier")
@@ -495,19 +495,19 @@ pub fn identifier_parser<'s>(
             }
             _ => None,
         }),
-        extra_node_parser,
+        non_trivia_parser,
     )
-        .map(|(identifier, extra_nodes)| match identifier {
+        .map(|(identifier, non_trivia)| match identifier {
             Identifier::SimpleIdentifier((text, metadata)) => {
                 Identifier::SimpleIdentifier((
                     text,
-                    replace_nodes(metadata, extra_nodes),
+                    replace_non_trivia(metadata, non_trivia),
                 ))
             }
             Identifier::EscapedIdentifier((text, metadata)) => {
                 Identifier::EscapedIdentifier((
                     text,
-                    replace_nodes(metadata, extra_nodes),
+                    replace_non_trivia(metadata, non_trivia),
                 ))
             }
         })
@@ -956,12 +956,12 @@ pub fn system_tf_identifier_parser<'s>(
             )),
             _ => None,
         }),
-        extra_node_parser,
+        non_trivia_parser,
     )
-        .map(|(identifier, extra_nodes)| {
+        .map(|(identifier, non_trivia)| {
             SystemTfIdentifier(
                 identifier.0,
-                replace_nodes(identifier.1, extra_nodes),
+                replace_non_trivia(identifier.1, non_trivia),
             )
         });
     alt((

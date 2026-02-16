@@ -12,7 +12,7 @@ use winnow::combinator::alt;
 pub fn source_text_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<SourceText<'s>, VerboseError<'s>> {
-    let extra_nodes = extra_node_parser(input)?;
+    let non_trivia = non_trivia_parser(input)?;
     let timeunits_declaration =
         opt_note(timeunits_declaration_parser).parse_next(input)?;
     let mut descriptions: Vec<Description<'s>> = vec![];
@@ -23,7 +23,7 @@ pub fn source_text_parser<'s>(
         let new_description = description_parser(input)?;
         descriptions.push(new_description);
     }
-    Ok(SourceText(extra_nodes, timeunits_declaration, descriptions))
+    Ok(SourceText(non_trivia, timeunits_declaration, descriptions))
 }
 
 pub fn description_parser<'s>(

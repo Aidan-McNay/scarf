@@ -312,6 +312,7 @@ name = "scarf-parser"
 version = "0.1.0"
 dependencies = [
  "ariadne",
+ "clap",
  "elsa",
  "logos",
  "scarf-syntax",
@@ -320,7 +321,7 @@ dependencies = [
 
 [[package]]
 name = "scarf-syntax"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "proc-macro2",
  "quote",

@@ -1,8 +1,7 @@
 // =======================================================================
 // mod.rs
 // =======================================================================
-// AST Nodes from 1800-2023 A.2.1
-
+// CST Nodes from 1800-2023 A.2.1
 pub mod module_parameter_declarations;
 pub mod port_declarations;
 pub mod type_declarations;

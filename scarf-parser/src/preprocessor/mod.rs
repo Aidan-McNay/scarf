@@ -285,9 +285,9 @@ pub fn preprocess<'s>(
                 Token::BlockComment(_)
                 | Token::OnelineComment(_)
                 | Token::Newline => {
-                    #[cfg(feature = "parse_extras")]
+                    #[cfg(feature = "parse_lossless")]
                     {
-                        dest.push_element(spanned_token)
+                        dest.push(spanned_token)
                     }
                 }
                 token if token.keyword_replace(&configs.curr_standard) => {

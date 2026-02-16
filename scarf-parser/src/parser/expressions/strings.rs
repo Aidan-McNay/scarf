@@ -30,19 +30,19 @@ pub fn string_literal_parser<'s>(
             }
             _ => None,
         }),
-        extra_node_parser,
+        non_trivia_parser,
     )
-        .map(|(string, extra_nodes)| match string {
+        .map(|(string, non_trivia)| match string {
             StringLiteral::QuotedString(quoted_string_box) => {
                 StringLiteral::QuotedString(Box::new(QuotedString(
                     quoted_string_box.0,
-                    replace_nodes(quoted_string_box.1, extra_nodes),
+                    replace_non_trivia(quoted_string_box.1, non_trivia),
                 )))
             }
             StringLiteral::TripleQuotedString(triple_quoted_string_box) => {
                 StringLiteral::TripleQuotedString(Box::new(TripleQuotedString(
                     triple_quoted_string_box.0,
-                    replace_nodes(triple_quoted_string_box.1, extra_nodes),
+                    replace_non_trivia(triple_quoted_string_box.1, non_trivia),
                 )))
             }
         })

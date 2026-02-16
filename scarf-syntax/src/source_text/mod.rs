@@ -1,8 +1,7 @@
 // =======================================================================
 // mod.rs
 // =======================================================================
-// AST Nodes from 1800-2023 A.1
-
+// CST Nodes from 1800-2023 A.1
 pub mod checker_items;
 pub mod class_items;
 pub mod configuration_source_text;

@@ -6,67 +6,68 @@
 use crate::*;
 use scarf_syntax::*;
 use winnow::Parser;
-#[cfg(feature = "parse_extras")]
+#[cfg(feature = "parse_lossless")]
 use winnow::combinator::alt;
 use winnow::error::ModalResult;
-#[cfg(feature = "parse_extras")]
+#[cfg(feature = "parse_lossless")]
 use winnow::token::any;
 
 // A parser for matching extra nodes
-#[cfg(feature = "parse_extras")]
-pub fn extra_node_parser<'s>(
+#[cfg(feature = "parse_lossless")]
+pub fn non_trivia_parser<'s>(
     input: &mut Tokens<'s>,
-) -> ModalResult<Vec<ExtraNode<'s>>, VerboseError<'s>> {
+) -> ModalResult<Vec<NonTriviaToken<'s>>, VerboseError<'s>> {
     let comment_parser = any.verify_map(|s: &'s SpannedToken<'s>| match s.0 {
         Token::OnelineComment(text) => {
-            Some(ExtraNode::OnelineComment((text, s.1.clone())))
+            Some(NonTriviaToken::OnelineComment((text, s.1.clone())))
         }
         Token::BlockComment(text) => {
-            Some(ExtraNode::BlockComment((text, s.1.clone())))
+            Some(NonTriviaToken::BlockComment((text, s.1.clone())))
         }
         _ => None,
     });
     let newline_parser = any.verify_map(|s: &'s SpannedToken<'s>| match s.0 {
-        Token::Newline => Some(ExtraNode::Newline),
+        Token::Newline => Some(NonTriviaToken::Newline),
         _ => None,
     });
     repeat_note(alt((comment_parser, newline_parser))).parse_next(input)
 }
 
 #[inline]
-#[cfg(not(feature = "parse_extras"))]
-pub fn extra_node_parser<'s>(
+#[cfg(not(feature = "parse_lossless"))]
+pub fn non_trivia_parser<'s>(
     _: &mut Tokens<'s>,
-) -> ModalResult<Vec<ExtraNode<'s>>, VerboseError<'s>> {
+) -> ModalResult<Vec<NonTriviaToken<'s>>, VerboseError<'s>> {
     Ok(vec![])
 }
 
 // A mapping function for replacing extra nodes in metadata
-#[cfg(feature = "parse_extras")]
-pub fn replace_nodes<'a>(
+#[cfg(feature = "parse_lossless")]
+pub fn replace_non_trivia<'a>(
     old_metadata: Metadata<'a>,
-    new_nodes: Vec<ExtraNode<'a>>,
+    non_trivia: Vec<NonTriviaToken<'a>>,
 ) -> Metadata<'a> {
-    Metadata::new(old_metadata.span, new_nodes)
+    Metadata::new(old_metadata.span, non_trivia)
 }
 
+// A mapping function for replacing extra nodes in metadata
 #[inline]
-#[cfg(not(feature = "parse_extras"))]
-pub fn replace_nodes<'a>(
+#[cfg(not(feature = "parse_lossless"))]
+pub fn replace_non_trivia<'a>(
     old_metadata: Metadata<'a>,
-    _: Vec<ExtraNode<'a>>,
+    _: Vec<NonTriviaToken<'a>>,
 ) -> Metadata<'a> {
     old_metadata
 }
 
 // A parser for matching a token and extra nodes, producing metadata
-#[cfg(feature = "parse_extras")]
+#[cfg(feature = "parse_lossless")]
 pub fn token<'s>(
     token_to_match: Token<'s>,
 ) -> impl FnMut(&mut Tokens<'s>) -> ModalResult<Metadata<'s>, VerboseError<'s>>
 {
     move |input: &mut Tokens<'s>| {
-        (token_to_match, extra_node_parser)
+        (token_to_match, non_trivia_parser)
             .context(token_to_match)
             .parse_next(input)
             .map(|(spanned_token, extra_nodes)| {
@@ -75,7 +76,7 @@ pub fn token<'s>(
     }
 }
 
-#[cfg(not(feature = "parse_extras"))]
+#[cfg(not(feature = "parse_lossless"))]
 pub fn token<'s>(
     token_to_match: Token<'s>,
 ) -> impl FnMut(&mut Tokens<'s>) -> ModalResult<Metadata<'s>, VerboseError<'s>>

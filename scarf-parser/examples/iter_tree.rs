@@ -3,20 +3,31 @@
 // =======================================================================
 // Iterate across the AST of SystemVerilog source code
 
+use clap::Parser;
 use scarf_parser::*;
-use std::env;
+use std::path::PathBuf;
+
+#[derive(Parser)]
+#[command(version, author, about, long_about = None)]
+struct Cli {
+    #[arg(short, long)]
+    include: Vec<PathBuf>,
+
+    #[arg(short, long)]
+    defines: Vec<String>,
+
+    path: PathBuf,
+}
 
 fn main() {
-    let args: Vec<String> = env::args().collect();
-    if args.len() != 2 {
-        panic!("Usage: iter_tree source.sv")
-    }
-    let path = args.get(1).unwrap();
+    let args = Cli::parse();
+    let path = args.path;
     let src = std::fs::read_to_string(&path).unwrap();
     let string_cache = PreprocessorCache::default();
     let mut configs = PreprocessConfigs::new(&string_cache);
-    let (_, src) = configs.retain_file(path.clone(), src);
-    let lexed_src = lex(src, path.as_str(), None).collect::<Vec<_>>();
+    let (_, src) = configs
+        .retain_file(path.clone().into_os_string().into_string().unwrap(), src);
+    let lexed_src = lex(src, path.to_str().unwrap(), None).collect::<Vec<_>>();
     match dump_lex(&lexed_src.clone().into_iter(), "./scarf_debug/lex.txt") {
         Ok(_) => (),
         Err(err) => println!("{}", err),
@@ -24,7 +35,9 @@ fn main() {
     let lex_errors = report_lex_errors(&lexed_src.clone().into_iter());
     if !lex_errors.is_empty() {
         for report in lex_errors {
-            report.print((path.as_str(), Source::from(src))).unwrap()
+            report
+                .print((path.to_str().unwrap(), Source::from(src)))
+                .unwrap()
         }
         return;
     }

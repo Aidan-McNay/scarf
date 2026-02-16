@@ -1,13 +1,12 @@
 // =======================================================================
 // system_verilog_source_text.rs
 // =======================================================================
-// AST Nodes from 1800-2023 A.1.2
-
+// CST Nodes from 1800-2023 A.1.2
 use crate::*;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct SourceText<'a>(
-    pub Vec<ExtraNode<'a>>, // Leading whitespace/comments/directives
+    pub Vec<NonTriviaToken<'a>>, // Leading whitespace/comments/directives
     pub Option<TimeunitsDeclaration<'a>>,
     pub Vec<Description<'a>>,
 );

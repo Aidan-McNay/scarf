@@ -1,8 +1,7 @@
 // =======================================================================
 // mod.rs
 // =======================================================================
-// AST Nodes from 1800-2023 A.6
-
+// CST Nodes from 1800-2023 A.6
 pub mod assertion_statements;
 pub mod case_statements;
 pub mod clocking_block;

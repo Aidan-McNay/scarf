@@ -339,26 +339,26 @@ fn time_unit_parser<'s>(
             }
             _ => None,
         }),
-        extra_node_parser,
+        non_trivia_parser,
     )
-        .map(|(time_unit, extra_nodes)| match time_unit {
+        .map(|(time_unit, non_trivia)| match time_unit {
             TimeUnit::S(metadata) => {
-                TimeUnit::S(replace_nodes(metadata, extra_nodes))
+                TimeUnit::S(replace_non_trivia(metadata, non_trivia))
             }
             TimeUnit::MS(metadata) => {
-                TimeUnit::S(replace_nodes(metadata, extra_nodes))
+                TimeUnit::S(replace_non_trivia(metadata, non_trivia))
             }
             TimeUnit::US(metadata) => {
-                TimeUnit::S(replace_nodes(metadata, extra_nodes))
+                TimeUnit::S(replace_non_trivia(metadata, non_trivia))
             }
             TimeUnit::NS(metadata) => {
-                TimeUnit::S(replace_nodes(metadata, extra_nodes))
+                TimeUnit::S(replace_non_trivia(metadata, non_trivia))
             }
             TimeUnit::PS(metadata) => {
-                TimeUnit::S(replace_nodes(metadata, extra_nodes))
+                TimeUnit::S(replace_non_trivia(metadata, non_trivia))
             }
             TimeUnit::FS(metadata) => {
-                TimeUnit::S(replace_nodes(metadata, extra_nodes))
+                TimeUnit::S(replace_non_trivia(metadata, non_trivia))
             }
         })
         .context("a time unit")

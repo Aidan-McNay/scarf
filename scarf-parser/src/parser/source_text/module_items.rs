@@ -107,17 +107,17 @@ pub fn finish_number_parser<'s>(
             }
             _ => None,
         }),
-        extra_node_parser,
+        non_trivia_parser,
     )
-        .map(|(finish_number, extra_nodes)| match finish_number {
+        .map(|(finish_number, non_trivia)| match finish_number {
             FinishNumber::Zero(metadata) => {
-                FinishNumber::Zero(replace_nodes(metadata, extra_nodes))
+                FinishNumber::Zero(replace_non_trivia(metadata, non_trivia))
             }
             FinishNumber::One(metadata) => {
-                FinishNumber::One(replace_nodes(metadata, extra_nodes))
+                FinishNumber::One(replace_non_trivia(metadata, non_trivia))
             }
             FinishNumber::Two(metadata) => {
-                FinishNumber::Two(replace_nodes(metadata, extra_nodes))
+                FinishNumber::Two(replace_non_trivia(metadata, non_trivia))
             }
         })
         .parse_next(input)

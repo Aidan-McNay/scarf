@@ -1,8 +1,7 @@
 // =======================================================================
 // specify_timing_check_command_arguments.rs
 // =======================================================================
-// AST Nodes from 1800-2023 A.7.5.2
-
+// CST Nodes from 1800-2023 A.7.5.2
 use crate::*;
 
 #[derive(Clone, Debug, PartialEq)]

@@ -6,8 +6,19 @@
 use crate::*;
 use core::ops::Range;
 
+/// The start and end bytes of a particular portion of a source file
 pub type ByteSpan = Range<usize>;
 
+/// A representation of a unique location in a source file
+///
+/// If the file was included from another file (using the `#include`
+/// directive), [`Span::included_from`] will reference the [`Span`]
+/// of the include directive
+///
+/// If the [`Span`] is part of a `#define` directive, each expanded
+/// text macro will have the original [`Span`] of the `#define` token,
+/// with [`Span::expanded_from`] referencing the macro expansion
+/// directive
 #[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct Span<'a> {
     pub file: &'a str,
@@ -16,7 +27,9 @@ pub struct Span<'a> {
     pub included_from: Option<&'a Span<'a>>,
 }
 
-#[derive(PartialEq)]
+/// A relationship between two [`Span`]s, ordering them relative to
+/// each other in declaration order
+#[derive(Debug, PartialEq)]
 pub enum SpanRelation {
     Earlier,
     Later,
@@ -44,6 +57,7 @@ impl<'a> Span<'a> {
         indeces.push(self.include_indeces());
         indeces
     }
+    /// An empty [`Span`]
     pub const fn empty() -> Span<'a> {
         Span {
             file: "",
@@ -52,6 +66,29 @@ impl<'a> Span<'a> {
             included_from: None,
         }
     }
+    /// Compare two [`Span`]s, returning the relationship of the first to the second
+    ///
+    /// ```rust
+    /// # use scarf_syntax::*;
+    /// let span1 = Span {
+    ///     file: "test",
+    ///     bytes: ByteSpan { start: 0, end: 2 },
+    ///     expanded_from: None,
+    ///     included_from: None
+    /// };
+    /// let span2 = Span {
+    ///     file: "test",
+    ///     bytes: ByteSpan { start: 6, end: 8 },
+    ///     expanded_from: None,
+    ///     included_from: None
+    /// };
+    /// assert_eq!(span1.compare(&span2), SpanRelation::Earlier)
+    /// ```
+    ///
+    /// Expanded [`Span`]s will be compared starting at their expansion
+    /// point, and working backwards through `#define`s. Included [`Span`]s
+    /// will be compared starting at their first `#include` and working
+    /// through the include hierarchy to their final token.
     pub fn compare(&self, other: &Self) -> SpanRelation {
         let mut idx = 0;
         let self_include_byte_indeces = self.indeces_to_compare();
@@ -104,34 +141,48 @@ impl<'a> Span<'a> {
     }
 }
 
-#[cfg(feature = "keep_extras")]
-#[derive(Clone, Debug)]
+/// Metadata for a given syntax token.
+///
+/// This includes the [`Span`] of the token. With the `lossless` feature,
+/// [`Metadata`] also includes `non_trivia`, which stores non-trivia tokens
+/// such as whitespace and comments
+#[cfg(feature = "lossless")]
+#[derive(Default, Clone, Debug)]
 pub struct Metadata<'a> {
     pub span: Span<'a>,
-    pub extra_nodes: Vec<ExtraNode<'a>>,
+    pub non_trivia: Vec<NonTriviaToken<'a>>,
 }
 
-#[cfg(not(feature = "keep_extras"))]
-#[derive(Clone, Debug)]
+/// Metadata for a given syntax token.
+///
+/// This includes the [`Span`] of the token. With the `lossless` feature,
+/// [`Metadata`] also includes `non_trivia`, which stores non-trivia tokens
+/// such as whitespace and comments
+#[cfg(not(feature = "lossless"))]
+#[derive(Default, Clone, Debug)]
 pub struct Metadata<'a> {
     pub span: Span<'a>,
 }
 
 impl<'a> Metadata<'a> {
-    #[cfg(feature = "keep_extras")]
-    pub fn new(span: Span<'a>, extra_nodes: Vec<ExtraNode<'a>>) -> Self {
-        Self { span, extra_nodes }
+    /// Construct a new [`Metadata`]. If the `lossless` feature isn't enabled,
+    /// `non_trivia` is discarded.
+    #[cfg(feature = "lossless")]
+    pub fn new(span: Span<'a>, non_trivia: Vec<NonTriviaToken<'a>>) -> Self {
+        Self { span, non_trivia }
     }
 
-    #[cfg(not(feature = "keep_extras"))]
-    pub fn new(span: Span<'a>, _: Vec<ExtraNode<'a>>) -> Self {
+    /// Construct a new [`Metadata`]. If the `lossless` feature isn't enabled,
+    /// `non_trivia` is discarded.
+    #[cfg(not(feature = "lossless"))]
+    pub fn new(span: Span<'a>, _: Vec<NonTriviaToken<'a>>) -> Self {
         Self { span }
     }
 }
 
 impl<'a> PartialEq for Metadata<'a> {
     fn eq(&self, _: &Self) -> bool {
-        // Allows checking of overall AST structure without checking
+        // Allows checking of overall CST structure without checking
         // exact whitespace
         true
     }
@@ -154,10 +205,10 @@ impl<'a, 'b> IntoIterator for &'b mut Metadata<'a> {
     }
 }
 
+/// A non-trivia token from the source file
 #[derive(Clone, Debug, PartialEq)]
-pub enum ExtraNode<'a> {
+pub enum NonTriviaToken<'a> {
     OnelineComment((&'a str, Span<'a>)),
     BlockComment((&'a str, Span<'a>)),
-    Directive(CompilerDirective<'a>),
     Newline,
 }
