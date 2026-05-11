@@ -3,16 +3,17 @@
 // =======================================================================
 // The tokens that a SystemVerilog source file is parsed into
 
-use crate::*;
+use crate::callbacks::*;
 use logos::Logos;
 use std::fmt;
 
+/// A single syntactic token for a SystemVerilog source file
 #[derive(Logos, Debug, Clone, PartialEq, Eq, Copy)]
 #[logos(skip r"[ \t\f]+")]
 #[logos(error = String)]
 pub enum Token<'a> {
+    /// A lexer error
     Error,
-    EOI,
     // 1364-1995
     #[token("always")]
     Always,
@@ -828,6 +829,7 @@ pub enum Token<'a> {
 }
 
 impl<'a> Token<'a> {
+    /// Whether the token represents a compiler directive
     pub fn is_directive(&self) -> bool {
         match self {
             Token::DirUnderscoreFile
@@ -856,9 +858,9 @@ impl<'a> Token<'a> {
             _ => false,
         }
     }
+    /// A string representation of the token (usually the literal matching text)
     pub fn as_str(&self) -> &'static str {
         match self {
-            Token::EOI => "end of input",
             Token::Error => "a lexer error",
             Token::Always => "always",
             Token::And => "and",
@@ -1263,12 +1265,7 @@ impl<'a> Token<'a> {
 }
 
 impl<'a> fmt::Display for Token<'a> {
-    // This trait requires `fmt` with this exact signature.
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        // Write strictly the first element into the supplied output
-        // stream: `f`. Returns `fmt::Result` which indicates whether the
-        // operation succeeded or failed. Note that `write!` uses syntax which
-        // is very similar to `println!`.
         let temp_str: String;
         let str_repr = match self {
             Token::OnelineComment(text) => {

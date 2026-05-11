@@ -12,7 +12,7 @@ categories = ["development-tools", "parsing"]
 
 [dependencies]
 ariadne = { version = "0.5.1", features = ["auto-color"] }
-scarf-syntax = { version = "0.2.0", path = "../scarf-syntax" }
+scarf-syntax = { version = "0.2", path = "../scarf-syntax" }
 logos = "0.16.0"
 winnow = "0.7.13"
 elsa = "1.11.2"

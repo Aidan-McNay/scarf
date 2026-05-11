@@ -4,7 +4,7 @@
 // The callbacks used to lex a SystemVerilog source
 
 use crate::*;
-use logos::Lexer;
+use logos::{Lexer, Logos};
 
 #[derive(Logos)]
 enum StringToken {

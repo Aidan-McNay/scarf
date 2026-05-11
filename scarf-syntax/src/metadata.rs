@@ -1,7 +1,7 @@
 // =======================================================================
 // metadata.rs
 // =======================================================================
-// Extra metadata attached to leaf nodes to encode a CST
+//! Extra metadata attached to leaf nodes to encode a CST
 
 use crate::*;
 use core::ops::Range;
@@ -11,12 +11,12 @@ pub type ByteSpan = Range<usize>;
 
 /// A representation of a unique location in a source file
 ///
-/// If the file was included from another file (using the `#include`
+/// If the file was included from another file (using the `` `include ``
 /// directive), [`Span::included_from`] will reference the [`Span`]
 /// of the include directive
 ///
-/// If the [`Span`] is part of a `#define` directive, each expanded
-/// text macro will have the original [`Span`] of the `#define` token,
+/// If the [`Span`] is part of a `` `define `` directive, each expanded
+/// text macro will have the original [`Span`] of the `` `define `` token,
 /// with [`Span::expanded_from`] referencing the macro expansion
 /// directive
 #[derive(Default, Debug, Clone, PartialEq, Eq)]

@@ -3,36 +3,36 @@
 // =======================================================================
 // The top-level interface for the parser
 
-pub mod behavioral_statements;
-pub mod combinators;
-pub mod declarations;
-pub mod error;
-pub mod expressions;
-pub mod general;
-pub mod instantiations;
-pub mod pratt;
-pub mod primitive_instances;
-pub mod source_text;
-pub mod spanned_token;
-pub mod specify_section;
-pub mod udp_declaration_and_instantiation;
-pub mod utils;
+pub(crate) mod behavioral_statements;
+pub(crate) mod combinators;
+pub(crate) mod declarations;
+pub(crate) mod error;
+pub(crate) mod expressions;
+pub(crate) mod general;
+pub(crate) mod instantiations;
+pub(crate) mod pratt;
+pub(crate) mod primitive_instances;
+pub(crate) mod source_text;
+pub(crate) mod spanned_token;
+pub(crate) mod specify_section;
+pub(crate) mod udp_declaration_and_instantiation;
+pub(crate) mod utils;
 use crate::*;
-pub use behavioral_statements::*;
-pub use combinators::*;
-pub use declarations::*;
+pub(crate) use behavioral_statements::*;
+pub(crate) use combinators::*;
+pub(crate) use declarations::*;
 pub use error::*;
-pub use expressions::*;
-pub use general::*;
-pub use instantiations::*;
+pub(crate) use expressions::*;
+pub(crate) use general::*;
+pub(crate) use instantiations::*;
 pub(crate) use pratt::*;
-pub use primitive_instances::*;
+pub(crate) use primitive_instances::*;
 use scarf_syntax::*;
-pub use source_text::*;
+pub(crate) use source_text::*;
 pub use spanned_token::*;
-pub use specify_section::*;
-pub use udp_declaration_and_instantiation::*;
-pub use utils::*;
+pub(crate) use specify_section::*;
+pub(crate) use udp_declaration_and_instantiation::*;
+pub(crate) use utils::*;
 use winnow::error::{ErrMode, ParserError};
 
 pub fn parse<'s>(

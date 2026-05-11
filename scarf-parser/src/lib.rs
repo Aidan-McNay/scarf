@@ -1,15 +1,30 @@
 // =======================================================================
 // lib.rs
 // =======================================================================
-// The top-level interface for parsing a SystemVerilog source file
+//! A SystemVerilog preprocessor and parser
+//!
+//! `scarf-parser` provides capabilities for transformting a SystemVerilog
+//! source file into a CST compliant with IEEE 1800-2023, with an
+//! emphasis on informative error messages. It can be used as the
+//! front-end for other tools looking to interpret SystemVerilog designs.
+//!
+//! ## Features
+//!
+//!  - `lossless`: Equivalent to the `lossless` feature for [`scarf_syntax`].
+//!    Produces a CST with room for non-trivia nodes, but does not actually
+//!    parse any from provided sources
+//!  - `parse_lossless`: Extends `lossless` to parse non-trivia tokens.
+//!    Due to their arbitrary position in source files, this adds a
+//!    measurable performance decrease, and should only be used if
+//!    newlines/comments are needed.
 
 pub mod lexer;
 pub mod parser;
 pub mod preprocessor;
 use ariadne::ReportBuilder;
-pub use ariadne::{Report, Source, sources};
+pub use ariadne::{Color, Label, Report, ReportKind, Source, sources};
 use lexer::*;
-pub use lexer::{Token, dump_lex, lex, report_lex_errors};
+pub use lexer::{LexedSource, Token, lex};
 use parser::*;
 pub use parser::{SpannedToken, VerboseError, parse};
 pub use preprocessor::*;
@@ -20,15 +35,6 @@ pub mod test;
 pub use scarf_syntax::Span;
 #[cfg(test)]
 pub use test::*;
-
-pub fn lex_to_parse_stream<'s>(
-    input: impl Iterator<Item = (Result<Token<'s>, String>, Span<'s>)>,
-) -> impl Iterator<Item = SpannedToken<'s>> {
-    input.map(|(tok, span)| match tok {
-        Ok(tok) => SpannedToken(tok, span),
-        Err(_) => SpannedToken(Token::Error, span),
-    })
-}
 
 fn get_expansion_string(expansion_depth: u32, is_last: bool) -> String {
     if expansion_depth == 0 {

@@ -1,10 +1,9 @@
 // =======================================================================
-// configs.rs
+// state.rs
 // =======================================================================
-// Configurations for preprocessing
+//! The state and setup of the preprocessor
 
 use crate::*;
-use elsa::FrozenVec;
 use scarf_syntax::SpanRelation;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -20,41 +19,7 @@ const DEFAULT_NETTYPE: DefaultNettype = DefaultNettype::Wire;
 const DEFAULT_UNCONNECTED_DRIVE: UnconnectedDrive =
     UnconnectedDrive::NoUnconnected;
 
-#[derive(Default)]
-pub struct PreprocessorCache<'a> {
-    spans: FrozenVec<Box<Span<'a>>>,
-    strings: FrozenVec<Box<str>>,
-}
-
-impl<'a> PreprocessorCache<'a> {
-    pub fn retain_span(&self, span: Span<'a>) -> &Span<'a> {
-        self.spans.push_get(Box::new(span))
-    }
-    pub fn retain_string(&self, string: String) -> &str {
-        self.strings.push_get(string.into_boxed_str())
-    }
-}
-
-#[derive(Clone)]
-pub struct PreprocessConfigs<'a> {
-    includes: Vec<&'a Path>,
-    defines: Vec<Define<'a>>,
-    timescales: Vec<Timescale<'a>>,
-    default_nettypes: Vec<(DefaultNettype, Span<'a>)>,
-    unconnected_drives: Vec<(UnconnectedDrive, Span<'a>)>,
-    cell_defines: Vec<(bool, Span<'a>)>,
-    line_directives: Vec<LineDirective<'a>>,
-    included_files: HashMap<&'a str, &'a str>,
-    in_define: bool,
-    in_define_arg: bool,
-    pub cache: &'a PreprocessorCache<'a>,
-    pub curr_standard: StandardVersion,
-    pub include_line_directives: bool,
-}
-
-#[derive(Clone, Debug)]
-pub struct SpannedString<'a>(pub &'a str, pub Span<'a>);
-
+/// A preprocessor definition
 #[derive(Clone, Debug)]
 pub struct Define<'a> {
     pub name: SpannedString<'a>,
@@ -62,11 +27,20 @@ pub struct Define<'a> {
 }
 
 impl<'a> Define<'a> {
+    /// Whether the define is from the command line
+    ///
+    /// CLI defines have an empty `file` for their [`Span`]
     pub fn is_from_command_line(&self) -> bool {
         self.name.1.file == ""
     }
 }
 
+/// The body of a preprocessor definition
+///
+/// Defines can either be
+/// - Empty (no associated text)
+/// - Some sequence of tokens
+/// - A function (see [`DefineFunction`])
 #[derive(Clone, Debug)]
 pub enum DefineBody<'a> {
     Empty,
@@ -74,8 +48,10 @@ pub enum DefineBody<'a> {
     Function(DefineFunction<'a>),
 }
 
+/// A preprocessor text macro function
 #[derive(Clone, Debug)]
 pub struct DefineFunction<'a> {
+    /// A list of arguments (possibly with defaults)
     pub args: Vec<(
         SpannedString<'a>,
         Option<(
@@ -83,10 +59,16 @@ pub struct DefineFunction<'a> {
             Vec<SpannedToken<'a>>,
         )>,
     )>,
+    /// The body of the function
     pub body: Option<Vec<SpannedToken<'a>>>,
 }
 
 impl<'a> DefineBody<'a> {
+    /// The tokens associated with a definition
+    ///
+    /// This returns `(tokens, args)`, where `args` is
+    /// some function arguments if the definition is a function,
+    /// and [`None`] if not
     pub fn get_tokens(
         &self,
     ) -> (
@@ -114,33 +96,73 @@ impl<'a> DefineBody<'a> {
     }
 }
 
+/// A line directive found during preprocessing
 #[derive(Clone)]
-struct LineDirective<'a> {
+pub struct LineDirective<'a> {
+    /// The file name indicated in the directive
     pub directive_file_name: &'a str,
+    /// The line number indicated in the directive
     pub directive_line_number: usize,
+    /// The span the directive was found at
     pub original_span: Span<'a>,
+    /// The line number the directive was found at
     pub original_line_num: usize,
 }
 
-impl<'a> PreprocessConfigs<'a> {
-    pub fn new(string_cache: &'a PreprocessorCache<'a>) -> Self {
+/// The current state of the preprocessor
+///
+/// The preprocessor has to keep track of various directives and
+/// how they affect later preprocessing. A [`PreprocessorState`]
+/// encapsulates all of this.
+///
+/// This is primarily meant to be used in the preprocessor, but
+/// can be examined afterwards to glean extra information, such
+/// as which files were included.
+#[derive(Clone)]
+pub struct PreprocessorState<'a> {
+    /// The include paths to search for included files
+    pub includes: Vec<&'a Path>,
+    /// The preprocessor definitions
+    pub defines: Vec<Define<'a>>,
+    /// Any timescales declared with `` `timescale ``
+    pub timescales: Vec<Timescale<'a>>,
+    /// Default nettypes declared with `` `default_nettype ``
+    pub default_nettypes: Vec<(DefaultNettype, Span<'a>)>,
+    /// Unconnected drives declared with `` `unconnected_drive ``
+    /// or `` `nounconnected_drive ``
+    pub unconnected_drives: Vec<(UnconnectedDrive, Span<'a>)>,
+    /// Cell definitions from `` `celldefine `` and `` `endcelldefine ``
+    pub cell_defines: Vec<(bool, Span<'a>)>,
+    /// Line directives declared with `` `line ``
+    pub line_directives: Vec<LineDirective<'a>>,
+    /// The contents of included files (`file_name` -> `content`)
+    pub included_files: HashMap<&'a str, &'a str>,
+    /// The current standard for reserved keywords
+    pub curr_standard: StandardVersion,
+    pub(crate) in_define: bool,
+    pub(crate) in_define_arg: bool,
+}
+
+impl<'a> PreprocessorState<'a> {
+    /// Create a new [`PreprocessorState`]
+    pub fn new(includes: Vec<&'a Path>, defines: Vec<Define<'a>>) -> Self {
         Self {
-            includes: vec![],
-            defines: vec![],
+            includes,
+            defines,
             timescales: vec![],
             default_nettypes: vec![],
             unconnected_drives: vec![],
             cell_defines: vec![],
             line_directives: vec![],
             included_files: HashMap::new(),
-            cache: string_cache,
             curr_standard: StandardVersion::default(),
             in_define: false,
             in_define_arg: false,
-            include_line_directives: false,
         }
     }
     /// Reset all resetable configs
+    ///
+    /// This is called when a `` `resetall `` is encountered
     pub fn reset_all(&mut self, reset_all_span: Span<'a>) {
         self.add_timescale(
             Timescale::new(
@@ -163,7 +185,7 @@ impl<'a> PreprocessConfigs<'a> {
         self.defines.iter().any(|d| d.name.0 == macro_name)
     }
 
-    /// Get the previous definition span, if any
+    /// Get the definition span for a macro, if it's been defined
     pub fn get_define_decl(&self, macro_name: &'a str) -> Option<Span<'a>> {
         match self.defines.iter().find(|d| d.name.0 == macro_name) {
             None => None,
@@ -171,41 +193,61 @@ impl<'a> PreprocessConfigs<'a> {
         }
     }
 
+    /// Called when starting to preprocess a definition
+    ///
+    /// Each call to [`PreprocessorState::enter_define`] should be
+    /// paired with a later call to [`PreprocessorState::exit_define`]
     #[inline]
-    pub fn enter_define(&mut self) -> bool {
+    pub(crate) fn enter_define(&mut self) -> bool {
         let prev_in_define = self.in_define;
         self.in_define = true;
         prev_in_define
     }
 
+    /// Called when stopping preprocessing of a definition
+    ///
+    /// Each call to [`PreprocessorState::enter_define`] should be
+    /// paired with a later call to [`PreprocessorState::exit_define`]
     #[inline]
-    pub fn exit_define(&mut self, prev_in_define: bool) {
+    pub(crate) fn exit_define(&mut self, prev_in_define: bool) {
         self.in_define = prev_in_define;
     }
 
+    /// Whether we're currently preprocessing a definition
     #[inline]
     pub fn in_define(&self) -> bool {
         self.in_define
     }
 
+    /// Called when starting to preprocess a definition argument
+    ///
+    /// Each call to [`PreprocessorState::enter_define_arg`] should be
+    /// paired with a later call to [`PreprocessorState::exit_define_arg`]
     #[inline]
-    pub fn enter_define_arg(&mut self) -> bool {
+    pub(crate) fn enter_define_arg(&mut self) -> bool {
         let prev_in_define_arg = self.in_define_arg;
         self.in_define_arg = true;
         prev_in_define_arg
     }
 
+    /// Called when stopping preprocessing of a definition argument
+    ///
+    /// Each call to [`PreprocessorState::enter_define_arg`] should be
+    /// paired with a later call to [`PreprocessorState::exit_define_arg`]
     #[inline]
-    pub fn exit_define_arg(&mut self, prev_in_define_arg: bool) {
+    pub(crate) fn exit_define_arg(&mut self, prev_in_define_arg: bool) {
         self.in_define_arg = prev_in_define_arg;
     }
 
+    /// Whether we're currently preprocessing a definition argument
     #[inline]
     pub fn in_define_arg(&self) -> bool {
         self.in_define_arg
     }
 
     /// Remove a given macro, evaluating to whether a macro was removed
+    ///
+    /// This is called when a `` `undef `` is encountered
     pub fn undefine(&mut self, macro_name: &'a str) -> bool {
         if let Some(idx) =
             self.defines.iter().position(|d| d.name.0 == macro_name)
@@ -218,6 +260,8 @@ impl<'a> PreprocessConfigs<'a> {
     }
 
     /// Define a new macro
+    ///
+    /// This is called when a `` `define `` is encountered
     pub fn define(
         &mut self,
         macro_name: &'a str,
@@ -231,12 +275,10 @@ impl<'a> PreprocessConfigs<'a> {
         });
     }
 
-    /// Provide a reference to existing defines
-    pub fn defines(&self) -> &Vec<Define<'a>> {
-        &self.defines
-    }
-
     /// Define a new macro from the command line
+    ///
+    /// This is similar to [`PreprocessorState::define`], but
+    /// uses a [`Span`] with no file name
     pub fn command_line_define(
         &mut self,
         macro_name: &'a str,
@@ -253,11 +295,14 @@ impl<'a> PreprocessConfigs<'a> {
     }
 
     /// Undefine all macros
+    ///
+    /// This is called when a `` `undefineall `` is encountered
     pub fn undefineall(&mut self) {
         self.defines = vec![];
     }
 
-    /// Get the tokens for a macro replacement
+    /// Get the ([`Span`], [`DefineBody::get_tokens`]) for a text macro,
+    /// if it exists
     pub fn get_macro_tokens(
         &self,
         macro_name: &'a str,
@@ -276,7 +321,7 @@ impl<'a> PreprocessConfigs<'a> {
         None
     }
 
-    /// Get the full path from an include statement
+    /// Get the full path from an `` `include `` statement
     pub fn get_file_path(&self, include_path: &str) -> Option<PathBuf> {
         for dir_path in &self.includes {
             let full_path = Path::new(dir_path).join(include_path);
@@ -288,11 +333,14 @@ impl<'a> PreprocessConfigs<'a> {
     }
 
     /// Add a compiler directive timescale
+    ///
+    /// This is called when a `` `timescale `` is encountered
     pub fn add_timescale(&mut self, timescale: Timescale<'a>) {
         self.timescales.push(timescale);
     }
 
-    /// Get the correct compiler timescale, based on a span
+    /// Get the correct compiler timescale, based on the [`Span`]
+    /// where a delay is encountered
     pub fn get_timescale(&self, span: &Span<'a>) -> &Timescale<'a> {
         for timescale in self.timescales.iter().rev() {
             if timescale.is_valid(span) {
@@ -304,6 +352,8 @@ impl<'a> PreprocessConfigs<'a> {
     }
 
     /// Add a compiler directive default nettype
+    ///
+    /// This is called when a `` `default_nettype `` is encountered
     pub fn add_default_nettype(
         &mut self,
         def_span: Span<'a>,
@@ -312,7 +362,8 @@ impl<'a> PreprocessConfigs<'a> {
         self.default_nettypes.push((default_nettype, def_span));
     }
 
-    /// Get the correct compiler default nettype, based on a span
+    /// Get the correct compiler default nettype, based on the [`Span`]
+    /// where an implicit nettype is needed
     pub fn get_default_nettype(&self, span: &Span<'a>) -> &DefaultNettype {
         for default_nettype in self.default_nettypes.iter().rev() {
             if default_nettype.1.compare(span) == SpanRelation::Earlier {
@@ -327,19 +378,24 @@ impl<'a> PreprocessConfigs<'a> {
         &mut self,
         file_path: String,
         file_contents: String,
+        cache: &'a PreprocessorCache<'a>,
     ) -> (&'a str, &'a str) {
-        let path = self.cache.retain_string(file_path);
-        let contents = self.cache.retain_string(file_contents);
+        let path = cache.retain_string(file_path);
+        let contents = cache.retain_string(file_contents);
         self.included_files.insert(path, contents);
         (path, contents)
     }
 
     /// Retain a span
-    pub fn retain_span(&mut self, span: Span<'a>) -> &'a Span<'a> {
-        self.cache.retain_span(span)
+    pub(crate) fn retain_span(
+        &mut self,
+        span: Span<'a>,
+        cache: &'a PreprocessorCache<'a>,
+    ) -> &'a Span<'a> {
+        cache.retain_span(span)
     }
 
-    /// Get the included file contents as a vector
+    /// Get the included files as a [`Vec`] of (name, content) tuples
     pub fn included_files(&self) -> Vec<(String, String)> {
         self.included_files
             .iter()
@@ -348,6 +404,9 @@ impl<'a> PreprocessConfigs<'a> {
     }
 
     /// Add an unconnected drive
+    ///
+    /// This is called when a `` `unconnected_drive `` or a
+    /// `` `nounconnected_drive `` is encountered
     pub fn add_unconnected_drive(
         &mut self,
         unconnected_drive_span: Span<'a>,
@@ -357,7 +416,8 @@ impl<'a> PreprocessConfigs<'a> {
             .push((unconnected_drive, unconnected_drive_span));
     }
 
-    /// Get the unconnected drive based on a span
+    /// Get the unconnected drive based on the [`Span`] where an
+    /// unconnected net is encountered
     pub fn get_unconnected_drive(&self, span: &Span<'a>) -> &UnconnectedDrive {
         for unconnected_drive in self.unconnected_drives.iter().rev() {
             if unconnected_drive.1.compare(span) == SpanRelation::Earlier {
@@ -368,11 +428,14 @@ impl<'a> PreprocessConfigs<'a> {
     }
 
     /// Add a cell define declaration
+    ///
+    /// This is called when a `` `celldefine `` is encountered
     pub fn add_cell_define(&mut self, is_cell_define: bool, span: Span<'a>) {
         self.cell_defines.push((is_cell_define, span));
     }
 
-    /// Determine whether a module is a cell module, based on a span
+    /// Determine whether a module is a cell module, based on the [`Span`]
+    /// of the module declaration
     pub fn is_cell_module(&self, declaration_span: &Span<'a>) -> bool {
         for cell_define in self.cell_defines.iter().rev() {
             if cell_define.1.compare(declaration_span) == SpanRelation::Earlier
@@ -383,7 +446,9 @@ impl<'a> PreprocessConfigs<'a> {
         false
     }
 
-    /// Add a line directive to affect future __LINE__/__FILE__ directives
+    /// Add a line directive
+    ///
+    /// This is called when a `` `line `` is encountered
     pub fn add_line_directive(
         &mut self,
         file_name: &'a str,
@@ -403,7 +468,7 @@ impl<'a> PreprocessConfigs<'a> {
         self.line_directives.push(new_line_directive);
     }
 
-    /// Get the file from a Span
+    /// Get the file name from a [`Span`], factoring in `` `line `` directives
     pub fn get_line_directive_file(&self, span: &Span<'a>) -> &'a str {
         let Some(line_directive) = self
             .line_directives
@@ -421,8 +486,12 @@ impl<'a> PreprocessConfigs<'a> {
         line_directive.directive_file_name
     }
 
-    /// Get the line number of a Span
-    pub fn get_line_directive_line(&mut self, span: &Span<'a>) -> &'a str {
+    /// Get the line number of a [`Span`], factoring in `` `line `` directives
+    pub fn get_line_directive_line(
+        &mut self,
+        span: &Span<'a>,
+        cache: &'a PreprocessorCache<'a>,
+    ) -> &'a str {
         let offset = span.bytes.end;
         let file_contents: &str = self.included_files.get(span.file).unwrap();
         let line_num = file_contents[..offset].lines().count();
@@ -437,19 +506,24 @@ impl<'a> PreprocessConfigs<'a> {
             })
             .next()
         else {
-            return self.cache.retain_string(line_num.to_string());
+            return cache.retain_string(line_num.to_string());
         };
         let new_line_num = (line_num + line_directive.directive_line_number)
             - (line_directive.original_line_num + 1);
-        self.cache.retain_string(new_line_num.to_string())
+        cache.retain_string(new_line_num.to_string())
     }
 
-    pub fn get_slice(&self, span: &Span<'a>) -> Option<&'a str> {
+    /// Get the text referenced by a [`Span`]
+    pub(crate) fn get_slice(&self, span: &Span<'a>) -> Option<&'a str> {
         let file_contents: &str = self.included_files.get(span.file)?;
         Some(&file_contents[span.bytes.start..span.bytes.end])
     }
 
-    pub fn retain_string(&mut self, string: String) -> &'a str {
-        self.cache.retain_string(string)
+    pub fn retain_string(
+        &mut self,
+        string: String,
+        cache: &'a PreprocessorCache<'a>,
+    ) -> &'a str {
+        cache.retain_string(string)
     }
 }

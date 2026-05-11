@@ -61,7 +61,7 @@ pub fn output_declaration_parser<'s>(
     let variable_output_declaration_parser = (
         token(Token::Output),
         variable_port_type_parser,
-        list_of_variable_identifiers_parser,
+        list_of_variable_port_identifiers_parser,
     )
         .map(|(a, b, c)| {
             OutputDeclaration::VariableOutputDeclaration(Box::new((a, b, c)))

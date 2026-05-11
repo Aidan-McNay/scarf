@@ -1,13 +1,17 @@
 // =======================================================================
 // error.rs
 // =======================================================================
-// Warnings/errors that are thrown by the preprocessor
+//! Warnings/errors that are thrown by the preprocessor
 
 use crate::*;
 use ariadne::ReportBuilder;
 
 const NOTE_COLOR: Color = Color::Fixed(81);
 
+/// An error encountered during preprocessing
+///
+/// As preprocessing can affect the interpretation of later
+/// source code, these errors are irrecoverable
 #[derive(Debug)]
 pub enum PreprocessorError<'a> {
     // Errors that can be exposed outside preprocess

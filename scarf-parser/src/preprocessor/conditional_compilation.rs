@@ -10,29 +10,6 @@ use crate::*;
 pub struct TextMacroIdentifier<'a>(pub &'a str, pub Span<'a>);
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct IfdefDirective<'a>(
-    pub Span<'a>, // `ifdef
-    pub IfdefCondition<'a>,
-);
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct IfndefDirective<'a>(
-    pub Span<'a>, // `ifndef
-    pub IfdefCondition<'a>,
-);
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct ElsifDirective<'a>(
-    pub Span<'a>, // `elsif
-    pub IfdefCondition<'a>,
-);
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct EndifDirective<'a>(
-    pub Span<'a>, // `endif
-);
-
-#[derive(Clone, Debug, PartialEq)]
 pub enum IfdefCondition<'a> {
     TextMacro(Box<TextMacroIdentifier<'a>>),
     ParenMacro(
@@ -278,56 +255,64 @@ fn get_ifdef_macro_expression<'s>(
 
 fn ifdef_condition_true<'s>(
     condition: IfdefCondition<'s>,
-    configs: &PreprocessConfigs<'s>,
+    state: &PreprocessorState<'s>,
+    cache: &'s PreprocessorCache<'s>,
 ) -> bool {
     match condition {
         IfdefCondition::TextMacro(inner_box) => {
             let TextMacroIdentifier(text, _) = *inner_box;
-            configs.is_defined(text)
+            state.is_defined(text)
         }
         IfdefCondition::ParenMacro(inner_box) => match *inner_box {
-            (_, expression, _) => ifdef_expression_true(expression, configs),
+            (_, expression, _) => {
+                ifdef_expression_true(expression, state, cache)
+            }
         },
     }
 }
 
 fn ifdef_expression_true<'s>(
     expression: IfdefMacroExpression<'s>,
-    configs: &PreprocessConfigs<'s>,
+    state: &PreprocessorState<'s>,
+    cache: &'s PreprocessorCache<'s>,
 ) -> bool {
     match expression {
         IfdefMacroExpression::Text(inner_box) => {
             let TextMacroIdentifier(text, _) = *inner_box;
-            configs.is_defined(text)
+            state.is_defined(text)
         }
         IfdefMacroExpression::Paren(inner_box) => {
             let (_, expression, _) = *inner_box;
-            ifdef_expression_true(expression, configs)
+            ifdef_expression_true(expression, state, cache)
         }
         IfdefMacroExpression::Not(inner_box) => {
             let (_, expression) = *inner_box;
-            !ifdef_expression_true(expression, configs)
+            !ifdef_expression_true(expression, state, cache)
         }
         IfdefMacroExpression::Operator(inner_box) => {
             let (first_expr, operator, second_expr) = *inner_box;
             match operator {
                 BinaryLogicalOperator::AmpAmp(_) => {
-                    ifdef_expression_true(first_expr, configs)
-                        && ifdef_expression_true(second_expr, configs)
+                    ifdef_expression_true(first_expr, state, cache)
+                        && ifdef_expression_true(second_expr, state, cache)
                 }
                 BinaryLogicalOperator::PipePipe(_) => {
-                    ifdef_expression_true(first_expr, configs)
-                        || ifdef_expression_true(second_expr, configs)
+                    ifdef_expression_true(first_expr, state, cache)
+                        || ifdef_expression_true(second_expr, state, cache)
                 }
                 BinaryLogicalOperator::Implication(_) => {
-                    (!ifdef_expression_true(first_expr, configs))
-                        || ifdef_expression_true(second_expr, configs)
+                    (!ifdef_expression_true(first_expr, state, cache))
+                        || ifdef_expression_true(second_expr, state, cache)
                 }
                 BinaryLogicalOperator::Equivalence(_) => {
-                    ((!ifdef_expression_true(first_expr.clone(), configs))
-                        || ifdef_expression_true(second_expr.clone(), configs))
-                        && ((!ifdef_expression_true(second_expr, configs))
-                            || ifdef_expression_true(first_expr, configs))
+                    ((!ifdef_expression_true(first_expr.clone(), state, cache))
+                        || ifdef_expression_true(
+                            second_expr.clone(),
+                            state,
+                            cache,
+                        ))
+                        && ((!ifdef_expression_true(second_expr, state, cache))
+                            || ifdef_expression_true(first_expr, state, cache))
                 }
             }
         }
@@ -337,17 +322,18 @@ fn ifdef_expression_true<'s>(
 pub fn preprocess_ifdef<'s>(
     src: &mut TokenIterator<'s, impl Iterator<Item = SpannedToken<'s>>>,
     dest: &mut Vec<SpannedToken<'s>>,
-    configs: &mut PreprocessConfigs<'s>,
+    state: &mut PreprocessorState<'s>,
+    cache: &'s PreprocessorCache<'s>,
     ifdef_span: Span<'s>,
     is_ifdef: bool, // False for ifndef
 ) -> Result<(), PreprocessorError<'s>> {
     let ifdef_condition = get_ifdef_condition(src, ifdef_span.clone())?;
     let mut valid_condition_found =
-        ifdef_condition_true(ifdef_condition, configs) ^ !is_ifdef;
+        ifdef_condition_true(ifdef_condition, state, cache) ^ !is_ifdef;
     let mut curr_condition_valid = valid_condition_found;
     loop {
         let result = if curr_condition_valid {
-            preprocess(src, dest, configs)
+            preprocess_helper(src, dest, state, cache)
         } else {
             preprocess_untaken_conditional(src)
         };
@@ -370,14 +356,14 @@ pub fn preprocess_ifdef<'s>(
                     curr_condition_valid = false;
                 } else {
                     curr_condition_valid =
-                        ifdef_condition_true(ifdef_condition, configs);
+                        ifdef_condition_true(ifdef_condition, state, cache);
                     valid_condition_found = curr_condition_valid;
                 };
                 ()
             }
             Err(PreprocessorError::Else(else_span)) => {
                 let result = if !valid_condition_found {
-                    preprocess(src, dest, configs)
+                    preprocess_helper(src, dest, state, cache)
                 } else {
                     preprocess_untaken_conditional(src)
                 };

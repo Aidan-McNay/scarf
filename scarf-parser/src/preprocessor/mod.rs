@@ -1,33 +1,48 @@
 // =======================================================================
 // mod.rs
 // =======================================================================
-// The top-level interface for the preprocessor
+//! Preprocessing a token stream, elaborating compiler directives
 
-pub mod conditional_compilation;
-pub mod configs;
-pub mod define;
-pub mod error;
-pub mod implicit_nettype;
-pub mod include;
-pub mod keywords;
-pub mod line;
-pub mod text_macro;
-pub mod timescale;
-pub mod unconnected;
+pub mod cache;
+pub(crate) mod conditional_compilation;
+pub(crate) mod define;
+pub(crate) mod error;
+pub(crate) mod implicit_nettype;
+pub(crate) mod include;
+pub(crate) mod keywords;
+pub(crate) mod line;
+pub mod state;
+pub(crate) mod text_macro;
+pub(crate) mod timescale;
+pub(crate) mod unconnected;
 use crate::*;
-pub use conditional_compilation::*;
-pub use configs::*;
-pub use define::*;
+pub use cache::*;
+use conditional_compilation::*;
+use define::*;
 pub use error::*;
-pub use implicit_nettype::*;
-pub use include::*;
-pub use keywords::*;
-pub use line::*;
+pub(crate) use implicit_nettype::DefaultNettype;
+use implicit_nettype::*;
+use include::*;
+use keywords::*;
+use line::*;
+pub use state::*;
 use std::collections::VecDeque;
-pub use text_macro::*;
-pub use timescale::*;
-pub use unconnected::*;
+use text_macro::*;
+use timescale::*;
+pub(crate) use timescale::{Timescale, TimescaleUnit, TimescaleValue};
+pub(crate) use unconnected::UnconnectedDrive;
+use unconnected::*;
 
+/// A string and its associated [`Span`] in the source files
+#[derive(Clone, Debug)]
+pub struct SpannedString<'a>(pub &'a str, pub Span<'a>);
+
+/// A peekable, extendable iterator over tokens.
+///
+/// This iterator extends `<T>` by keeping track of an additional
+/// stack of tokens at the front, allowing users to peek the next
+/// token, as well as push tokens to be iterated on next (such as
+/// when expanding a preprocessor definition)
 pub struct TokenIterator<'s, T: Iterator<Item = SpannedToken<'s>>> {
     iter: T,
     extras: VecDeque<SpannedToken<'s>>,
@@ -71,13 +86,14 @@ impl<'s, T: Iterator<Item = SpannedToken<'s>>> TokenIterator<'s, T> {
     }
 }
 
-pub fn preprocess<'s>(
+pub(crate) fn preprocess_helper<'s>(
     src: &mut TokenIterator<'s, impl Iterator<Item = SpannedToken<'s>>>,
     dest: &mut Vec<SpannedToken<'s>>,
-    configs: &mut PreprocessConfigs<'s>,
+    state: &mut PreprocessorState<'s>,
+    cache: &'s PreprocessorCache<'s>,
 ) -> Result<(), PreprocessorError<'s>> {
     let mut enclosures: Vec<Token<'s>> = vec![];
-    if configs.in_define() || configs.in_define_arg() {
+    if state.in_define() || state.in_define_arg() {
         while let Some(mut spanned_token) = src.next() {
             match spanned_token.0 {
                 Token::Bslash => loop {
@@ -103,19 +119,19 @@ pub fn preprocess<'s>(
                         spanned_token.1,
                     ));
                 }
-                Token::Paren if configs.in_define_arg() => {
+                Token::Paren if state.in_define_arg() => {
                     enclosures.push(Token::Paren);
                     dest.push(spanned_token);
                 }
-                Token::Bracket if configs.in_define_arg() => {
+                Token::Bracket if state.in_define_arg() => {
                     enclosures.push(Token::Bracket);
                     dest.push(spanned_token);
                 }
-                Token::Brace if configs.in_define_arg() => {
+                Token::Brace if state.in_define_arg() => {
                     enclosures.push(Token::Brace);
                     dest.push(spanned_token);
                 }
-                Token::EParen if configs.in_define_arg() => {
+                Token::EParen if state.in_define_arg() => {
                     match enclosures.pop() {
                         Some(Token::Paren) => dest.push(spanned_token),
                         None => {
@@ -134,7 +150,7 @@ pub fn preprocess<'s>(
                         }
                     }
                 }
-                Token::EBracket if configs.in_define_arg() => {
+                Token::EBracket if state.in_define_arg() => {
                     match enclosures.pop() {
                         Some(Token::Bracket) => dest.push(spanned_token),
                         _ => {
@@ -146,7 +162,7 @@ pub fn preprocess<'s>(
                         }
                     }
                 }
-                Token::EBrace if configs.in_define_arg() => {
+                Token::EBrace if state.in_define_arg() => {
                     match enclosures.pop() {
                         Some(Token::Brace) => dest.push(spanned_token),
                         _ => {
@@ -158,7 +174,7 @@ pub fn preprocess<'s>(
                         }
                     }
                 }
-                Token::Comma if configs.in_define_arg() => {
+                Token::Comma if state.in_define_arg() => {
                     if enclosures.is_empty() {
                         return Err(PreprocessorError::EndOfFunctionArgument(
                             spanned_token,
@@ -168,10 +184,11 @@ pub fn preprocess<'s>(
                     }
                 }
                 Token::BlockComment(_) | Token::OnelineComment(_) => (),
-                Token::TextMacro(macro_name) if configs.in_define_arg() => {
+                Token::TextMacro(macro_name) if state.in_define_arg() => {
                     preprocess_macro(
                         src,
-                        configs,
+                        state,
+                        cache,
                         (macro_name, spanned_token.1),
                     )?;
                 }
@@ -183,25 +200,27 @@ pub fn preprocess<'s>(
         while let Some(spanned_token) = src.next() {
             match spanned_token.0 {
                 Token::DirResetall => {
-                    configs.reset_all(spanned_token.1);
+                    state.reset_all(spanned_token.1);
                 }
                 Token::DirInclude => {
-                    let include_span = configs.retain_span(spanned_token.1);
-                    preprocess_include(src, dest, configs, include_span)?;
+                    let include_span =
+                        state.retain_span(spanned_token.1, cache);
+                    preprocess_include(src, dest, state, cache, include_span)?;
                 }
                 Token::DirUndefineall => {
-                    configs.undefineall();
+                    state.undefineall();
                 }
                 Token::DirBeginKeywords => {
                     preprocess_keyword_standard(
                         src,
                         dest,
-                        configs,
+                        state,
+                        cache,
                         spanned_token.1,
                     )?;
                 }
                 Token::DirDefine => {
-                    preprocess_define(src, configs, spanned_token.1)?;
+                    preprocess_define(src, state, cache, spanned_token.1)?;
                 }
                 Token::DirElse => {
                     return Err(PreprocessorError::Else(spanned_token.1));
@@ -221,7 +240,8 @@ pub fn preprocess<'s>(
                     preprocess_ifdef(
                         src,
                         dest,
-                        configs,
+                        state,
+                        cache,
                         spanned_token.1,
                         true,
                     )?;
@@ -230,7 +250,8 @@ pub fn preprocess<'s>(
                     preprocess_ifdef(
                         src,
                         dest,
-                        configs,
+                        state,
+                        cache,
                         spanned_token.1,
                         false,
                     )?;
@@ -238,47 +259,49 @@ pub fn preprocess<'s>(
                 Token::TextMacro(macro_name) => {
                     preprocess_macro(
                         src,
-                        configs,
+                        state,
+                        cache,
                         (macro_name, spanned_token.1),
                     )?;
                 }
                 Token::DirUndef => {
-                    preprocess_undefine(src, configs, spanned_token.1)?;
+                    preprocess_undefine(src, state, spanned_token.1)?;
                 }
                 Token::DirTimescale => {
-                    preprocess_timescale(src, configs, spanned_token.1)?;
+                    preprocess_timescale(src, state, cache, spanned_token.1)?;
                 }
                 Token::DirDefaultNettype => {
-                    preprocess_default_nettype(src, configs, spanned_token.1)?;
-                }
-                Token::DirUnconnectedDrive => {
-                    preprocess_unconnected_drive(
+                    preprocess_default_nettype(
                         src,
-                        configs,
+                        state,
+                        cache,
                         spanned_token.1,
                     )?;
                 }
+                Token::DirUnconnectedDrive => {
+                    preprocess_unconnected_drive(src, state, spanned_token.1)?;
+                }
                 Token::DirNounconnectedDrive => {
-                    preprocess_nounconnected_drive(configs, spanned_token.1)?;
+                    preprocess_nounconnected_drive(state, spanned_token.1)?;
                 }
                 Token::DirCelldefine => {
-                    configs.add_cell_define(true, spanned_token.1);
+                    state.add_cell_define(true, spanned_token.1);
                 }
                 Token::DirEndcelldefine => {
-                    configs.add_cell_define(false, spanned_token.1);
+                    state.add_cell_define(false, spanned_token.1);
                 }
                 Token::DirLine => {
-                    preprocess_line(src, configs, spanned_token.1)?;
+                    preprocess_line(src, state, cache, spanned_token.1)?;
                 }
                 Token::DirUnderscoreFile => dest.push(SpannedToken(
                     Token::StringLiteral(
-                        configs.get_line_directive_file(&spanned_token.1),
+                        state.get_line_directive_file(&spanned_token.1),
                     ),
                     spanned_token.1,
                 )),
                 Token::DirUnderscoreLine => dest.push(SpannedToken(
                     Token::UnsignedNumber(
-                        configs.get_line_directive_line(&spanned_token.1),
+                        state.get_line_directive_line(&spanned_token.1, cache),
                     ),
                     spanned_token.1,
                 )),
@@ -290,7 +313,7 @@ pub fn preprocess<'s>(
                         dest.push(spanned_token)
                     }
                 }
-                token if token.keyword_replace(&configs.curr_standard) => {
+                token if token.keyword_replace(&state.curr_standard) => {
                     let new_token = SpannedToken(
                         Token::SimpleIdentifier(token.as_str()),
                         spanned_token.1,
@@ -306,7 +329,8 @@ pub fn preprocess<'s>(
 
 pub(crate) fn preprocess_single<'s>(
     src: &mut TokenIterator<'s, impl Iterator<Item = SpannedToken<'s>>>,
-    configs: &mut PreprocessConfigs<'s>,
+    state: &mut PreprocessorState<'s>,
+    cache: &'s PreprocessorCache<'s>,
 ) -> Result<Option<SpannedToken<'s>>, PreprocessorError<'s>> {
     loop {
         match src.next() {
@@ -315,9 +339,20 @@ pub(crate) fn preprocess_single<'s>(
             }
             Some(SpannedToken(Token::BlockComment(_), _)) => (),
             Some(SpannedToken(Token::TextMacro(macro_name), macro_span)) => {
-                preprocess_macro(src, configs, (macro_name, macro_span))?;
+                preprocess_macro(src, state, cache, (macro_name, macro_span))?;
             }
             other => break Ok(other),
         }
     }
+}
+
+pub fn preprocess<'s>(
+    src: impl Iterator<Item = SpannedToken<'s>>,
+    state: &mut PreprocessorState<'s>,
+    cache: &'s PreprocessorCache<'s>,
+) -> Result<Vec<SpannedToken<'s>>, PreprocessorError<'s>> {
+    let mut token_iter = TokenIterator::new(src);
+    let mut dest = Vec::new();
+    preprocess_helper(&mut token_iter, &mut dest, state, cache)?;
+    Ok(dest)
 }

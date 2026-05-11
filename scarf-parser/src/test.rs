@@ -8,7 +8,7 @@ use scarf_syntax::*;
 #[macro_export]
 macro_rules! check_lexer {
     ($input:expr, $expected:expr) => {{
-        let input = lex($input, "<test>", None)
+        let input = lex($input, "<test>")
             .map(|a| a.0.unwrap())
             .collect::<Vec<_>>();
         assert_eq!(input, $expected)
@@ -18,18 +18,16 @@ macro_rules! check_lexer {
 #[macro_export]
 macro_rules! check_preprocessor {
     ($input:expr, $expected:expr) => {{
-        let input = lex_to_parse_stream(lex($input, "<test>", None))
-            .collect::<Vec<_>>();
-        let string_cache = PreprocessorCache::default();
-        let mut configs = PreprocessConfigs::new(&string_cache);
-        let mut preprocessed_stream: Vec<SpannedToken<'_>> = vec![];
+        let input = lex($input, "<test>").tokens().collect::<Vec<_>>();
+        let mut state = PreprocessorState::new(vec![], vec![]);
+        let cache = PreprocessorCache::new();
         let preprocess_result = preprocess(
             &mut TokenIterator::new(input.into_iter()),
-            &mut preprocessed_stream,
-            &mut configs,
+            &mut state,
+            &cache,
         );
         match preprocess_result {
-            Ok(()) => assert_eq!(preprocessed_stream, $expected),
+            Ok(result) => assert_eq!(result, $expected),
             Err(err) => panic!("{:?}", err),
         }
     }};
@@ -38,8 +36,7 @@ macro_rules! check_preprocessor {
 #[macro_export]
 macro_rules! apply_parser {
     ($input:literal, $parser:ident, $storage:expr) => {{
-        *$storage = lex_to_parse_stream(lex($input, "<test>", None))
-            .collect::<Vec<_>>();
+        *$storage = lex($input, "<test>").tokens().collect::<Vec<_>>();
         let mut tokens = Tokens {
             input: TokenSlice::new(&$storage[..]),
             state: VerboseError::default(),
@@ -51,8 +48,7 @@ macro_rules! apply_parser {
 #[macro_export]
 macro_rules! check_parser {
     ($input:literal, $parser:ident, $expected:expr) => {{
-        let input = lex_to_parse_stream(lex($input, "<test>", None))
-            .collect::<Vec<_>>();
+        let input = lex($input, "<test>").tokens().collect::<Vec<_>>();
         let mut tokens = Tokens {
             input: TokenSlice::new(&input[..]),
             state: VerboseError::default(),

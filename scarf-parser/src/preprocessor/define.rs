@@ -57,7 +57,8 @@ fn get_define_name<'s>(
 fn get_define_function_args<'s>(
     src: &mut TokenIterator<'s, impl Iterator<Item = SpannedToken<'s>>>,
     define_name: &'s str,
-    configs: &mut PreprocessConfigs<'s>,
+    state: &mut PreprocessorState<'s>,
+    cache: &'s PreprocessorCache<'s>,
 ) -> Result<
     Option<(
         Span<'s>,
@@ -86,7 +87,8 @@ fn get_define_function_args<'s>(
                 let mut next_arg_token = match get_define_function_arg(
                     src,
                     &mut function_args,
-                    configs,
+                    state,
+                    cache,
                     define_name,
                     &mut started_defaults,
                     paren_span.clone(),
@@ -163,7 +165,8 @@ fn get_define_function_arg<'s>(
         SpannedString<'s>,
         Option<(Span<'s>, Vec<SpannedToken<'s>>)>,
     )>,
-    configs: &mut PreprocessConfigs<'s>,
+    state: &mut PreprocessorState<'s>,
+    cache: &'s PreprocessorCache<'s>,
     define_name: &'s str,
     started_defaults: &mut Option<SpannedString<'s>>,
     paren_span: Span<'s>,
@@ -215,11 +218,11 @@ fn get_define_function_arg<'s>(
         }
     };
     let mut default_arg_text: Vec<SpannedToken<'s>> = vec![];
-    let prev_in_define = configs.enter_define();
-    let prev_in_define_arg = configs.enter_define_arg();
-    let result = preprocess(src, &mut default_arg_text, configs);
-    configs.exit_define(prev_in_define);
-    configs.exit_define_arg(prev_in_define_arg);
+    let prev_in_define = state.enter_define();
+    let prev_in_define_arg = state.enter_define_arg();
+    let result = preprocess_helper(src, &mut default_arg_text, state, cache);
+    state.exit_define(prev_in_define);
+    state.exit_define_arg(prev_in_define_arg);
     match result {
         Ok(()) => Err(PreprocessorError::IncompleteDirectiveWithToken(
             SpannedToken(Token::Paren, paren_span),
@@ -235,12 +238,13 @@ fn get_define_function_arg<'s>(
 
 fn get_define_body<'s>(
     src: &mut TokenIterator<'s, impl Iterator<Item = SpannedToken<'s>>>,
-    configs: &mut PreprocessConfigs<'s>,
+    state: &mut PreprocessorState<'s>,
+    cache: &'s PreprocessorCache<'s>,
 ) -> Result<Option<Vec<SpannedToken<'s>>>, PreprocessorError<'s>> {
     let mut define_body: Vec<SpannedToken<'s>> = vec![];
-    let prev_in_define = configs.enter_define();
-    let result = preprocess(src, &mut define_body, configs);
-    configs.exit_define(prev_in_define);
+    let prev_in_define = state.enter_define();
+    let result = preprocess_helper(src, &mut define_body, state, cache);
+    state.exit_define(prev_in_define);
     match result {
         Ok(()) => Ok(Some(define_body)),
         Err(PreprocessorError::NewlineInDefine(_)) => Ok(Some(define_body)),
@@ -250,19 +254,21 @@ fn get_define_body<'s>(
 
 pub fn preprocess_define<'s>(
     src: &mut TokenIterator<'s, impl Iterator<Item = SpannedToken<'s>>>,
-    configs: &mut PreprocessConfigs<'s>,
+    state: &mut PreprocessorState<'s>,
+    cache: &'s PreprocessorCache<'s>,
     define_span: Span<'s>,
 ) -> Result<(), PreprocessorError<'s>> {
     let define_name = get_define_name(src, define_span)?;
-    if let Some(prev_def_span) = configs.get_define_decl(define_name.0) {
+    if let Some(prev_def_span) = state.get_define_decl(define_name.0) {
         return Err(PreprocessorError::RedefinedMacro((
             define_name.0,
             define_name.1,
             prev_def_span,
         )));
     }
-    let function_args = get_define_function_args(src, define_name.0, configs)?;
-    let define_text = get_define_body(src, configs)?;
+    let function_args =
+        get_define_function_args(src, define_name.0, state, cache)?;
+    let define_text = get_define_body(src, state, cache)?;
     let (define_body, define_span) = match function_args {
         Some((end_span, arg_vec)) => {
             let mut overall_span = define_name.1;
@@ -280,17 +286,17 @@ pub fn preprocess_define<'s>(
             None => (DefineBody::Empty, define_name.1),
         },
     };
-    configs.define(define_name.0, define_span, define_body);
+    state.define(define_name.0, define_span, define_body);
     Ok(())
 }
 
 pub fn preprocess_undefine<'s>(
     src: &mut TokenIterator<'s, impl Iterator<Item = SpannedToken<'s>>>,
-    configs: &mut PreprocessConfigs<'s>,
+    state: &mut PreprocessorState<'s>,
     define_span: Span<'s>,
 ) -> Result<(), PreprocessorError<'s>> {
     let undefine_name = get_define_name(src, define_span)?;
-    if !configs.undefine(undefine_name.0) {
+    if !state.undefine(undefine_name.0) {
         Err(PreprocessorError::NotPreviouslyDefinedMacro((
             undefine_name.0,
             undefine_name.1,

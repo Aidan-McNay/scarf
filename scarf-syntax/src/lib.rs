@@ -42,27 +42,16 @@
 
 include!(concat!(env!("OUT_DIR"), "/nodes.rs"));
 
-/// CST Nodes from 1800-2023 A.6
 pub mod behavioral_statements;
-/// CST Nodes from 1800-2023 A.2
 pub mod declarations;
-/// CST Nodes from 1800-2023 A.8
 pub mod expressions;
-/// CST Nodes from 1800-2023 A.9
 pub mod general;
-/// CST Nodes from 1800-2023 A.4
 pub mod instantiations;
-/// Iterating over a CST
 pub mod iter;
-/// Extra metadata attached to leaf nodes to encode a CST
 pub mod metadata;
-/// CST Nodes from 1800-2023 A.3
 pub mod primitive_instances;
-/// CST Nodes from 1800-2023 A.1
 pub mod source_text;
-/// CST Nodes from 1800-2023 A.7
 pub mod specify_section;
-/// CST Nodes from 1800-2023 A.5
 pub mod udp_declaration_and_instantiation;
 pub use behavioral_statements::*;
 pub use declarations::*;

@@ -1,7 +1,7 @@
 // =======================================================================
 // mod.rs
 // =======================================================================
-// CST Nodes from 1800-2023 A.2
+//! CST Nodes from 1800-2023 A.2
 pub mod assertion_declarations;
 pub mod block_item_declarations;
 pub mod covergroup_declarations;

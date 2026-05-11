@@ -9,7 +9,8 @@ use std::vec::IntoIter;
 
 fn get_text_macro_args<'s>(
     src: &mut TokenIterator<'s, impl Iterator<Item = SpannedToken<'s>>>,
-    configs: &mut PreprocessConfigs<'s>,
+    state: &mut PreprocessorState<'s>,
+    cache: &'s PreprocessorCache<'s>,
     define_span: &Span<'s>,
     text_macro: (&'s str, Span<'s>),
 ) -> Result<(Vec<Vec<SpannedToken<'s>>>, Span<'s>), PreprocessorError<'s>> {
@@ -30,9 +31,9 @@ fn get_text_macro_args<'s>(
     let mut arg_vec: Vec<Vec<SpannedToken<'s>>> = vec![];
     let end_span = loop {
         let mut new_arg: Vec<SpannedToken<'s>> = vec![];
-        let prev_in_define_arg = configs.enter_define_arg();
-        let result = preprocess(src, &mut new_arg, configs);
-        configs.exit_define_arg(prev_in_define_arg);
+        let prev_in_define_arg = state.enter_define_arg();
+        let result = preprocess_helper(src, &mut new_arg, state, cache);
+        state.exit_define_arg(prev_in_define_arg);
         match result {
             Ok(()) => {
                 return Err(PreprocessorError::IncompleteDirective(paren_span));
@@ -212,11 +213,11 @@ fn get_string_substitute<'a>(
 
 fn get_replacement_string<'a>(
     mut initial_string: String,
-    configs: &PreprocessConfigs<'a>,
+    state: &PreprocessorState<'a>,
     arguments: &HashMap<&'a str, (Span<'a>, Vec<SpannedToken<'a>>)>,
 ) -> Result<String, PreprocessorError<'a>> {
     // Replace definitions
-    for define in configs.defines() {
+    for define in &state.defines {
         let define_id = format! {"`{}", define.name.0};
         if initial_string.contains(&define_id) {
             let replacement_string = match &define.body {
@@ -257,7 +258,8 @@ fn get_replacement_string<'a>(
 fn replace_macro_tokens<'a>(
     original_stream: IntoIter<SpannedToken<'a>>,
     arguments: HashMap<&'a str, (Span<'a>, Vec<SpannedToken<'a>>)>,
-    configs: &mut PreprocessConfigs<'a>,
+    state: &mut PreprocessorState<'a>,
+    cache: &'a PreprocessorCache<'a>,
 ) -> Result<Vec<SpannedToken<'a>>, PreprocessorError<'a>> {
     let mut result_vec = vec![];
     for token in original_stream {
@@ -286,19 +288,20 @@ fn replace_macro_tokens<'a>(
                 }
                 result_vec.push(SpannedToken(
                     Token::SimpleIdentifier(
-                        configs.retain_string(resulting_identifier),
+                        state.retain_string(resulting_identifier, cache),
                     ),
                     span,
                 ));
             }
             SpannedToken(Token::PreprocessorStringLiteral(id), span) => {
                 result_vec.push(SpannedToken(
-                    Token::StringLiteral(configs.retain_string(
+                    Token::StringLiteral(state.retain_string(
                         get_replacement_string(
                             id.to_string(),
-                            configs,
+                            state,
                             &arguments,
                         )?,
+                        cache,
                     )),
                     span,
                 ));
@@ -309,13 +312,14 @@ fn replace_macro_tokens<'a>(
             ) => {
                 result_vec.push(SpannedToken(
                     Token::TripleQuoteStringLiteral(
-                        configs.retain_string(
+                        state.retain_string(
                             get_replacement_string(
                                 id.to_string(),
-                                configs,
+                                state,
                                 &arguments,
                             )?
                             .replace("\\\n", "\n"),
+                            cache,
                         ),
                     ),
                     span,
@@ -363,16 +367,18 @@ impl<'a> SpanReplacer<'a> {
 
 pub fn preprocess_macro<'s>(
     src: &mut TokenIterator<'s, impl Iterator<Item = SpannedToken<'s>>>,
-    configs: &mut PreprocessConfigs<'s>,
+    state: &mut PreprocessorState<'s>,
+    cache: &'s PreprocessorCache<'s>,
     text_macro: (&'s str, Span<'s>),
 ) -> Result<(), PreprocessorError<'s>> {
-    match configs.get_macro_tokens(text_macro.0) {
+    match state.get_macro_tokens(text_macro.0) {
         Some((define_span, (mut token_vec, define_args))) => {
             let mut macro_span = text_macro.1.clone();
             let arguments = if let Some(define_args) = define_args {
                 let (function_args, function_macro_span) = get_text_macro_args(
                     src,
-                    configs,
+                    state,
+                    cache,
                     &define_span,
                     text_macro.clone(),
                 )?;
@@ -389,10 +395,11 @@ pub fn preprocess_macro<'s>(
             token_vec = replace_macro_tokens(
                 token_vec.into_iter(),
                 arguments,
-                configs,
+                state,
+                cache,
             )?;
             let token_iter = SpanReplacer::new(
-                configs.retain_span(macro_span),
+                state.retain_span(macro_span, cache),
                 token_vec.into_iter(),
             );
             src.add_tokens(token_iter);

@@ -1,7 +1,7 @@
 // =======================================================================
 // mod.rs
 // =======================================================================
-// CST Nodes from 1800-2023 A.5
+//! CST Nodes from 1800-2023 A.5
 pub mod udp_body;
 pub mod udp_declaration;
 pub mod udp_instantiation;

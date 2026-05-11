@@ -24,14 +24,10 @@ impl Default for StandardVersion {
     }
 }
 
-// -----------------------------------------------------------------------
-// keyword_replace
-// -----------------------------------------------------------------------
-// Whether the token is a keyword that needs to be replaced, based on the
-// current standard
-
 impl<'a> Token<'a> {
-    pub fn keyword_replace(&self, standard: &StandardVersion) -> bool {
+    /// Whether the token is a keyword that needs to be replaced, based on
+    /// the current standard
+    pub(crate) fn keyword_replace(&self, standard: &StandardVersion) -> bool {
         let valid_in_standard = match self {
             Token::Automatic
             | Token::Endgenerate

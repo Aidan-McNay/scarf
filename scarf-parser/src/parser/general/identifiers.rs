@@ -10,6 +10,7 @@ use winnow::Parser;
 use winnow::combinator::{alt, peek, terminated};
 use winnow::token::any;
 
+#[allow(dead_code)] // Never used
 pub fn array_identifier_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<ArrayIdentifier<'s>, VerboseError<'s>> {
@@ -166,6 +167,7 @@ pub fn covergroup_identifier_parser<'s>(
         .parse_next(input)
 }
 
+#[allow(dead_code)] // Never used
 pub fn covergroup_variable_identifier_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<CovergroupVariableIdentifier<'s>, VerboseError<'s>> {
@@ -206,6 +208,7 @@ pub fn enum_identifier_parser<'s>(
         .parse_next(input)
 }
 
+#[allow(dead_code)] // Never used
 pub fn formal_identifier_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<FormalIdentifier<'s>, VerboseError<'s>> {

@@ -29,6 +29,7 @@ pub fn inc_or_dec_expression_parser<'s>(
     alt((_preop_parser, _postop_parser)).parse_next(input)
 }
 
+#[allow(dead_code)] // Parsed in Pratt parsing
 pub fn conditional_expression_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<ConditionalExpression<'s>, VerboseError<'s>> {
@@ -606,6 +607,7 @@ pub fn tagged_union_expression_parser<'s>(
         .parse_next(input)
 }
 
+#[allow(dead_code)] // Parsed in Pratt parsing
 pub fn inside_expression_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<InsideExpression<'s>, VerboseError<'s>> {
@@ -639,6 +641,7 @@ pub fn mintypmax_expression_parser<'s>(
     .parse_next(input)
 }
 
+#[allow(dead_code)] // Parsed in Pratt parsing
 pub fn module_path_conditional_expression_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<ModulePathConditionalExpression<'s>, VerboseError<'s>> {

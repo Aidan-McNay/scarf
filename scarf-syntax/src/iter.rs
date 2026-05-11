@@ -1,7 +1,7 @@
 // =======================================================================
 // iter.rs
 // =======================================================================
-// Iterating over a source tree
+//! Iterating over a CST
 
 use crate::*;
 use std::ops::Add;
@@ -68,7 +68,7 @@ pub trait Nodes<'a: 'b, 'b> {
     /// Add all children nodes satisfying the given predicate to
     /// the provided [`Vec`]
     ///
-    /// This is faster tha iterating across the entire tree, as the tree
+    /// This is faster than iterating across the entire tree, as the tree
     /// can be evaluated completely rather than being itermediately
     /// stored
     fn add_nodes(
@@ -79,7 +79,7 @@ pub trait Nodes<'a: 'b, 'b> {
 
     /// Find all children nodes satisfying the given predicate
     ///
-    /// This is faster tha iterating across the entire tree, as the tree
+    /// This is faster than iterating across the entire tree, as the tree
     /// can be evaluated completely rather than being itermediately
     /// stored
     fn find(&'b self, pred: fn(Node<'a, 'b>) -> bool) -> Vec<Node<'a, 'b>> {

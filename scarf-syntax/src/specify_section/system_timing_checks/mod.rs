@@ -1,7 +1,7 @@
 // =======================================================================
 // mod.rs
 // =======================================================================
-// CST Nodes from 1800-2023 A.7.5
+//! CST Nodes from 1800-2023 A.7.5
 pub mod system_timing_check_command_arguments;
 pub mod system_timing_check_commands;
 pub mod system_timing_check_event_definitions;

@@ -31,7 +31,7 @@ pub struct Timescale<'a> {
 }
 
 impl<'a> Timescale<'a> {
-    pub const fn new_unchecked(
+    pub(crate) const fn new_unchecked(
         def_span: Span<'a>,
         unit: (TimescaleValue, TimescaleUnit),
         precision: (TimescaleValue, TimescaleUnit),
@@ -76,10 +76,11 @@ impl<'a> Timescale<'a> {
 
 fn get_timescale<'s>(
     src: &mut TokenIterator<'s, impl Iterator<Item = SpannedToken<'s>>>,
-    configs: &mut PreprocessConfigs<'s>,
+    state: &mut PreprocessorState<'s>,
+    cache: &'s PreprocessorCache<'s>,
     def_span: Span<'s>,
 ) -> Result<(TimescaleValue, TimescaleUnit), PreprocessorError<'s>> {
-    let Some(spanned_token) = preprocess_single(src, configs)? else {
+    let Some(spanned_token) = preprocess_single(src, state, cache)? else {
         return Err(PreprocessorError::IncompleteDirective(def_span));
     };
     let timescale_value = match spanned_token.0 {
@@ -95,7 +96,7 @@ fn get_timescale<'s>(
             }));
         }
     };
-    let Some(spanned_token) = preprocess_single(src, configs)? else {
+    let Some(spanned_token) = preprocess_single(src, state, cache)? else {
         return Err(PreprocessorError::IncompleteDirective(def_span));
     };
     let timescale_unit = match spanned_token.0 {
@@ -119,10 +120,11 @@ fn get_timescale<'s>(
 
 fn get_divider<'s>(
     src: &mut TokenIterator<'s, impl Iterator<Item = SpannedToken<'s>>>,
-    configs: &mut PreprocessConfigs<'s>,
+    state: &mut PreprocessorState<'s>,
+    cache: &'s PreprocessorCache<'s>,
     def_span: Span<'s>,
 ) -> Result<Span<'s>, PreprocessorError<'s>> {
-    let Some(spanned_token) = preprocess_single(src, configs)? else {
+    let Some(spanned_token) = preprocess_single(src, state, cache)? else {
         return Err(PreprocessorError::IncompleteDirective(def_span));
     };
     match spanned_token.0 {
@@ -138,13 +140,15 @@ fn get_divider<'s>(
 
 pub fn preprocess_timescale<'s>(
     src: &mut TokenIterator<'s, impl Iterator<Item = SpannedToken<'s>>>,
-    configs: &mut PreprocessConfigs<'s>,
+    state: &mut PreprocessorState<'s>,
+    cache: &'s PreprocessorCache<'s>,
     directive_span: Span<'s>,
 ) -> Result<(), PreprocessorError<'s>> {
-    let timeunit = get_timescale(src, configs, directive_span.clone())?;
-    let _ = get_divider(src, configs, directive_span.clone())?;
-    let timeprecision = get_timescale(src, configs, directive_span.clone())?;
-    configs.add_timescale(Timescale::new(
+    let timeunit = get_timescale(src, state, cache, directive_span.clone())?;
+    let _ = get_divider(src, state, cache, directive_span.clone())?;
+    let timeprecision =
+        get_timescale(src, state, cache, directive_span.clone())?;
+    state.add_timescale(Timescale::new(
         directive_span,
         timeunit,
         timeprecision,

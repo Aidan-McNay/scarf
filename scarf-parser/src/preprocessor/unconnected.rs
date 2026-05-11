@@ -34,19 +34,19 @@ fn get_unconnected_drive<'s>(
 
 pub fn preprocess_unconnected_drive<'s>(
     src: &mut TokenIterator<'s, impl Iterator<Item = SpannedToken<'s>>>,
-    configs: &mut PreprocessConfigs<'s>,
+    state: &mut PreprocessorState<'s>,
     directive_span: Span<'s>,
 ) -> Result<(), PreprocessorError<'s>> {
     let unconnected_drive = get_unconnected_drive(src, directive_span.clone())?;
-    configs.add_unconnected_drive(directive_span, unconnected_drive);
+    state.add_unconnected_drive(directive_span, unconnected_drive);
     Ok(())
 }
 
 pub fn preprocess_nounconnected_drive<'s>(
-    configs: &mut PreprocessConfigs<'s>,
+    state: &mut PreprocessorState<'s>,
     directive_span: Span<'s>,
 ) -> Result<(), PreprocessorError<'s>> {
-    configs
+    state
         .add_unconnected_drive(directive_span, UnconnectedDrive::NoUnconnected);
     Ok(())
 }

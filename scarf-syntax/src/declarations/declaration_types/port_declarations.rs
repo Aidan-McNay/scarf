@@ -1,7 +1,7 @@
 // =======================================================================
 // port_declarations.rs
 // =======================================================================
-// CST Nodes from 1800-2023 A.2.1.2
+//! CST Nodes from 1800-2023 A.2.1.2
 use crate::*;
 
 #[derive(Clone, Debug, PartialEq)]
@@ -34,7 +34,7 @@ pub enum OutputDeclaration<'a> {
         Box<(
             Metadata<'a>,
             VariablePortType<'a>,
-            ListOfVariableIdentifiers<'a>,
+            ListOfVariablePortIdentifiers<'a>,
         )>,
     ),
 }

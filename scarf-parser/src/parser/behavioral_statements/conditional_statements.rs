@@ -79,6 +79,7 @@ pub fn expression_or_cond_pattern_parser<'s>(
         .parse_next(input)
 }
 
+#[allow(dead_code)] // Integrated in expression_or_cond_pattern_parser
 pub fn cond_pattern_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<CondPattern<'s>, VerboseError<'s>> {
