@@ -15,7 +15,7 @@ const NOTE_COLOR: Color = Color::Fixed(81);
 ///
 /// Errors marked with **INTERNAL** are meant for use inside the
 /// preprocessor for passing information, and should not be returned
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum PreprocessorError<'a> {
     // Errors that can be exposed outside preprocess
     /// An `` `endif `` encountered outside a conditional preprocessor block
@@ -159,7 +159,6 @@ pub enum PreprocessorError<'a> {
     ///     &mut state,
     ///     &cache,
     /// );
-    /// println!("{:?}", preprocess_result);
     /// assert!(matches!(preprocess_result, Err(PreprocessorError::InvalidDefineArgument(_))));
     /// ```
     InvalidDefineArgument(SpannedToken<'a>),
@@ -178,7 +177,6 @@ pub enum PreprocessorError<'a> {
     ///     &mut state,
     ///     &cache,
     /// );
-    /// println!("{:?}", preprocess_result);
     /// assert!(matches!(preprocess_result, Err(PreprocessorError::InvalidVersionSpecifier(_))));
     /// ```
     InvalidVersionSpecifier((Option<&'a str>, Span<'a>)),
@@ -198,7 +196,6 @@ pub enum PreprocessorError<'a> {
     ///     &mut state,
     ///     &cache,
     /// );
-    /// println!("{:?}", preprocess_result);
     /// assert!(matches!(preprocess_result, Err(PreprocessorError::IncompleteDirective(_))));
     /// ```
     IncompleteDirective(Span<'a>),
@@ -217,7 +214,6 @@ pub enum PreprocessorError<'a> {
     ///     &mut state,
     ///     &cache,
     /// );
-    /// println!("{:?}", preprocess_result);
     /// assert!(matches!(preprocess_result, Err(PreprocessorError::IncompleteDefine(_))));
     /// ```
     IncompleteDefine(SpannedToken<'a>),
@@ -236,49 +232,9 @@ pub enum PreprocessorError<'a> {
     ///     &mut state,
     ///     &cache,
     /// );
-    /// println!("{:?}", preprocess_result);
     /// assert!(matches!(preprocess_result, Err(PreprocessorError::UndefinedMacro(_))));
     /// ```
     UndefinedMacro((&'a str, Span<'a>)),
-    /// A redefinition of a text macro that was previously defined
-    ///
-    /// ```rust
-    /// # use scarf_parser::*;
-    /// # let mut state = PreprocessorState::new(vec![], vec![]);
-    /// # let cache = PreprocessorCache::new();
-    /// let source = "
-    /// `define TEST definition_one
-    /// `define TEST definition_two
-    /// ";
-    /// let input = lex(source, "test.v").tokens();
-    /// let preprocess_result = preprocess(
-    ///     &mut TokenIterator::new(input.into_iter()),
-    ///     &mut state,
-    ///     &cache,
-    /// );
-    /// println!("{:?}", preprocess_result);
-    /// assert!(matches!(preprocess_result, Err(PreprocessorError::RedefinedMacro(_))));
-    /// ```
-    RedefinedMacro((&'a str, Span<'a>, Span<'a>)),
-    /// Attempted to `` `undef `` a macro that had no previous definition
-    ///
-    /// ```rust
-    /// # use scarf_parser::*;
-    /// # let mut state = PreprocessorState::new(vec![], vec![]);
-    /// # let cache = PreprocessorCache::new();
-    /// let source = "
-    /// `undef TEST
-    /// ";
-    /// let input = lex(source, "test.v").tokens();
-    /// let preprocess_result = preprocess(
-    ///     &mut TokenIterator::new(input.into_iter()),
-    ///     &mut state,
-    ///     &cache,
-    /// );
-    /// println!("{:?}", preprocess_result);
-    /// assert!(matches!(preprocess_result, Err(PreprocessorError::NotPreviouslyDefinedMacro(_))));
-    /// ```
-    NotPreviouslyDefinedMacro((&'a str, Span<'a>)),
     /// Specifying a macro parameter that was already specified
     ///
     /// ```rust
@@ -294,7 +250,6 @@ pub enum PreprocessorError<'a> {
     ///     &mut state,
     ///     &cache,
     /// );
-    /// println!("{:?}", preprocess_result);
     /// assert!(matches!(preprocess_result, Err(PreprocessorError::DuplicateMacroParameter(_))));
     /// ```
     DuplicateMacroParameter((&'a str, &'a str, Span<'a>, Span<'a>)),
@@ -313,7 +268,6 @@ pub enum PreprocessorError<'a> {
     ///     &mut state,
     ///     &cache,
     /// );
-    /// println!("{:?}", preprocess_result);
     /// assert!(matches!(preprocess_result, Err(PreprocessorError::NoDefaultAfterDefault(_))));
     /// ```
     NoDefaultAfterDefault((SpannedString<'a>, SpannedString<'a>)),
@@ -333,7 +287,6 @@ pub enum PreprocessorError<'a> {
     ///     &mut state,
     ///     &cache,
     /// );
-    /// println!("{:?}", preprocess_result);
     /// assert!(matches!(preprocess_result, Err(PreprocessorError::NoMacroArguments(_))));
     /// ```
     NoMacroArguments((Span<'a>, (&'a str, Span<'a>))),
@@ -353,7 +306,6 @@ pub enum PreprocessorError<'a> {
     ///     &mut state,
     ///     &cache,
     /// );
-    /// println!("{:?}", preprocess_result);
     /// assert!(matches!(preprocess_result, Err(PreprocessorError::TooManyMacroArguments(_))));
     /// ```
     TooManyMacroArguments((Span<'a>, (&'a str, usize, usize, Span<'a>))),
@@ -373,7 +325,6 @@ pub enum PreprocessorError<'a> {
     ///     &mut state,
     ///     &cache,
     /// );
-    /// println!("{:?}", preprocess_result);
     /// assert!(matches!(preprocess_result, Err(PreprocessorError::MissingMacroArgument(_))));
     /// ```
     MissingMacroArgument((Span<'a>, (&'a str, Span<'a>))),
@@ -393,7 +344,6 @@ pub enum PreprocessorError<'a> {
     ///     &mut state,
     ///     &cache,
     /// );
-    /// println!("{:?}", preprocess_result);
     /// assert!(matches!(preprocess_result, Err(PreprocessorError::InvalidIdentifierFormation(_))));
     /// ```
     InvalidIdentifierFormation((&'a str, Span<'a>)),
@@ -412,7 +362,6 @@ pub enum PreprocessorError<'a> {
     ///     &mut state,
     ///     &cache,
     /// );
-    /// println!("{:?}", preprocess_result);
     /// assert!(matches!(preprocess_result, Err(PreprocessorError::InvalidRelativeTimescales(_))));
     /// ```
     InvalidRelativeTimescales(Span<'a>),
@@ -432,7 +381,6 @@ pub enum PreprocessorError<'a> {
     ///     &mut state,
     ///     &cache,
     /// );
-    /// println!("{:?}", preprocess_result);
     /// assert!(matches!(preprocess_result, Err(PreprocessorError::IncompleteMacroWithToken(_))));
     /// ```
     IncompleteMacroWithToken(SpannedToken<'a>),
@@ -453,7 +401,6 @@ pub enum PreprocessorError<'a> {
     ///     &mut state,
     ///     &cache,
     /// );
-    /// println!("{:?}", preprocess_result);
     /// // Expects a line number
     /// assert!(matches!(preprocess_result, Err(PreprocessorError::VerboseError(_))));
     /// ```
@@ -596,25 +543,6 @@ impl<'s> From<PreprocessorError<'s>>
                     ReportKind::Error,
                 ).finish()
             }
-            PreprocessorError::RedefinedMacro((macro_name, macro_span, prev_span)) => {
-                attach_span_label(prev_span, NOTE_COLOR, "Previously defined here", make_report(
-                    macro_span,
-                    "PP12",
-                    format!("Redefining {macro_name}"),
-                    "Redefined here".to_string(),
-                    ReportKind::Warning,
-                )).finish()
-            }
-            PreprocessorError::NotPreviouslyDefinedMacro((
-                macro_name,
-                macro_span,
-            )) => make_report(
-                macro_span,
-                "PP13",
-                format!("Undefining {macro_name}, which has not been previously defined"),
-                "Not previously defined".to_string(),
-                ReportKind::Warning,
-            ).finish(),
             PreprocessorError::DuplicateMacroParameter((define_name, arg_name, arg_span, prev_span)) => {
                 attach_span_label(prev_span, NOTE_COLOR, "Previously declared here", make_report(
                     arg_span,
@@ -706,6 +634,81 @@ impl<'s> From<PreprocessorError<'s>>
                 ReportKind::Error,
             ).finish()
             }
+        }
+    }
+}
+
+/// A warning encountered during preprocessing
+///
+/// Warnings reflect an irregularity in the source code, but are
+/// still well-defined and allow preprocessing to continue
+#[derive(Debug, Clone)]
+pub enum PreprocessorWarning<'a> {
+    /// Attempted to `` `undef `` a macro that had no previous definition
+    ///
+    /// ```rust
+    /// # use scarf_parser::*;
+    /// # let mut state = PreprocessorState::new(vec![], vec![]);
+    /// # let cache = PreprocessorCache::new();
+    /// let source = "
+    /// `undef TEST
+    /// ";
+    /// let input = lex(source, "test.v").tokens();
+    /// let preprocess_result = preprocess(
+    ///     &mut TokenIterator::new(input.into_iter()),
+    ///     &mut state,
+    ///     &cache,
+    /// );
+    /// assert!(matches!(preprocess_result, Ok(_)));
+    /// assert!(matches!(state.warnings.first(), Some(PreprocessorWarning::NotPreviouslyDefinedMacro(_))))
+    /// ```
+    NotPreviouslyDefinedMacro((&'a str, Span<'a>)),
+    /// A redefinition of a text macro that was previously defined
+    ///
+    /// ```rust
+    /// # use scarf_parser::*;
+    /// # let mut state = PreprocessorState::new(vec![], vec![]);
+    /// # let cache = PreprocessorCache::new();
+    /// let source = "
+    /// `define TEST definition_one
+    /// `define TEST definition_two
+    /// ";
+    /// let input = lex(source, "test.v").tokens();
+    /// let preprocess_result = preprocess(
+    ///     &mut TokenIterator::new(input.into_iter()),
+    ///     &mut state,
+    ///     &cache,
+    /// );
+    /// assert!(matches!(preprocess_result, Ok(_)));
+    /// assert!(matches!(state.warnings.first(), Some(PreprocessorWarning::RedefinedMacro(_))))
+    /// ```
+    RedefinedMacro((&'a str, Span<'a>, Span<'a>)),
+}
+
+impl<'s> From<PreprocessorWarning<'s>>
+    for Report<'s, (String, std::ops::Range<usize>)>
+{
+    fn from(s: PreprocessorWarning<'s>) -> Self {
+        match s {
+            PreprocessorWarning::RedefinedMacro((macro_name, macro_span, prev_span)) => {
+                attach_span_label(prev_span, NOTE_COLOR, "Previously defined here", make_report(
+                    macro_span,
+                    "PP12",
+                    format!("Redefining {macro_name}"),
+                    "Redefined here".to_string(),
+                    ReportKind::Warning,
+                )).finish()
+            }
+            PreprocessorWarning::NotPreviouslyDefinedMacro((
+                macro_name,
+                macro_span,
+            )) => make_report(
+                macro_span,
+                "PP13",
+                format!("Undefining {macro_name}, which has not been previously defined"),
+                "Not previously defined".to_string(),
+                ReportKind::Warning,
+            ).finish(),
         }
     }
 }

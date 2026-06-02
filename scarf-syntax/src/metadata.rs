@@ -145,7 +145,7 @@ impl<'a> Span<'a> {
 ///
 /// This includes the [`Span`] of the token. With the `lossless` feature,
 /// [`Metadata`] also includes `non_trivia`, which stores non-trivia tokens
-/// such as whitespace and comments
+/// such as whitespace and comments - see [`NonTriviaToken`]
 #[cfg(feature = "lossless")]
 #[derive(Default, Clone, Debug)]
 pub struct Metadata<'a> {
@@ -157,7 +157,7 @@ pub struct Metadata<'a> {
 ///
 /// This includes the [`Span`] of the token. With the `lossless` feature,
 /// [`Metadata`] also includes `non_trivia`, which stores non-trivia tokens
-/// such as whitespace and comments
+/// such as whitespace and comments - see [`NonTriviaToken`]
 #[cfg(not(feature = "lossless"))]
 #[derive(Default, Clone, Debug)]
 pub struct Metadata<'a> {
@@ -175,7 +175,8 @@ impl<'a> Metadata<'a> {
     /// Construct a new [`Metadata`]. If the `lossless` feature isn't enabled,
     /// `non_trivia` is discarded.
     #[cfg(not(feature = "lossless"))]
-    pub fn new(span: Span<'a>, _: Vec<NonTriviaToken<'a>>) -> Self {
+    #[allow(unused_variables)]
+    pub fn new(span: Span<'a>, non_trivia: Vec<NonTriviaToken<'a>>) -> Self {
         Self { span }
     }
 }
@@ -208,7 +209,7 @@ impl<'a, 'b> IntoIterator for &'b mut Metadata<'a> {
 /// A non-trivia token from the source file
 #[derive(Clone, Debug, PartialEq)]
 pub enum NonTriviaToken<'a> {
-    OnelineComment((&'a str, Span<'a>)),
-    BlockComment((&'a str, Span<'a>)),
+    OnelineComment(&'a str, Span<'a>),
+    BlockComment(&'a str, Span<'a>),
     Newline,
 }

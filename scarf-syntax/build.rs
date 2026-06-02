@@ -60,6 +60,18 @@ fn main() {
     let node_enum_def = quote! {
       #[derive(Debug, Clone)]
       /// A reference to a data structure in a SystemVerilog CST
+      ///
+      /// A corresponding [`Node`] variant exists for all AST data structures
+      ///
+      /// ```rust
+      /// # use scarf_syntax::Node;
+      /// fn is_module_header(node: &Node) -> bool {
+      ///   match node {
+      ///     Node::ModuleAnsiHeader(_) | Node::ModuleNonansiHeader(_) => true,
+      ///     _ => false
+      ///   }
+      /// }
+      /// ```
       pub enum Node<'a: 'b, 'b> {
         #( #node_names(&'b #node_names<'a>) ),*
       }

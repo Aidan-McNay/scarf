@@ -19,10 +19,10 @@ pub fn non_trivia_parser<'s>(
 ) -> ModalResult<Vec<NonTriviaToken<'s>>, VerboseError<'s>> {
     let comment_parser = any.verify_map(|s: &'s SpannedToken<'s>| match s.0 {
         Token::OnelineComment(text) => {
-            Some(NonTriviaToken::OnelineComment((text, s.1.clone())))
+            Some(NonTriviaToken::OnelineComment(text, s.1.clone()))
         }
         Token::BlockComment(text) => {
-            Some(NonTriviaToken::BlockComment((text, s.1.clone())))
+            Some(NonTriviaToken::BlockComment(text, s.1.clone()))
         }
         _ => None,
     });

@@ -139,6 +139,8 @@ pub struct PreprocessorState<'a> {
     pub included_files: HashMap<&'a str, &'a str>,
     /// The current standard for reserved keywords
     pub curr_standard: StandardVersion,
+    /// Any warnings encountered so far
+    pub warnings: Vec<PreprocessorWarning<'a>>,
     pub(crate) in_define: bool,
     pub(crate) in_define_arg: bool,
 }
@@ -156,6 +158,7 @@ impl<'a> PreprocessorState<'a> {
             line_directives: vec![],
             included_files: HashMap::new(),
             curr_standard: StandardVersion::default(),
+            warnings: vec![],
             in_define: false,
             in_define_arg: false,
         }
@@ -249,26 +252,21 @@ impl<'a> PreprocessorState<'a> {
     ///
     /// This is called when a `` `undef `` is encountered
     pub fn undefine(&mut self, macro_name: &'a str) -> bool {
-        if let Some(idx) =
-            self.defines.iter().position(|d| d.name.0 == macro_name)
-        {
-            self.defines.remove(idx);
-            true
-        } else {
-            false
-        }
+        let prev_len = self.defines.len();
+        self.defines.retain(|d| d.name.0 != macro_name);
+        prev_len != self.defines.len()
     }
 
     /// Define a new macro
     ///
-    /// This is called when a `` `define `` is encountered
+    /// This is called when a `` `define `` is encountered, and assumes that
+    /// any previous definitions were removed with [`PreprocessorState::undefine`]
     pub fn define(
         &mut self,
         macro_name: &'a str,
         macro_span: Span<'a>,
         macro_body: DefineBody<'a>,
     ) {
-        self.defines.retain(|d| d.name.0 != macro_name);
         self.defines.push(Define {
             name: SpannedString(macro_name, macro_span),
             body: macro_body,
@@ -525,5 +523,10 @@ impl<'a> PreprocessorState<'a> {
         cache: &'a PreprocessorCache<'a>,
     ) -> &'a str {
         cache.retain_string(string)
+    }
+
+    /// Add a warning encountered during preprocessing
+    pub fn warn(&mut self, warning: PreprocessorWarning<'a>) {
+        self.warnings.push(warning);
     }
 }

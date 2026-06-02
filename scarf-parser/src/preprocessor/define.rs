@@ -260,11 +260,12 @@ pub fn preprocess_define<'s>(
 ) -> Result<(), PreprocessorError<'s>> {
     let define_name = get_define_name(src, define_span)?;
     if let Some(prev_def_span) = state.get_define_decl(define_name.0) {
-        return Err(PreprocessorError::RedefinedMacro((
+        state.warn(PreprocessorWarning::RedefinedMacro((
             define_name.0,
-            define_name.1,
+            define_name.1.clone(),
             prev_def_span,
         )));
+        state.undefine(define_name.0);
     }
     let function_args =
         get_define_function_args(src, define_name.0, state, cache)?;
@@ -297,13 +298,12 @@ pub fn preprocess_undefine<'s>(
 ) -> Result<(), PreprocessorError<'s>> {
     let undefine_name = get_define_name(src, define_span)?;
     if !state.undefine(undefine_name.0) {
-        Err(PreprocessorError::NotPreviouslyDefinedMacro((
+        state.warn(PreprocessorWarning::NotPreviouslyDefinedMacro((
             undefine_name.0,
             undefine_name.1,
-        )))
-    } else {
-        Ok(())
+        )));
     }
+    Ok(())
 }
 
 #[test]

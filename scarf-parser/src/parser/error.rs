@@ -20,7 +20,7 @@ pub enum Expectation<'s> {
     EOI,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct VerboseError<'s> {
     pub valid: bool,
     pub span: Span<'s>,

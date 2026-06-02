@@ -8,7 +8,24 @@ use std::ops::Add;
 
 /// An iterator over nodes in a syntax tree
 ///
-/// Nodes are iterated across in a depth-first fashion
+/// Nodes are iterated across in a depth-first fashion, in the same order
+/// they appear in source files
+///
+/// ```rust
+/// # use scarf_syntax::*;
+/// /// The number of non-blocking assignments within an `always` block
+/// fn num_nonblock_assign(block: &AlwaysConstruct) -> i32 {
+///   let always_construct_node: Node = block.into();
+///   let always_construct_iter: NodeIter = always_construct_node.into();
+///   let mut count = 0;
+///   for node in always_construct_iter {
+///     if let Node::NonblockingAssignment(_) = node {
+///       count += 1;
+///     }
+///   }
+///   count
+/// }
+/// ```
 pub struct NodeIter<'a, 'b> {
     nodes: Vec<Node<'a, 'b>>,
 }
