@@ -15,7 +15,7 @@ const NOTE_COLOR: Color = Color::Fixed(81);
 ///
 /// Errors marked with **INTERNAL** are meant for use inside the
 /// preprocessor for passing information, and should not be returned
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum PreprocessorError<'a> {
     // Errors that can be exposed outside preprocess
     /// An `` `endif `` encountered outside a conditional preprocessor block
@@ -642,7 +642,7 @@ impl<'s> From<PreprocessorError<'s>>
 ///
 /// Warnings reflect an irregularity in the source code, but are
 /// still well-defined and allow preprocessing to continue
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum PreprocessorWarning<'a> {
     /// Attempted to `` `undef `` a macro that had no previous definition
     ///

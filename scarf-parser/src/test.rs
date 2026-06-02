@@ -27,7 +27,10 @@ macro_rules! check_preprocessor {
             &cache,
         );
         match preprocess_result {
-            Ok(result) => assert_eq!(result, $expected),
+            Ok(result) => {
+                assert_eq!(result, $expected);
+                assert_eq!(state.warnings.first(), None);
+            }
             Err(err) => panic!("{:?}", err),
         }
     }};

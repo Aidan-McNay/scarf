@@ -38,7 +38,7 @@ pub use scarf_syntax::Span;
 pub use test::*;
 
 /// A string and its associated [`Span`] in the source files
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SpannedString<'a>(pub &'a str, pub Span<'a>);
 
 /// A token and its location in the source code
