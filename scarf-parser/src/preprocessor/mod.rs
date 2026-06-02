@@ -33,10 +33,6 @@ pub(crate) use timescale::{Timescale, TimescaleUnit, TimescaleValue};
 pub(crate) use unconnected::UnconnectedDrive;
 use unconnected::*;
 
-/// A string and its associated [`Span`] in the source files
-#[derive(Clone, Debug)]
-pub struct SpannedString<'a>(pub &'a str, pub Span<'a>);
-
 /// A peekable, extendable iterator over tokens.
 ///
 /// This iterator extends `<T>` by keeping track of an additional

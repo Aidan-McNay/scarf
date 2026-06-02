@@ -42,7 +42,7 @@ fn get_nettype<'s>(
         Token::Trireg => Ok(DefaultNettype::Trireg),
         Token::Uwire => Ok(DefaultNettype::Uwire),
         Token::SimpleIdentifier("none") => Ok(DefaultNettype::None),
-        _ => Err(PreprocessorError::Error(VerboseError {
+        _ => Err(PreprocessorError::VerboseError(VerboseError {
             valid: true,
             span: spanned_token.1,
             found: Some(spanned_token.0),

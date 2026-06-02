@@ -19,7 +19,7 @@ fn get_line_number<'s>(
         SpannedToken(Token::UnsignedNumber(num_text), num_span) => {
             Ok((num_text, num_span))
         }
-        _ => Err(PreprocessorError::Error(VerboseError {
+        _ => Err(PreprocessorError::VerboseError(VerboseError {
             valid: true,
             span: spanned_token.1,
             found: Some(spanned_token.0),
@@ -41,7 +41,7 @@ fn get_line_file<'s>(
         SpannedToken(Token::StringLiteral(file_name), file_name_span) => {
             Ok((file_name, file_name_span))
         }
-        _ => Err(PreprocessorError::Error(VerboseError {
+        _ => Err(PreprocessorError::VerboseError(VerboseError {
             valid: true,
             span: spanned_token.1,
             found: Some(spanned_token.0),
@@ -75,7 +75,7 @@ fn get_line_level<'s>(
         SpannedToken(Token::UnsignedNumber("2"), num_span) => {
             Ok((LineDirectiveLevel::ExitInclude, num_span))
         }
-        _ => Err(PreprocessorError::Error(VerboseError {
+        _ => Err(PreprocessorError::VerboseError(VerboseError {
             valid: true,
             span: spanned_token.1,
             found: Some(spanned_token.0),

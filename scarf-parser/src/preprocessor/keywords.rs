@@ -27,13 +27,14 @@ fn get_keyword_standard<'s>(
             "1364-2001" => Ok(StandardVersion::IEEE1364_2001),
             "1364-1995" => Ok(StandardVersion::IEEE1364_1995),
             _ => Err(PreprocessorError::InvalidVersionSpecifier((
-                version_spec,
+                Some(version_spec),
                 spanned_token.1,
             ))),
         },
-        _ => Err(PreprocessorError::IncompleteDirectiveWithToken(
-            spanned_token,
-        )),
+        _ => Err(PreprocessorError::InvalidVersionSpecifier((
+            None,
+            spanned_token.1,
+        ))),
     }
 }
 

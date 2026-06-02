@@ -11,36 +11,458 @@ const NOTE_COLOR: Color = Color::Fixed(81);
 /// An error encountered during preprocessing
 ///
 /// As preprocessing can affect the interpretation of later
-/// source code, these errors are irrecoverable
+/// source code, these errors are often irrecoverable
+///
+/// Errors marked with **INTERNAL** are meant for use inside the
+/// preprocessor for passing information, and should not be returned
 #[derive(Debug)]
 pub enum PreprocessorError<'a> {
     // Errors that can be exposed outside preprocess
+    /// An `` `endif `` encountered outside a conditional preprocessor block
+    ///
+    /// ```rust
+    /// # use scarf_parser::*;
+    /// # let mut state = PreprocessorState::new(vec![], vec![]);
+    /// # let cache = PreprocessorCache::new();
+    /// let source = "
+    /// `endif
+    /// ";
+    /// let input = lex(source, "test.v").tokens();
+    /// let preprocess_result = preprocess(
+    ///     &mut TokenIterator::new(input.into_iter()),
+    ///     &mut state,
+    ///     &cache,
+    /// );
+    /// assert!(matches!(preprocess_result, Err(PreprocessorError::Endif(_))));
+    /// ```
     Endif(Span<'a>),
+    /// No terminating `` `endif `` for a conditional preprocessor block
+    ///
+    /// ```rust
+    /// # use scarf_parser::*;
+    /// # let mut state = PreprocessorState::new(vec![], vec![]);
+    /// # let cache = PreprocessorCache::new();
+    /// let source = "
+    /// `ifdef TEST
+    /// ";
+    /// let input = lex(source, "test.v").tokens();
+    /// let preprocess_result = preprocess(
+    ///     &mut TokenIterator::new(input.into_iter()),
+    ///     &mut state,
+    ///     &cache,
+    /// );
+    /// assert!(matches!(preprocess_result, Err(PreprocessorError::NoEndif(Token::DirIfdef, _))));
+    /// ```
     NoEndif(Token<'a>, Span<'a>),
+    /// An `` `elsif `` encountered outside a conditional preprocessor block
+    ///
+    /// ```rust
+    /// # use scarf_parser::*;
+    /// # let mut state = PreprocessorState::new(vec![], vec![]);
+    /// # let cache = PreprocessorCache::new();
+    /// let source = "
+    /// `elsif
+    /// ";
+    /// let input = lex(source, "test.v").tokens();
+    /// let preprocess_result = preprocess(
+    ///     &mut TokenIterator::new(input.into_iter()),
+    ///     &mut state,
+    ///     &cache,
+    /// );
+    /// assert!(matches!(preprocess_result, Err(PreprocessorError::Elsif(_))));
+    /// ```
     Elsif(Span<'a>),
+    /// An `` `else `` encountered outside a conditional preprocessor block
+    ///
+    /// ```rust
+    /// # use scarf_parser::*;
+    /// # let mut state = PreprocessorState::new(vec![], vec![]);
+    /// # let cache = PreprocessorCache::new();
+    /// let source = "
+    /// `else
+    /// ";
+    /// let input = lex(source, "test.v").tokens();
+    /// let preprocess_result = preprocess(
+    ///     &mut TokenIterator::new(input.into_iter()),
+    ///     &mut state,
+    ///     &cache,
+    /// );
+    /// assert!(matches!(preprocess_result, Err(PreprocessorError::Else(_))));
+    /// ```
     Else(Span<'a>),
+    /// An `` `end_keywords `` encountered outside a `` `begin_keywords `` block
+    ///
+    /// ```rust
+    /// # use scarf_parser::*;
+    /// # let mut state = PreprocessorState::new(vec![], vec![]);
+    /// # let cache = PreprocessorCache::new();
+    /// let source = "
+    /// `end_keywords
+    /// ";
+    /// let input = lex(source, "test.v").tokens();
+    /// let preprocess_result = preprocess(
+    ///     &mut TokenIterator::new(input.into_iter()),
+    ///     &mut state,
+    ///     &cache,
+    /// );
+    /// assert!(matches!(preprocess_result, Err(PreprocessorError::EndKeywords(_))));
+    /// ```
     EndKeywords(Span<'a>),
+    /// No terminating `` `end_keywords `` for a `` `begin_keywords `` block
+    ///
+    /// ```rust
+    /// # use scarf_parser::*;
+    /// # let mut state = PreprocessorState::new(vec![], vec![]);
+    /// # let cache = PreprocessorCache::new();
+    /// let source = "
+    /// `begin_keywords \"1800-2009\"
+    /// ";
+    /// let input = lex(source, "test.v").tokens();
+    /// let preprocess_result = preprocess(
+    ///     &mut TokenIterator::new(input.into_iter()),
+    ///     &mut state,
+    ///     &cache,
+    /// );
+    /// assert!(matches!(preprocess_result, Err(PreprocessorError::NoEndKeywords(_))));
+    /// ```
     NoEndKeywords(Span<'a>),
+    /// A missing parameter in a `` `define `` function declaration where one is expected
+    ///
+    /// ```rust
+    /// # use scarf_parser::*;
+    /// # let mut state = PreprocessorState::new(vec![], vec![]);
+    /// # let cache = PreprocessorCache::new();
+    /// let source = "
+    /// `define TEST()
+    /// ";
+    /// let input = lex(source, "test.v").tokens();
+    /// let preprocess_result = preprocess(
+    ///     &mut TokenIterator::new(input.into_iter()),
+    ///     &mut state,
+    ///     &cache,
+    /// );
+    /// assert!(matches!(preprocess_result, Err(PreprocessorError::InvalidDefineParameter(_))));
+    /// ```
     InvalidDefineParameter(SpannedToken<'a>),
+    /// A missing or invalid argument specification in a `` `define `` function
+    ///
+    /// ```rust
+    /// # use scarf_parser::*;
+    /// # let mut state = PreprocessorState::new(vec![], vec![]);
+    /// # let cache = PreprocessorCache::new();
+    /// let source = "
+    /// `define TEST(a, b c)
+    /// ";
+    /// let input = lex(source, "test.v").tokens();
+    /// let preprocess_result = preprocess(
+    ///     &mut TokenIterator::new(input.into_iter()),
+    ///     &mut state,
+    ///     &cache,
+    /// );
+    /// println!("{:?}", preprocess_result);
+    /// assert!(matches!(preprocess_result, Err(PreprocessorError::InvalidDefineArgument(_))));
+    /// ```
     InvalidDefineArgument(SpannedToken<'a>),
-    InvalidVersionSpecifier((&'a str, Span<'a>)),
+    /// An invalid version specifier for a `` `begin_keywords `` directive
+    ///
+    /// ```rust
+    /// # use scarf_parser::*;
+    /// # let mut state = PreprocessorState::new(vec![], vec![]);
+    /// # let cache = PreprocessorCache::new();
+    /// let source = "
+    /// `begin_keywords \"MyVersion\"
+    /// ";
+    /// let input = lex(source, "test.v").tokens();
+    /// let preprocess_result = preprocess(
+    ///     &mut TokenIterator::new(input.into_iter()),
+    ///     &mut state,
+    ///     &cache,
+    /// );
+    /// println!("{:?}", preprocess_result);
+    /// assert!(matches!(preprocess_result, Err(PreprocessorError::InvalidVersionSpecifier(_))));
+    /// ```
+    InvalidVersionSpecifier((Option<&'a str>, Span<'a>)),
+    /// A directive that doesn't have all of the required components
+    ///
+    /// In general, [`PreprocessorError::VerboseError`] is preferred, but may
+    /// not be suitable due to a lack of subsequent tokens
+    ///
+    /// ```rust
+    /// # use scarf_parser::*;
+    /// # let mut state = PreprocessorState::new(vec![], vec![]);
+    /// # let cache = PreprocessorCache::new();
+    /// let source = "`line";
+    /// let input = lex(source, "test.v").tokens();
+    /// let preprocess_result = preprocess(
+    ///     &mut TokenIterator::new(input.into_iter()),
+    ///     &mut state,
+    ///     &cache,
+    /// );
+    /// println!("{:?}", preprocess_result);
+    /// assert!(matches!(preprocess_result, Err(PreprocessorError::IncompleteDirective(_))));
+    /// ```
     IncompleteDirective(Span<'a>),
-    IncompleteDirectiveWithToken(SpannedToken<'a>),
+    /// An incomplete preprocessor definition, specifically with function macro arguments
+    ///
+    /// ```rust
+    /// # use scarf_parser::*;
+    /// # let mut state = PreprocessorState::new(vec![], vec![]);
+    /// # let cache = PreprocessorCache::new();
+    /// let source = "
+    /// `define TEST(
+    /// ";
+    /// let input = lex(source, "test.v").tokens();
+    /// let preprocess_result = preprocess(
+    ///     &mut TokenIterator::new(input.into_iter()),
+    ///     &mut state,
+    ///     &cache,
+    /// );
+    /// println!("{:?}", preprocess_result);
+    /// assert!(matches!(preprocess_result, Err(PreprocessorError::IncompleteDefine(_))));
+    /// ```
+    IncompleteDefine(SpannedToken<'a>),
+    /// Use of a text macro that wasn't previously defined
+    ///
+    /// ```rust
+    /// # use scarf_parser::*;
+    /// # let mut state = PreprocessorState::new(vec![], vec![]);
+    /// # let cache = PreprocessorCache::new();
+    /// let source = "
+    /// `TEST
+    /// ";
+    /// let input = lex(source, "test.v").tokens();
+    /// let preprocess_result = preprocess(
+    ///     &mut TokenIterator::new(input.into_iter()),
+    ///     &mut state,
+    ///     &cache,
+    /// );
+    /// println!("{:?}", preprocess_result);
+    /// assert!(matches!(preprocess_result, Err(PreprocessorError::UndefinedMacro(_))));
+    /// ```
     UndefinedMacro((&'a str, Span<'a>)),
+    /// A redefinition of a text macro that was previously defined
+    ///
+    /// ```rust
+    /// # use scarf_parser::*;
+    /// # let mut state = PreprocessorState::new(vec![], vec![]);
+    /// # let cache = PreprocessorCache::new();
+    /// let source = "
+    /// `define TEST definition_one
+    /// `define TEST definition_two
+    /// ";
+    /// let input = lex(source, "test.v").tokens();
+    /// let preprocess_result = preprocess(
+    ///     &mut TokenIterator::new(input.into_iter()),
+    ///     &mut state,
+    ///     &cache,
+    /// );
+    /// println!("{:?}", preprocess_result);
+    /// assert!(matches!(preprocess_result, Err(PreprocessorError::RedefinedMacro(_))));
+    /// ```
     RedefinedMacro((&'a str, Span<'a>, Span<'a>)),
+    /// Attempted to `` `undef `` a macro that had no previous definition
+    ///
+    /// ```rust
+    /// # use scarf_parser::*;
+    /// # let mut state = PreprocessorState::new(vec![], vec![]);
+    /// # let cache = PreprocessorCache::new();
+    /// let source = "
+    /// `undef TEST
+    /// ";
+    /// let input = lex(source, "test.v").tokens();
+    /// let preprocess_result = preprocess(
+    ///     &mut TokenIterator::new(input.into_iter()),
+    ///     &mut state,
+    ///     &cache,
+    /// );
+    /// println!("{:?}", preprocess_result);
+    /// assert!(matches!(preprocess_result, Err(PreprocessorError::NotPreviouslyDefinedMacro(_))));
+    /// ```
     NotPreviouslyDefinedMacro((&'a str, Span<'a>)),
+    /// Specifying a macro parameter that was already specified
+    ///
+    /// ```rust
+    /// # use scarf_parser::*;
+    /// # let mut state = PreprocessorState::new(vec![], vec![]);
+    /// # let cache = PreprocessorCache::new();
+    /// let source = "
+    /// `define TEST(a, b, a) a + b
+    /// ";
+    /// let input = lex(source, "test.v").tokens();
+    /// let preprocess_result = preprocess(
+    ///     &mut TokenIterator::new(input.into_iter()),
+    ///     &mut state,
+    ///     &cache,
+    /// );
+    /// println!("{:?}", preprocess_result);
+    /// assert!(matches!(preprocess_result, Err(PreprocessorError::DuplicateMacroParameter(_))));
+    /// ```
     DuplicateMacroParameter((&'a str, &'a str, Span<'a>, Span<'a>)),
+    /// Attempting to have a macro parameter with no default value after one that does
+    ///
+    /// ```rust
+    /// # use scarf_parser::*;
+    /// # let mut state = PreprocessorState::new(vec![], vec![]);
+    /// # let cache = PreprocessorCache::new();
+    /// let source = "
+    /// `define TEST(a = 1, b) a + b
+    /// ";
+    /// let input = lex(source, "test.v").tokens();
+    /// let preprocess_result = preprocess(
+    ///     &mut TokenIterator::new(input.into_iter()),
+    ///     &mut state,
+    ///     &cache,
+    /// );
+    /// println!("{:?}", preprocess_result);
+    /// assert!(matches!(preprocess_result, Err(PreprocessorError::NoDefaultAfterDefault(_))));
+    /// ```
     NoDefaultAfterDefault((SpannedString<'a>, SpannedString<'a>)),
+    /// Specifying no arguments for a macro function that takes arguments
+    ///
+    /// ```rust
+    /// # use scarf_parser::*;
+    /// # let mut state = PreprocessorState::new(vec![], vec![]);
+    /// # let cache = PreprocessorCache::new();
+    /// let source = "
+    /// `define TEST(a, b) a + b
+    /// `TEST
+    /// ";
+    /// let input = lex(source, "test.v").tokens();
+    /// let preprocess_result = preprocess(
+    ///     &mut TokenIterator::new(input.into_iter()),
+    ///     &mut state,
+    ///     &cache,
+    /// );
+    /// println!("{:?}", preprocess_result);
+    /// assert!(matches!(preprocess_result, Err(PreprocessorError::NoMacroArguments(_))));
+    /// ```
     NoMacroArguments((Span<'a>, (&'a str, Span<'a>))),
+    /// Specifying too many arguments for a macro function
+    ///
+    /// ```rust
+    /// # use scarf_parser::*;
+    /// # let mut state = PreprocessorState::new(vec![], vec![]);
+    /// # let cache = PreprocessorCache::new();
+    /// let source = "
+    /// `define TEST(a, b) a + b
+    /// `TEST(1, 2, 3)
+    /// ";
+    /// let input = lex(source, "test.v").tokens();
+    /// let preprocess_result = preprocess(
+    ///     &mut TokenIterator::new(input.into_iter()),
+    ///     &mut state,
+    ///     &cache,
+    /// );
+    /// println!("{:?}", preprocess_result);
+    /// assert!(matches!(preprocess_result, Err(PreprocessorError::TooManyMacroArguments(_))));
+    /// ```
     TooManyMacroArguments((Span<'a>, (&'a str, usize, usize, Span<'a>))),
+    /// Missing an argument in a macro function use
+    ///
+    /// ```rust
+    /// # use scarf_parser::*;
+    /// # let mut state = PreprocessorState::new(vec![], vec![]);
+    /// # let cache = PreprocessorCache::new();
+    /// let source = "
+    /// `define TEST(a, b) a + b
+    /// `TEST(1)
+    /// ";
+    /// let input = lex(source, "test.v").tokens();
+    /// let preprocess_result = preprocess(
+    ///     &mut TokenIterator::new(input.into_iter()),
+    ///     &mut state,
+    ///     &cache,
+    /// );
+    /// println!("{:?}", preprocess_result);
+    /// assert!(matches!(preprocess_result, Err(PreprocessorError::MissingMacroArgument(_))));
+    /// ```
     MissingMacroArgument((Span<'a>, (&'a str, Span<'a>))),
+    /// An invalid preprocessor identifier specification
+    ///
+    /// ```rust
+    /// # use scarf_parser::*;
+    /// # let mut state = PreprocessorState::new(vec![], vec![]);
+    /// # let cache = PreprocessorCache::new();
+    /// let source = "
+    /// `define TEST(a, b) a``_with_``b
+    /// `TEST(\"one\", \"two\")
+    /// ";
+    /// let input = lex(source, "test.v").tokens();
+    /// let preprocess_result = preprocess(
+    ///     &mut TokenIterator::new(input.into_iter()),
+    ///     &mut state,
+    ///     &cache,
+    /// );
+    /// println!("{:?}", preprocess_result);
+    /// assert!(matches!(preprocess_result, Err(PreprocessorError::InvalidIdentifierFormation(_))));
+    /// ```
     InvalidIdentifierFormation((&'a str, Span<'a>)),
+    /// A precision that is less precise than the unit in a `` `timescale `` directive
+    ///
+    /// ```rust
+    /// # use scarf_parser::*;
+    /// # let mut state = PreprocessorState::new(vec![], vec![]);
+    /// # let cache = PreprocessorCache::new();
+    /// let source = "
+    /// `timescale 100 fs / 1 s
+    /// ";
+    /// let input = lex(source, "test.v").tokens();
+    /// let preprocess_result = preprocess(
+    ///     &mut TokenIterator::new(input.into_iter()),
+    ///     &mut state,
+    ///     &cache,
+    /// );
+    /// println!("{:?}", preprocess_result);
+    /// assert!(matches!(preprocess_result, Err(PreprocessorError::InvalidRelativeTimescales(_))));
+    /// ```
     InvalidRelativeTimescales(Span<'a>),
+    /// An incomplete macro due to mismatching grouping tokens (`[]`, `()`, or `{}`)
+    ///
+    /// ```rust
+    /// # use scarf_parser::*;
+    /// # let mut state = PreprocessorState::new(vec![], vec![]);
+    /// # let cache = PreprocessorCache::new();
+    /// let source = "
+    /// `define TEST(a, b) a + b
+    /// `TEST(a = 1, b = 2])
+    /// ";
+    /// let input = lex(source, "test.v").tokens();
+    /// let preprocess_result = preprocess(
+    ///     &mut TokenIterator::new(input.into_iter()),
+    ///     &mut state,
+    ///     &cache,
+    /// );
+    /// println!("{:?}", preprocess_result);
+    /// assert!(matches!(preprocess_result, Err(PreprocessorError::IncompleteMacroWithToken(_))));
+    /// ```
     IncompleteMacroWithToken(SpannedToken<'a>),
-    Error(VerboseError<'a>),
+    /// A [`VerboseError`] detailing the expected and found tokens, for a case not covered above
+    ///
+    /// This is most commonly used when we can provide the user with a bit more context
+    ///
+    /// ```rust
+    /// # use scarf_parser::*;
+    /// # let mut state = PreprocessorState::new(vec![], vec![]);
+    /// # let cache = PreprocessorCache::new();
+    /// let source = "
+    /// `line
+    /// ";
+    /// let input = lex(source, "test.v").tokens();
+    /// let preprocess_result = preprocess(
+    ///     &mut TokenIterator::new(input.into_iter()),
+    ///     &mut state,
+    ///     &cache,
+    /// );
+    /// println!("{:?}", preprocess_result);
+    /// // Expects a line number
+    /// assert!(matches!(preprocess_result, Err(PreprocessorError::VerboseError(_))));
+    /// ```
+    VerboseError(VerboseError<'a>),
     // Internal "errors" used for communication
     // - Should not be exposed outside of main preprocess function
+    /// **INTERNAL**: A newline encountered in a `` `define `` directive
     NewlineInDefine(Span<'a>),
+    /// **INTERNAL**: The end of a function argument was encountered
     EndOfFunctionArgument(SpannedToken<'a>),
 }
 
@@ -139,7 +561,10 @@ impl<'s> From<PreprocessorError<'s>>
             )) => make_report(
                 spec_span,
                 "PP8",
-                format!("{spec_string} is not a valid version specifier"),
+                match spec_string {
+                    Some(version_string) => format!("{version_string} is not a valid version specifier"),
+                    None => "Not a valid version specifier".to_string()
+                },
                 "Invalid version specifier".to_string(),
                 ReportKind::Error,
             ).finish(),
@@ -150,13 +575,13 @@ impl<'s> From<PreprocessorError<'s>>
                 "Expected a complete directive".to_string(),
                 ReportKind::Error,
             ).finish(),
-            PreprocessorError::IncompleteDirectiveWithToken(
+            PreprocessorError::IncompleteDefine(
                 err_spanned_token,
             ) => make_report(
                 err_spanned_token.1,
                 "PP10",
                 format!(
-                    "Found {}, expected more in the directive",
+                    "Found {}, expected more in the preprocessor definition",
                     err_spanned_token.0
                 ),
                 "Expected more after".to_string(),
@@ -262,7 +687,7 @@ impl<'s> From<PreprocessorError<'s>>
                   ReportKind::Error,
               ).finish()
             }
-            PreprocessorError::Error(verbose_error) => {
+            PreprocessorError::VerboseError(verbose_error) => {
               verbose_error.into()
             },
             PreprocessorError::NewlineInDefine(newline_span) => make_report(

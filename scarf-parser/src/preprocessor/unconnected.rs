@@ -23,7 +23,7 @@ fn get_unconnected_drive<'s>(
     match spanned_token.0 {
         Token::Pull0 => Ok(UnconnectedDrive::PullDown),
         Token::Pull1 => Ok(UnconnectedDrive::PullUp),
-        _ => Err(PreprocessorError::Error(VerboseError {
+        _ => Err(PreprocessorError::VerboseError(VerboseError {
             valid: true,
             span: spanned_token.1,
             found: Some(spanned_token.0),

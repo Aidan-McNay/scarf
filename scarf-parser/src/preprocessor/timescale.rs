@@ -88,7 +88,7 @@ fn get_timescale<'s>(
         Token::UnsignedNumber("10") => TimescaleValue::Ten,
         Token::UnsignedNumber("100") => TimescaleValue::Hundred,
         _ => {
-            return Err(PreprocessorError::Error(VerboseError {
+            return Err(PreprocessorError::VerboseError(VerboseError {
                 valid: true,
                 span: spanned_token.1,
                 found: Some(spanned_token.0),
@@ -107,7 +107,7 @@ fn get_timescale<'s>(
         Token::SimpleIdentifier("ps") => TimescaleUnit::PS,
         Token::SimpleIdentifier("fs") => TimescaleUnit::FS,
         _ => {
-            return Err(PreprocessorError::Error(VerboseError {
+            return Err(PreprocessorError::VerboseError(VerboseError {
                 valid: true,
                 span: spanned_token.1,
                 found: Some(spanned_token.0),
@@ -129,7 +129,7 @@ fn get_divider<'s>(
     };
     match spanned_token.0 {
         Token::Slash => Ok(spanned_token.1),
-        _ => Err(PreprocessorError::Error(VerboseError {
+        _ => Err(PreprocessorError::VerboseError(VerboseError {
             valid: true,
             span: spanned_token.1,
             found: Some(spanned_token.0),

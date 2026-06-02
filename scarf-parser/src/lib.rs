@@ -22,11 +22,12 @@ pub mod lexer;
 pub mod parser;
 pub mod preprocessor;
 use ariadne::ReportBuilder;
-pub use ariadne::{Color, Label, Report, ReportKind, Source, sources};
+use ariadne::{Color, Label, ReportKind};
+pub use ariadne::{Report, Source, sources};
 use lexer::*;
 pub use lexer::{LexedSource, Token, lex};
 use parser::*;
-pub use parser::{SpannedToken, VerboseError, parse};
+pub use parser::{VerboseError, parse};
 pub use preprocessor::*;
 use winnow::Parser;
 use winnow::stream::TokenSlice;
@@ -35,6 +36,24 @@ pub mod test;
 pub use scarf_syntax::Span;
 #[cfg(test)]
 pub use test::*;
+
+/// A string and its associated [`Span`] in the source files
+#[derive(Clone, Debug)]
+pub struct SpannedString<'a>(pub &'a str, pub Span<'a>);
+
+/// A token and its location in the source code
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SpannedToken<'s>(pub Token<'s>, pub Span<'s>);
+impl<'s> PartialEq<Token<'s>> for SpannedToken<'s> {
+    fn eq(&self, other: &Token) -> bool {
+        self.0 == *other
+    }
+}
+impl<'s> From<(Token<'s>, Span<'s>)> for SpannedToken<'s> {
+    fn from(item: (Token<'s>, Span<'s>)) -> Self {
+        (item.0, item.1).into()
+    }
+}
 
 fn get_expansion_string(expansion_depth: u32, is_last: bool) -> String {
     if expansion_depth == 0 {

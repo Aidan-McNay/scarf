@@ -45,7 +45,7 @@ fn get_define_name<'s>(
         Token::EscapedIdentifier(id_str) => {
             Ok(SpannedString(id_str, spanned_token.1))
         }
-        _ => Err(PreprocessorError::Error(VerboseError {
+        _ => Err(PreprocessorError::VerboseError(VerboseError {
             valid: true,
             span: spanned_token.1,
             found: Some(spanned_token.0),
@@ -97,11 +97,9 @@ fn get_define_function_args<'s>(
                         let (next_token, eod) =
                             get_define_token(src, paren_span.clone())?;
                         if eod && (next_token != Token::EParen) {
-                            return Err(
-                                PreprocessorError::IncompleteDirectiveWithToken(
-                                    next_token,
-                                ),
-                            );
+                            return Err(PreprocessorError::IncompleteDefine(
+                                next_token,
+                            ));
                         } else {
                             next_token
                         }
@@ -110,11 +108,14 @@ fn get_define_function_args<'s>(
                         next_token,
                     )) => next_token,
                     Err(PreprocessorError::IncompleteDirective(_)) => {
-                        return Err(
-                            PreprocessorError::IncompleteDirectiveWithToken(
-                                SpannedToken(Token::Paren, paren_span),
-                            ),
-                        );
+                        return Err(PreprocessorError::IncompleteDefine(
+                            SpannedToken(Token::Paren, paren_span),
+                        ));
+                    }
+                    Err(PreprocessorError::NewlineInDefine(_)) => {
+                        return Err(PreprocessorError::IncompleteDefine(
+                            SpannedToken(Token::Paren, paren_span),
+                        ));
                     }
                     Err(err) => {
                         return Err(err);
@@ -136,7 +137,7 @@ fn get_define_function_args<'s>(
                                 get_define_token(src, paren_span.clone())?;
                             next_arg_token = if eod {
                                 return Err(
-                                    PreprocessorError::IncompleteDirectiveWithToken(
+                                    PreprocessorError::IncompleteDefine(
                                         next_token,
                                     ),
                                 );
@@ -196,25 +197,23 @@ fn get_define_function_arg<'s>(
             )));
         }
     }
-    let eq_span = loop {
-        match src.peek() {
-            None => {
-                return Err(PreprocessorError::IncompleteDirective(paren_span));
+    let eq_span = match src.peek() {
+        None => {
+            return Err(PreprocessorError::IncompleteDirective(paren_span));
+        }
+        Some(SpannedToken(Token::Eq, _)) => {
+            let SpannedToken(_, eq_span) = src.next().unwrap();
+            eq_span
+        }
+        Some(_) => {
+            if let Some(last_define_arg) = started_defaults {
+                return Err(PreprocessorError::NoDefaultAfterDefault((
+                    last_define_arg.clone(),
+                    arg_id,
+                )));
             }
-            Some(SpannedToken(Token::Eq, _)) => {
-                let SpannedToken(_, eq_span) = src.next().unwrap();
-                break eq_span;
-            }
-            Some(_) => {
-                if let Some(last_define_arg) = started_defaults {
-                    return Err(PreprocessorError::NoDefaultAfterDefault((
-                        last_define_arg.clone(),
-                        arg_id,
-                    )));
-                }
-                dest.push((arg_id, None));
-                return Ok(());
-            }
+            dest.push((arg_id, None));
+            return Ok(());
         }
     };
     let mut default_arg_text: Vec<SpannedToken<'s>> = vec![];
@@ -224,9 +223,10 @@ fn get_define_function_arg<'s>(
     state.exit_define(prev_in_define);
     state.exit_define_arg(prev_in_define_arg);
     match result {
-        Ok(()) => Err(PreprocessorError::IncompleteDirectiveWithToken(
-            SpannedToken(Token::Paren, paren_span),
-        )),
+        Ok(()) => Err(PreprocessorError::IncompleteDefine(SpannedToken(
+            Token::Paren,
+            paren_span,
+        ))),
         Err(PreprocessorError::EndOfFunctionArgument(spanned_token)) => {
             *started_defaults = Some(arg_id.clone());
             dest.push((arg_id, Some((eq_span, default_arg_text))));
@@ -419,6 +419,12 @@ fn function() {
 #[should_panic(expected = "InvalidDefineParameter")]
 fn empty_function() {
     check_preprocessor!("`define TEST()", Vec::<Token<'_>>::new())
+}
+
+#[test]
+#[should_panic(expected = "InvalidDefineParameter")]
+fn missing_arg_function() {
+    check_preprocessor!("`define TEST(a,)", Vec::<Token<'_>>::new())
 }
 
 #[test]

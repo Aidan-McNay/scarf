@@ -108,7 +108,7 @@ fn get_ifdef_condition<'s>(
             let ifdef_macro_expression =
                 get_ifdef_macro_expression(src, ifdef_span, 0)?;
             let Some(eparen_token) = src.next() else {
-                return Err(PreprocessorError::Error(VerboseError {
+                return Err(PreprocessorError::VerboseError(VerboseError {
                     valid: true,
                     span: spanned_token.1,
                     found: None,
@@ -122,7 +122,7 @@ fn get_ifdef_condition<'s>(
             ))))
         }
         _ => {
-            return Err(PreprocessorError::Error(VerboseError {
+            return Err(PreprocessorError::VerboseError(VerboseError {
                 valid: true,
                 span: spanned_token.1,
                 found: Some(spanned_token.0),
@@ -174,7 +174,7 @@ fn get_ifdef_macro_expression<'s>(
                 get_ifdef_macro_expression(src, previous_span.clone(), 0)?;
             let Some(SpannedToken(Token::EParen, eparen_span)) = src.next()
             else {
-                return Err(PreprocessorError::Error(VerboseError {
+                return Err(PreprocessorError::VerboseError(VerboseError {
                     valid: true,
                     span: spanned_token.1,
                     found: Some(Token::Paren),
@@ -193,7 +193,7 @@ fn get_ifdef_macro_expression<'s>(
             IfdefMacroExpression::Not(Box::new((spanned_token.1, negated_expr)))
         }
         _ => {
-            return Err(PreprocessorError::Error(VerboseError {
+            return Err(PreprocessorError::VerboseError(VerboseError {
                 valid: true,
                 span: spanned_token.1,
                 found: Some(spanned_token.0),

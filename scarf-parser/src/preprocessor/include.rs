@@ -26,7 +26,7 @@ fn get_include_path<'s>(
         }
         Token::Lt => loop {
             let Some(next_token) = preprocess_single(src, state, cache)? else {
-                break Err(PreprocessorError::Error(VerboseError {
+                break Err(PreprocessorError::VerboseError(VerboseError {
                     valid: true,
                     span: spanned_token.1,
                     found: Some(spanned_token.0),
@@ -35,7 +35,7 @@ fn get_include_path<'s>(
             };
             match next_token.0 {
                 Token::Newline => {
-                    break Err(PreprocessorError::Error(VerboseError {
+                    break Err(PreprocessorError::VerboseError(VerboseError {
                         valid: true,
                         span: spanned_token.1,
                         found: Some(spanned_token.0),
@@ -54,7 +54,7 @@ fn get_include_path<'s>(
                 _ => (),
             }
         },
-        _ => Err(PreprocessorError::Error(VerboseError {
+        _ => Err(PreprocessorError::VerboseError(VerboseError {
             valid: true,
             span: spanned_token.1,
             found: Some(spanned_token.0),
