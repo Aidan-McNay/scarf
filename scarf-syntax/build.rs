@@ -55,7 +55,7 @@ fn main() {
     }
 
     // Emit new definitions for nodes
-    let output_path =
+    let nodes_path =
         Path::new(&std::env::var("OUT_DIR").unwrap()).join("nodes.rs");
     let node_enum_def = quote! {
       #[derive(Debug, Clone)]
@@ -283,10 +283,100 @@ fn main() {
         })
     }
     fs::write(
-        &output_path,
+        &nodes_path,
         node_enum_def.to_string()
             + &node_defs.to_string()
             + &node_impls.to_string(),
     )
-    .expect("Unable to write generated file");
+    .expect("Unable to write generated nodes.rs file");
+    // IDs for nodes
+    let ids_path = Path::new(&std::env::var("OUT_DIR").unwrap()).join("id.rs");
+    let node_ids = (0..node_names.len() as u16).collect::<Vec<_>>();
+    let id_def = quote! {
+        /// A unique identifier for a [`Node`] variant
+        #[derive(Debug, Clone, PartialEq, Eq)]
+        pub struct NodeID(u16);
+    };
+    let node_to_id = quote! {
+        impl From<&Node<'_, '_>> for NodeID {
+            /// Get the [`NodeID`] of a [`Node`]
+            ///
+            /// ```rust
+            /// # use scarf_syntax::*;
+            /// let identifier_one = Identifier::SimpleIdentifier((
+            ///     "my_signal",
+            ///     Metadata::default()
+            /// ));
+            /// let node_one: Node<'_, '_> = (&identifier_one).into();
+            /// let node_id_one: NodeID = (&node_one).into();
+            /// let identifier_two = Identifier::SimpleIdentifier((
+            ///     "my_other_signal",
+            ///     Metadata::default()
+            /// ));
+            /// let node_two: Node<'_, '_> = (&identifier_two).into();
+            /// let node_id_two: NodeID = (&node_two).into();
+            /// assert_eq!(node_id_one, node_id_two);
+            /// ```
+            fn from(value: &Node) -> NodeID {
+                match value {
+                    #( Node::#node_names(_) => NodeID(#node_ids) ),*
+                }
+            }
+        }
+    };
+    let name_to_id = quote! {
+        /// Lookup the [`NodeID`] of a [`Node`] based on its name
+        ///
+        /// ```rust
+        /// # use scarf_syntax::*;
+        /// let identifier = Identifier::SimpleIdentifier((
+        ///     "my_signal",
+        ///     Metadata::default()
+        /// ));
+        /// let node: Node<'_, '_> = (&identifier).into();
+        /// let node_id: NodeID = (&node).into();
+        /// let identifier_node_id: NodeID = "Identifier".try_into().unwrap();
+        /// assert_eq!(node_id, identifier_node_id);
+        /// ```
+        impl TryFrom<&str> for NodeID {
+            type Error = ();
+            fn try_from(value: &str) -> Result<Self, Self::Error> {
+                match value {
+                    #( stringify!(#node_names) => Ok(NodeID(#node_ids)) ),*,
+                    _ => Err(())
+                }
+            }
+        }
+    };
+    let id_to_name = quote! {
+        /// Get the name of a [`Node`] based on its [`NodeID`]
+        /// ```rust
+        /// # use scarf_syntax::*;
+        /// let identifier = Identifier::SimpleIdentifier((
+        ///     "my_signal",
+        ///     Metadata::default()
+        /// ));
+        /// let node: Node<'_, '_> = (&identifier).into();
+        /// let node_id: NodeID = (&node).into();
+        /// let node_id_name: &'static str = node_id.try_into().unwrap();
+        /// assert_eq!(node_id_name, "Identifier");
+        /// ```
+        impl TryFrom<NodeID> for &'static str {
+            type Error = ();
+            fn try_from(value: NodeID) -> Result<Self, Self::Error> {
+                match value.0 {
+                    #( #node_ids => Ok(stringify!(#node_names)) ),*,
+                    _ => Err(())
+                }
+            }
+        }
+    };
+    fs::write(
+        &ids_path,
+        id_def.to_string()
+            + &node_to_id.to_string()
+            + &name_to_id.to_string()
+            + &id_to_name.to_string(),
+    )
+    .expect("Unable to write generated id.rs file");
 }

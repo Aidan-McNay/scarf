@@ -41,6 +41,7 @@
 //!  - `lossless`: Allows for whitespace/comments to be preserved in [`Metadata`]
 
 include!(concat!(env!("OUT_DIR"), "/nodes.rs"));
+include!(concat!(env!("OUT_DIR"), "/id.rs"));
 
 pub mod behavioral_statements;
 pub mod declarations;
