@@ -54,6 +54,11 @@ fn format(args: &FormatArgs) {
             &string_cache,
         );
         let mut error_sources = sources(state.included_files());
+        for warning in state.warnings {
+            let report: Report<'_, (String, std::ops::Range<usize>)> =
+                warning.into();
+            report.print(&mut error_sources).unwrap();
+        }
         let preprocessed_stream = match preprocess_result {
             Err(err) => {
                 let report: Report<'_, (String, std::ops::Range<usize>)> =
