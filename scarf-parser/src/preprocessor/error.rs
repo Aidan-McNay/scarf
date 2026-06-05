@@ -5,6 +5,7 @@
 
 use crate::*;
 use ariadne::ReportBuilder;
+use std::io;
 
 const NOTE_COLOR: Color = Color::Fixed(81);
 
@@ -15,7 +16,7 @@ const NOTE_COLOR: Color = Color::Fixed(81);
 ///
 /// Errors marked with **INTERNAL** are meant for use inside the
 /// preprocessor for passing information, and should not be returned
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug)]
 pub enum PreprocessorError<'a> {
     // Errors that can be exposed outside preprocess
     /// An `` `endif `` encountered outside a conditional preprocessor block
@@ -384,6 +385,24 @@ pub enum PreprocessorError<'a> {
     /// assert!(matches!(preprocess_result, Err(PreprocessorError::IncompleteMacroWithToken(_))));
     /// ```
     IncompleteMacroWithToken(SpannedToken<'a>),
+    /// An error reading a file specified by an  `` `include `` macro
+    ///
+    /// ```rust
+    /// # use scarf_parser::*;
+    /// # let mut state = PreprocessorState::new(vec![], vec![]);
+    /// # let cache = PreprocessorCache::new();
+    /// let source = "
+    /// `include \"other.v\"
+    /// ";
+    /// let input = lex(source, "test.v").tokens();
+    /// let preprocess_result = preprocess(
+    ///     &mut TokenIterator::new(input.into_iter()),
+    ///     &mut state,
+    ///     &cache,
+    /// );
+    /// assert!(matches!(preprocess_result, Err(PreprocessorError::Include(_, _, _))));
+    /// ```
+    Include(Span<'a>, String, io::Error),
     /// A [`VerboseError`] detailing the expected and found tokens, for a case not covered above
     ///
     /// This is most commonly used when we can provide the user with a bit more context
@@ -614,6 +633,15 @@ impl<'s> From<PreprocessorError<'s>>
                   "Expected a complete macro argument or escaped newline after".to_string(),
                   ReportKind::Error,
               ).finish()
+            }
+            PreprocessorError::Include(span, path, io_error) => {
+                make_report(
+                    span,
+                    "PP22",
+                    format!("Error when reading {}", path),
+                    io_error.to_string(),
+                    ReportKind::Error,
+                ).finish()
             }
             PreprocessorError::VerboseError(verbose_error) => {
               verbose_error.into()

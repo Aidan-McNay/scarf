@@ -3,6 +3,8 @@
 // =======================================================================
 // Preprocessing for preprocessor definitions
 
+use std::io;
+
 use crate::Span;
 use crate::*;
 
@@ -70,15 +72,29 @@ pub fn preprocess_include<'s>(
     cache: &'s PreprocessorCache<'s>,
     include_span: &'s Span<'s>,
 ) -> Result<(), PreprocessorError<'s>> {
-    let (include_path_text, _) =
+    let (include_path_text, file_span) =
         get_include_path(src, state, cache, include_span.clone())?;
     // Treat both include types as the same
     let include_path_text = match include_path_text {
         IncludePath::ProjectRelative(text) => text,
         IncludePath::ToolRelative(text) => text,
     };
-    let include_path = state.get_file_path(include_path_text).unwrap();
-    let included_file = std::fs::read_to_string(&include_path).unwrap();
+    let include_path =
+        state.get_file_path(include_path_text).ok_or_else(|| {
+            PreprocessorError::Include(
+                file_span.clone(),
+                include_path_text.to_string(),
+                io::Error::new(io::ErrorKind::NotFound, "File not found"),
+            )
+        })?;
+    let included_file =
+        std::fs::read_to_string(&include_path).map_err(|err| {
+            PreprocessorError::Include(
+                file_span,
+                include_path_text.to_string(),
+                err,
+            )
+        })?;
     let (include_path, included_file) = state.retain_file(
         include_path.to_str().unwrap().to_owned(),
         included_file,
