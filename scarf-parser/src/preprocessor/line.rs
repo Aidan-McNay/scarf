@@ -20,7 +20,6 @@ fn get_line_number<'s>(
             Ok((num_text, num_span))
         }
         _ => Err(PreprocessorError::VerboseError(VerboseError {
-            valid: true,
             span: spanned_token.1,
             found: Some(spanned_token.0),
             expected: vec![Expectation::Label("a line number")],
@@ -42,7 +41,6 @@ fn get_line_file<'s>(
             Ok((file_name, file_name_span))
         }
         _ => Err(PreprocessorError::VerboseError(VerboseError {
-            valid: true,
             span: spanned_token.1,
             found: Some(spanned_token.0),
             expected: vec![Expectation::Label("a file name")],
@@ -76,7 +74,6 @@ fn get_line_level<'s>(
             Ok((LineDirectiveLevel::ExitInclude, num_span))
         }
         _ => Err(PreprocessorError::VerboseError(VerboseError {
-            valid: true,
             span: spanned_token.1,
             found: Some(spanned_token.0),
             expected: vec![Expectation::Label("a line number")],

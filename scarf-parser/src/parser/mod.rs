@@ -6,7 +6,6 @@
 pub(crate) mod behavioral_statements;
 pub(crate) mod combinators;
 pub(crate) mod declarations;
-pub(crate) mod error;
 pub(crate) mod expressions;
 pub(crate) mod general;
 pub(crate) mod instantiations;
@@ -21,7 +20,6 @@ use crate::*;
 pub(crate) use behavioral_statements::*;
 pub(crate) use combinators::*;
 pub(crate) use declarations::*;
-pub use error::*;
 pub(crate) use expressions::*;
 pub(crate) use general::*;
 pub(crate) use instantiations::*;
@@ -40,11 +38,14 @@ pub fn parse<'s>(
 ) -> Result<SourceText<'s>, VerboseError<'s>> {
     let mut stateful_input = Tokens {
         input: TokenSlice::new(input),
-        state: VerboseError::default(),
+        state: None,
     };
     match source_text_parser.parse_next(&mut stateful_input) {
         Ok(source_text) => Ok(source_text),
-        Err(ErrMode::Backtrack(err)) => Err(err.or(stateful_input.state)),
+        Err(ErrMode::Backtrack(err)) => Err(match stateful_input.state {
+            None => err,
+            Some(prev_err) => err.or(prev_err),
+        }),
         Err(ErrMode::Cut(err)) => Err(err),
         Err(ErrMode::Incomplete(_)) => {
             panic!("Produced 'incomplete', an unsupported error")

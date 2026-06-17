@@ -46,7 +46,6 @@ fn get_define_name<'s>(
             Ok(SpannedString(id_str, spanned_token.1))
         }
         _ => Err(PreprocessorError::VerboseError(VerboseError {
-            valid: true,
             span: spanned_token.1,
             found: Some(spanned_token.0),
             expected: vec![Expectation::Label("a preprocessor macro name")],

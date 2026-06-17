@@ -56,8 +56,15 @@ fn find_struct_enum_names()
     (node_names, node_structs, node_enums)
 }
 
-fn gen_node_def(node_names: &Vec<syn::Ident>) -> TokenStream {
-    quote! {
+fn main() {
+    println!("cargo:rerun-if-changed=src");
+    println!("cargo:rerun-if-changed=build.rs");
+    let (node_names, node_structs, node_enums) = find_struct_enum_names();
+
+    // Emit new definitions for nodes
+    let nodes_path =
+        Path::new(&std::env::var("OUT_DIR").unwrap()).join("nodes.rs");
+    let node_enum_def = quote! {
       #[derive(Debug, Clone)]
       /// A reference to a data structure in a SystemVerilog CST
       ///
@@ -125,12 +132,9 @@ fn gen_node_def(node_names: &Vec<syn::Ident>) -> TokenStream {
               }
           }
       }
-    }
-}
-
-fn gen_node_iter_def(node_names: &Vec<syn::Ident>) -> TokenStream {
-    let node_impl_docs = node_names.iter().map(|ident| format!{"Iterate across the [`{}`] and its children", ident.to_string()});
-    quote! {
+    };
+    let iter_doc = node_names.iter().map(|ident| format!{"Iterate across the [`{}`] and its children", ident.to_string()});
+    let node_defs = quote! {
         #(
             impl<'a: 'b, 'b> From<&'b #node_names<'a>> for Node<'a, 'b> {
                 fn from(value: &'b #node_names<'a>) -> Self {
@@ -146,17 +150,14 @@ fn gen_node_iter_def(node_names: &Vec<syn::Ident>) -> TokenStream {
             }
 
             impl<'a: 'b, 'b> #node_names<'a> {
-                #[doc = #node_impl_docs]
+                #[doc = #iter_doc]
                 pub fn iter(&'b self) -> NodeIter<'a, 'b> {
                     Into::<Node<'a, 'b>>::into(self).iter()
                 }
             }
         )*
-    }
-}
-
-fn gen_node_enum_impls(node_enums: Vec<syn::ItemEnum>) -> TokenStream {
-    let mut tokens = TokenStream::new();
+    };
+    let mut node_impls = TokenStream::default();
     for item_enum in node_enums {
         let ident = item_enum.ident;
         let variants = item_enum.variants.iter().map(|v| {
@@ -230,7 +231,7 @@ fn gen_node_enum_impls(node_enums: Vec<syn::ItemEnum>) -> TokenStream {
         });
         let variants_clone = variants.clone();
         let variant_expansions_clone = variant_expansions.clone();
-        tokens.extend(quote! {
+        node_impls.extend(quote! {
             impl<'a: 'b, 'b> Nodes<'a, 'b> for #ident<'a> {
                 fn nodes(&'b self) -> NodeIter<'a, 'b> {
                     Into::<NodeIter<'a, 'b>>::into(Into::<Node<'a, 'b>>::into(self))
@@ -254,11 +255,6 @@ fn gen_node_enum_impls(node_enums: Vec<syn::ItemEnum>) -> TokenStream {
             }
         })
     }
-    tokens
-}
-
-fn gen_node_struct_impls(node_structs: Vec<syn::ItemStruct>) -> TokenStream {
-    let mut tokens = TokenStream::new();
     for item_struct in node_structs {
         let ident = item_struct.ident;
         let syn::Fields::Unnamed(unnamed_fields) = item_struct.fields else {
@@ -273,7 +269,7 @@ fn gen_node_struct_impls(node_structs: Vec<syn::ItemStruct>) -> TokenStream {
                 quote! {#index}
             });
         let indices_clone = indices.clone();
-        tokens.extend(quote! {
+        node_impls.extend(quote! {
             impl<'a: 'b, 'b> Nodes<'a, 'b> for #ident<'a> {
                 fn nodes(&'b self) -> NodeIter<'a, 'b> {
                     Into::<NodeIter<'a, 'b>>::into(Into::<Node<'a, 'b>>::into(self))
@@ -293,42 +289,22 @@ fn gen_node_struct_impls(node_structs: Vec<syn::ItemStruct>) -> TokenStream {
             }
         })
     }
-    tokens
-}
-
-fn gen_id_def(max_id: u16) -> TokenStream {
-    quote! {
+    fs::write(
+        &nodes_path,
+        node_enum_def.to_string()
+            + &node_defs.to_string()
+            + &node_impls.to_string(),
+    )
+    .expect("Unable to write generated nodes.rs file");
+    // IDs for nodes
+    let ids_path = Path::new(&std::env::var("OUT_DIR").unwrap()).join("id.rs");
+    let node_ids = (0..node_names.len() as u16).collect::<Vec<_>>();
+    let id_def = quote! {
         /// A unique identifier for a [`Node`] variant
-        ///
-        /// The exact mapping of [`Node`]s to [`NodeID`]s is not
-        /// stable; as such, the underlying representation is hidden.
-        ///
-        /// ```rust
-        /// # use scarf_syntax::*;
-        /// # use std::collections::HashSet;
-        /// let mut found_names = HashSet::new();
-        /// for node_id in NodeID::all() {
-        ///     let name: &'static str = node_id.into();
-        ///     assert!(found_names.insert(name));
-        /// }
-        /// ```
         #[derive(Debug, Clone, PartialEq, Eq)]
         pub struct NodeID(u16);
-
-        impl NodeID {
-            /// An iterator across all possible [`NodeID`]s
-            pub fn all() -> impl Iterator<Item = NodeID> {
-                (0..=#max_id).map(|id_num| NodeID(id_num))
-            }
-        }
-    }
-}
-
-fn gen_node_to_id(
-    node_names: &Vec<syn::Ident>,
-    node_ids: &Vec<u16>,
-) -> TokenStream {
-    quote! {
+    };
+    let node_to_id = quote! {
         impl From<&Node<'_, '_>> for NodeID {
             /// Get the [`NodeID`] of a [`Node`]
             ///
@@ -349,29 +325,13 @@ fn gen_node_to_id(
             /// assert_eq!(node_id_one, node_id_two);
             /// ```
             fn from(value: &Node) -> NodeID {
-                NodeID::from_node(value)
-            }
-        }
-
-        impl NodeID {
-            /// A `const` version of [`NodeID::from::<&Node<'_, '_>>`]
-            pub const fn from_node(node: &Node<'_, '_>) -> NodeID {
-                match node {
+                match value {
                     #( Node::#node_names(_) => NodeID(#node_ids) ),*
                 }
             }
         }
-    }
-}
-
-fn gen_name_to_id(
-    node_names: &Vec<syn::Ident>,
-    node_ids: &Vec<u16>,
-) -> TokenStream {
-    let node_byte_strs = node_names.iter().map(|ident| {
-        syn::LitByteStr::new(ident.to_string().as_bytes(), ident.span())
-    });
-    quote! {
+    };
+    let name_to_id = quote! {
         /// Lookup the [`NodeID`] of a [`Node`] based on its name
         ///
         /// ```rust
@@ -388,28 +348,14 @@ fn gen_name_to_id(
         impl TryFrom<&str> for NodeID {
             type Error = ();
             fn try_from(value: &str) -> Result<Self, Self::Error> {
-                NodeID::try_from_name(value).ok_or(())
-            }
-        }
-
-        impl NodeID {
-            /// A `const` version of [`NodeID::try_from::<&str>`]
-            pub const fn try_from_name(name: &str) -> Option<NodeID> {
-                // Can't compare as &str - need to compare bytes
-                match name.as_bytes() {
-                    #( #node_byte_strs => Some(NodeID(#node_ids)) ),*,
-                    _ => None
+                match value {
+                    #( stringify!(#node_names) => Ok(NodeID(#node_ids)) ),*,
+                    _ => Err(())
                 }
             }
         }
-    }
-}
-
-fn gen_id_to_name(
-    node_names: &Vec<syn::Ident>,
-    node_ids: &Vec<u16>,
-) -> TokenStream {
-    quote! {
+    };
+    let id_to_name = quote! {
         /// Get the name of a [`Node`] based on its [`NodeID`]
         /// ```rust
         /// # use scarf_syntax::*;
@@ -419,56 +365,19 @@ fn gen_id_to_name(
         /// ));
         /// let node: Node<'_, '_> = (&identifier).into();
         /// let node_id: NodeID = (&node).into();
-        /// let node_id_name: &'static str = node_id.into();
+        /// let node_id_name: &'static str = node_id.try_into().unwrap();
         /// assert_eq!(node_id_name, "Identifier");
         /// ```
-        impl From<NodeID> for &'static str {
-            fn from(value: NodeID) -> Self {
-                NodeID::into_name(value)
-            }
-        }
-
-        impl NodeID {
-            /// A `const` version of `&'static str::from::<NodeID>`
-            pub const fn into_name(id: NodeID)-> &'static str {
-                match id.0 {
-                    #( #node_ids => stringify!(#node_names)),*,
-                    _ => panic!("Unknown NodeID!")
+        impl TryFrom<NodeID> for &'static str {
+            type Error = ();
+            fn try_from(value: NodeID) -> Result<Self, Self::Error> {
+                match value.0 {
+                    #( #node_ids => Ok(stringify!(#node_names)) ),*,
+                    _ => Err(())
                 }
             }
         }
-    }
-}
-
-fn main() {
-    println!("cargo:rerun-if-changed=src");
-    println!("cargo:rerun-if-changed=build.rs");
-    let (node_names, node_structs, node_enums) = find_struct_enum_names();
-
-    // Emit new definitions for nodes
-    let nodes_path =
-        Path::new(&std::env::var("OUT_DIR").unwrap()).join("nodes.rs");
-    let node_def = gen_node_def(&node_names);
-    let node_iter_def = gen_node_iter_def(&node_names);
-    let mut node_impls = TokenStream::default();
-    node_impls.extend(gen_node_enum_impls(node_enums));
-    node_impls.extend(gen_node_struct_impls(node_structs));
-    fs::write(
-        &nodes_path,
-        node_def.to_string()
-            + &node_iter_def.to_string()
-            + &node_impls.to_string(),
-    )
-    .expect("Unable to write generated nodes.rs file");
-
-    // IDs for nodes
-    let ids_path = Path::new(&std::env::var("OUT_DIR").unwrap()).join("id.rs");
-    let node_ids = (0..node_names.len() as u16).collect::<Vec<_>>();
-    let max_id = node_names.len() - 1;
-    let id_def = gen_id_def(max_id as u16);
-    let node_to_id = gen_node_to_id(&node_names, &node_ids);
-    let name_to_id = gen_name_to_id(&node_names, &node_ids);
-    let id_to_name = gen_id_to_name(&node_names, &node_ids);
+    };
     fs::write(
         &ids_path,
         id_def.to_string()

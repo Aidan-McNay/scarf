@@ -3,10 +3,10 @@
 // =======================================================================
 // Preprocessing for preprocessor definitions
 
-use std::io;
-
 use crate::Span;
 use crate::*;
+
+pub(crate) const MAX_INCLUDE_DEPTH: usize = 50;
 
 pub enum IncludePath<'a> {
     ProjectRelative(&'a str),
@@ -29,7 +29,6 @@ fn get_include_path<'s>(
         Token::Lt => loop {
             let Some(next_token) = preprocess_single(src, state, cache)? else {
                 break Err(PreprocessorError::VerboseError(VerboseError {
-                    valid: true,
                     span: spanned_token.1,
                     found: Some(spanned_token.0),
                     expected: vec![Expectation::Label("an include path")],
@@ -38,7 +37,6 @@ fn get_include_path<'s>(
             match next_token.0 {
                 Token::Newline => {
                     break Err(PreprocessorError::VerboseError(VerboseError {
-                        valid: true,
                         span: spanned_token.1,
                         found: Some(spanned_token.0),
                         expected: vec![Expectation::Label("an include path")],
@@ -57,7 +55,6 @@ fn get_include_path<'s>(
             }
         },
         _ => Err(PreprocessorError::VerboseError(VerboseError {
-            valid: true,
             span: spanned_token.1,
             found: Some(spanned_token.0),
             expected: vec![Expectation::Label("an include path")],
@@ -72,6 +69,12 @@ pub fn preprocess_include<'s>(
     cache: &'s PreprocessorCache<'s>,
     include_span: &'s Span<'s>,
 ) -> Result<(), PreprocessorError<'s>> {
+    if state.include_history.len() >= MAX_INCLUDE_DEPTH {
+        return Err(PreprocessorError::IncludeDepth(
+            include_span.clone(),
+            state.include_history.clone(),
+        ));
+    }
     let (include_path_text, file_span) =
         get_include_path(src, state, cache, include_span.clone())?;
     // Treat both include types as the same
@@ -79,38 +82,22 @@ pub fn preprocess_include<'s>(
         IncludePath::ProjectRelative(text) => text,
         IncludePath::ToolRelative(text) => text,
     };
-    let include_path =
-        state.get_file_path(include_path_text).ok_or_else(|| {
-            PreprocessorError::Include(
-                file_span.clone(),
-                include_path_text.to_string(),
-                io::Error::new(io::ErrorKind::NotFound, "File not found"),
-            )
-        })?;
-    let included_file =
-        std::fs::read_to_string(&include_path).map_err(|err| {
-            PreprocessorError::Include(
-                file_span,
-                include_path_text.to_string(),
-                err,
-            )
-        })?;
-    let (include_path, included_file) = state.retain_file(
-        include_path.to_str().unwrap().to_owned(),
-        included_file,
-        cache,
-    );
+    let (include_path, included_file) =
+        state.retain_include_file(include_path_text, file_span, cache)?;
     let included_file_contents =
         lex_helper(included_file, include_path, Some(include_span)).tokens();
     if let Some(size_hint) = included_file_contents.size_hint().1 {
         dest.reserve(size_hint);
     }
-    preprocess_helper(
+    state.include_history.push(include_span.clone());
+    let result = preprocess_helper(
         &mut TokenIterator::new(included_file_contents),
         dest,
         state,
         cache,
-    )
+    );
+    state.include_history.pop();
+    result
 }
 
 #[test]

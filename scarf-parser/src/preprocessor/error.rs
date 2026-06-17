@@ -3,7 +3,7 @@
 // =======================================================================
 //! Warnings/errors that are thrown by the preprocessor
 
-use crate::*;
+use crate::{include::MAX_INCLUDE_DEPTH, *};
 use ariadne::ReportBuilder;
 use std::io;
 
@@ -18,7 +18,6 @@ const NOTE_COLOR: Color = Color::Fixed(81);
 /// preprocessor for passing information, and should not be returned
 #[derive(Debug)]
 pub enum PreprocessorError<'a> {
-    // Errors that can be exposed outside preprocess
     /// An `` `endif `` encountered outside a conditional preprocessor block
     ///
     /// ```rust
@@ -403,6 +402,30 @@ pub enum PreprocessorError<'a> {
     /// assert!(matches!(preprocess_result, Err(PreprocessorError::Include(_, _, _))));
     /// ```
     Include(Span<'a>, String, io::Error),
+    /// The maximum include depth was hit, likely as a result of a self-referential
+    /// `` `include `` sequence
+    ///
+    /// ```rust
+    /// # use scarf_parser::*;
+    /// # let mut state = PreprocessorState::new(vec![], vec![]);
+    /// # let cache = PreprocessorCache::new();
+    /// let source = "
+    /// `include \"test.v\"
+    /// ";
+    /// state.retain_file(
+    ///     "test.v".to_string(),
+    ///     source.to_string(),
+    ///     &cache,
+    /// );
+    /// let input = lex(source, "test.v").tokens();
+    /// let preprocess_result = preprocess(
+    ///     &mut TokenIterator::new(input.into_iter()),
+    ///     &mut state,
+    ///     &cache,
+    /// );
+    /// assert!(matches!(preprocess_result, Err(PreprocessorError::IncludeDepth(_, _))));
+    /// ```
+    IncludeDepth(Span<'a>, Vec<Span<'a>>),
     /// A [`VerboseError`] detailing the expected and found tokens, for a case not covered above
     ///
     /// This is most commonly used when we can provide the user with a bit more context
@@ -643,8 +666,17 @@ impl<'s> From<PreprocessorError<'s>>
                     ReportKind::Error,
                 ).finish()
             }
+            PreprocessorError::IncludeDepth(span, _prev_include_spans) => {
+                make_report(
+                    span,
+                    "PP23",
+                    format!("Include depth of {} reached", MAX_INCLUDE_DEPTH),
+                    "Check for an `include loop".to_string(),
+                    ReportKind::Error,
+                ).finish()
+            }
             PreprocessorError::VerboseError(verbose_error) => {
-              verbose_error.into()
+              verbose_error.report("PP24")
             },
             PreprocessorError::NewlineInDefine(newline_span) => make_report(
               newline_span,

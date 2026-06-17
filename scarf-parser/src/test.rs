@@ -42,7 +42,7 @@ macro_rules! apply_parser {
         *$storage = lex($input, "<test>").tokens().collect::<Vec<_>>();
         let mut tokens = Tokens {
             input: TokenSlice::new(&$storage[..]),
-            state: VerboseError::default(),
+            state: None,
         };
         $parser(&mut tokens).unwrap()
     }};
@@ -54,7 +54,7 @@ macro_rules! check_parser {
         let input = lex($input, "<test>").tokens().collect::<Vec<_>>();
         let mut tokens = Tokens {
             input: TokenSlice::new(&input[..]),
-            state: VerboseError::default(),
+            state: None,
         };
         assert_eq!($parser(&mut tokens).unwrap(), $expected)
     }};

@@ -68,10 +68,11 @@ fn format(args: &FormatArgs) {
             }
             Ok(preprocessed_stream) => preprocessed_stream,
         };
+        println!("{:?}", preprocessed_stream);
         let parsed_src = parse(&preprocessed_stream);
         if let Err(err) = parsed_src {
             let report: Report<'_, (String, std::ops::Range<usize>)> =
-                err.into();
+                err.report("P1");
             report.print(&mut error_sources).unwrap()
         }
         // println!("{:#?}", parsed_src);

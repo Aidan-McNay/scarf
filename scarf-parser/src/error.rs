@@ -1,76 +1,96 @@
 // =======================================================================
 // error.rs
 // =======================================================================
-// The type of errors used for AST parsing
+//! Errors used in parsing
 
 use crate::*;
 use core::ops::Range;
 use lexer::Token;
 use scarf_syntax::*;
+use std::fmt;
 use std::fs;
 use winnow::{
     error::{AddContext, ParserError},
     stream::Stream,
 };
 
+/// Something the parser expected to find instead of what was found,
+/// in the case of an error
 #[derive(Debug, Clone, PartialEq)]
 pub enum Expectation<'s> {
+    /// A particular lexed token
     Token(Token<'s>),
+    /// A human-readable expectation
     Label(&'s str),
+    /// The end of a file
     EOI,
 }
 
+/// A verbose error message describing the error location, what was
+/// found, and what was expected instead
 #[derive(Debug, Clone, PartialEq)]
 pub struct VerboseError<'s> {
-    pub valid: bool,
+    /// The [`Span`] where the error occurred
     pub span: Span<'s>,
+    /// What token was found (if any - [`None`] indicates the end of a file)
     pub found: Option<Token<'s>>,
+    /// What was expected instead of what was found
     pub expected: Vec<Expectation<'s>>,
 }
-impl<'s> VerboseError<'s> {
-    pub fn is_eoi(&self) -> bool {
-        self.found.is_none()
-    }
-}
-impl<'s> Default for VerboseError<'s> {
-    fn default() -> Self {
-        VerboseError {
-            valid: false,
-            span: Span::default(),
-            found: None,
-            expected: vec![],
-        }
-    }
-}
+
 impl<'s> ParserError<Tokens<'s>> for VerboseError<'s> {
     type Inner = Self;
     fn from_input(input: &Tokens<'s>) -> Self {
         match input.peek_token() {
             Some(token) => VerboseError {
-                valid: true,
                 span: token.1.clone(),
                 found: Some(token.0),
                 expected: vec![],
             },
-            None => VerboseError {
-                valid: true,
-                span: Span::default(),
-                found: None,
-                expected: vec![],
-            },
+            None => {
+                // Use the last token instead, indicate EOF
+                match input.previous_tokens().next() {
+                    Some(token) => {
+                        let mut curr_span: &Span = &token.1;
+                        let root_file = loop {
+                            if let Some(included_from_span) =
+                                curr_span.included_from
+                            {
+                                curr_span = included_from_span;
+                            } else {
+                                break curr_span.file;
+                            }
+                        };
+                        VerboseError {
+                            span: Span {
+                                file: root_file,
+                                bytes: Range {
+                                    start: token.1.bytes.end,
+                                    end: token.1.bytes.end,
+                                },
+                                expanded_from: None,
+                                included_from: None,
+                            },
+                            found: None,
+                            expected: vec![],
+                        }
+                    }
+                    None => {
+                        // No tokens ever present in input - use defaults
+                        VerboseError {
+                            span: Span::default(),
+                            found: None,
+                            expected: vec![],
+                        }
+                    }
+                }
+            }
         }
     }
     fn into_inner(self) -> winnow::Result<Self::Inner, Self> {
         Ok(self)
     }
     fn or(mut self, mut other: Self) -> Self {
-        // Check for invalid errors
-        if !self.valid {
-            return other;
-        }
-        if !other.valid {
-            return self;
-        }
         // Prefer errors that got to the end of the input
         match (self.found, other.found) {
             (None, Some(_)) => self,
@@ -162,12 +182,17 @@ fn format_reason_short<'s>(error: &VerboseError<'s>) -> String {
     }
 }
 
-impl<'s> From<VerboseError<'s>>
-    for Report<'s, (String, std::ops::Range<usize>)>
-{
-    fn from(value: VerboseError<'s>) -> Self {
-        let error_span = if value.is_eoi() {
-            let file_len = fs::metadata(value.span.file)
+impl<'s> VerboseError<'s> {
+    /// Generate an error report for the [`VerboseError`]
+    pub fn report<C>(
+        self,
+        code: C,
+    ) -> Report<'s, (String, std::ops::Range<usize>)>
+    where
+        C: fmt::Display,
+    {
+        let error_span = if self.found.is_none() {
+            let file_len = fs::metadata(self.span.file)
                 .expect("TODO: Handle file read error")
                 .len();
             let byte_span = Range {
@@ -175,27 +200,27 @@ impl<'s> From<VerboseError<'s>>
                 end: file_len as usize,
             };
             Span {
-                file: value.span.file,
+                file: self.span.file,
                 bytes: byte_span,
                 expanded_from: None,
-                included_from: value.span.included_from,
+                included_from: self.span.included_from,
             }
         } else {
-            value.span.clone()
+            self.span.clone()
         };
         let mut report = Report::build(
             ReportKind::Error,
             (error_span.file.to_string(), error_span.bytes.clone()),
         )
-        .with_code("P1")
+        .with_code(code)
         .with_config(
             ariadne::Config::new().with_index_type(ariadne::IndexType::Byte),
         )
-        .with_message(format_reason(&value));
+        .with_message(format_reason(&self));
         report = attach_span_label(
             error_span,
             Color::Red,
-            format_reason_short(&value),
+            format_reason_short(&self),
             report,
         );
         report.finish()
@@ -203,15 +228,9 @@ impl<'s> From<VerboseError<'s>>
 }
 
 impl<'s> VerboseError<'s> {
-    pub fn or_in_place(&mut self, mut other: Self) {
-        // Check for invalid errors
-        if !self.valid {
-            *self = other;
-            return;
-        }
-        if !other.valid {
-            return;
-        }
+    /// Similar to [`VerboseError::or`], but modifies an existing
+    /// error instead of creating a new one
+    pub(crate) fn or_in_place(&mut self, mut other: Self) {
         // Prefer errors that got to the end of the input
         match (self.found, other.found) {
             (None, Some(_)) => (),

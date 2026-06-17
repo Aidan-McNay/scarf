@@ -57,15 +57,6 @@ impl<'a> Span<'a> {
         indeces.push(self.include_indeces());
         indeces
     }
-    /// An empty [`Span`]
-    pub const fn empty() -> Span<'a> {
-        Span {
-            file: "",
-            bytes: ByteSpan { start: 0, end: 0 },
-            expanded_from: None,
-            included_from: None,
-        }
-    }
     /// Compare two [`Span`]s, returning the relationship of the first to the second
     ///
     /// ```rust
@@ -138,6 +129,36 @@ impl<'a> Span<'a> {
                 }
             }
         }
+    }
+
+    /// How many preprocessor macros this [`Span`] was expanded from
+    pub const fn expansion_depth(&self) -> usize {
+        let mut curr_span: &Span = self;
+        let mut depth = 0;
+        loop {
+            if let Some(expanded_from_span) = curr_span.expanded_from {
+                curr_span = expanded_from_span;
+                depth += 1;
+            } else {
+                break;
+            }
+        }
+        depth
+    }
+
+    /// How many `` `include `` macros this [`Span`] was included with
+    pub const fn inclusion_depth(&self) -> usize {
+        let mut curr_span: &Span = self;
+        let mut depth = 0;
+        loop {
+            if let Some(included_from_span) = curr_span.included_from {
+                curr_span = included_from_span;
+                depth += 1;
+            } else {
+                break;
+            }
+        }
+        depth
     }
 }
 

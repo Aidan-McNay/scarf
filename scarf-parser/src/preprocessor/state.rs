@@ -6,10 +6,10 @@
 use crate::*;
 use scarf_syntax::SpanRelation;
 use std::collections::HashMap;
+use std::io;
 use std::path::{Path, PathBuf};
 
-const DEFAULT_TIMESCALE: Timescale = Timescale::new_unchecked(
-    Span::empty(),
+const DEFAULT_TIMESCALE: Timescale = Timescale::new_default(
     (TimescaleValue::One, TimescaleUnit::NS),
     (TimescaleValue::One, TimescaleUnit::NS),
 );
@@ -143,6 +143,7 @@ pub struct PreprocessorState<'a> {
     pub warnings: Vec<PreprocessorWarning<'a>>,
     pub(crate) in_define: bool,
     pub(crate) in_define_arg: bool,
+    pub(crate) include_history: Vec<Span<'a>>,
 }
 
 impl<'a> PreprocessorState<'a> {
@@ -161,6 +162,7 @@ impl<'a> PreprocessorState<'a> {
             warnings: vec![],
             in_define: false,
             in_define_arg: false,
+            include_history: vec![],
         }
     }
     /// Reset all resetable configs
@@ -371,17 +373,70 @@ impl<'a> PreprocessorState<'a> {
         &DEFAULT_NETTYPE
     }
 
+    /// Retain the contents of a file found from an `` `include `` statement
+    ///
+    /// Produces `(&path, &file_contents)`
+    ///
+    /// This differs from [`PreprocessorState::retain_file`] by only reading
+    /// in the file if necessary, and using the include paths to find the
+    /// correct file to read in.
+    pub(crate) fn retain_include_file(
+        &mut self,
+        include_path: &'a str,
+        include_path_span: Span<'a>,
+        cache: &'a PreprocessorCache<'a>,
+    ) -> Result<(&'a str, &'a str), PreprocessorError<'a>> {
+        let include_path_buf =
+            self.get_file_path(include_path).ok_or_else(|| {
+                PreprocessorError::Include(
+                    include_path_span.clone(),
+                    include_path.to_string(),
+                    io::Error::new(io::ErrorKind::NotFound, "File not found"),
+                )
+            })?;
+        match self
+            .included_files
+            .get_key_value::<str>(include_path_buf.to_str().unwrap())
+        {
+            Some((path, contents)) => Ok((*path, *contents)),
+            None => {
+                let cached_path = cache.retain_string(
+                    include_path_buf.to_str().unwrap().to_owned(),
+                );
+                let file_contents = std::fs::read_to_string(&cached_path)
+                    .map_err(|err| {
+                        PreprocessorError::Include(
+                            include_path_span,
+                            include_path.to_string(),
+                            err,
+                        )
+                    })?;
+                let cached_contents = cache.retain_string(file_contents);
+                self.included_files.insert(cached_path, cached_contents);
+                Ok((cached_path, cached_contents))
+            }
+        }
+    }
+
     /// Retain the contents of a file
+    ///
+    /// Produces `(&file_path, &file_contents)` as references to
+    /// the cached passed arguments
     pub fn retain_file(
         &mut self,
         file_path: String,
         file_contents: String,
         cache: &'a PreprocessorCache<'a>,
     ) -> (&'a str, &'a str) {
-        let path = cache.retain_string(file_path);
-        let contents = cache.retain_string(file_contents);
-        self.included_files.insert(path, contents);
-        (path, contents)
+        match self.included_files.get_key_value::<str>(file_path.as_ref()) {
+            Some((path, contents)) => (*path, *contents),
+            None => {
+                let path = cache.retain_string(file_path);
+                let contents = cache.retain_string(file_contents);
+                self.included_files.insert(path, contents);
+                (path, contents)
+            }
+        }
     }
 
     /// Retain a span

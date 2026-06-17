@@ -109,7 +109,6 @@ fn get_ifdef_condition<'s>(
                 get_ifdef_macro_expression(src, ifdef_span, 0)?;
             let Some(eparen_token) = src.next() else {
                 return Err(PreprocessorError::VerboseError(VerboseError {
-                    valid: true,
                     span: spanned_token.1,
                     found: None,
                     expected: vec![Expectation::Token(Token::EParen)],
@@ -123,7 +122,6 @@ fn get_ifdef_condition<'s>(
         }
         _ => {
             return Err(PreprocessorError::VerboseError(VerboseError {
-                valid: true,
                 span: spanned_token.1,
                 found: Some(spanned_token.0),
                 expected: vec![Expectation::Label(
@@ -175,7 +173,6 @@ fn get_ifdef_macro_expression<'s>(
             let Some(SpannedToken(Token::EParen, eparen_span)) = src.next()
             else {
                 return Err(PreprocessorError::VerboseError(VerboseError {
-                    valid: true,
                     span: spanned_token.1,
                     found: Some(Token::Paren),
                     expected: vec![Expectation::Label("a closing parenthesis")],
@@ -194,7 +191,6 @@ fn get_ifdef_macro_expression<'s>(
         }
         _ => {
             return Err(PreprocessorError::VerboseError(VerboseError {
-                valid: true,
                 span: spanned_token.1,
                 found: Some(spanned_token.0),
                 expected: vec![Expectation::Label(

@@ -64,7 +64,8 @@ fn main() {
     };
     let parsed_src = parse(&preprocessed_stream);
     if let Err(err) = parsed_src {
-        let report: Report<'_, (String, std::ops::Range<usize>)> = err.into();
+        let report: Report<'_, (String, std::ops::Range<usize>)> =
+            err.report("P1");
         report.print(&mut error_sources).unwrap();
         return;
     }

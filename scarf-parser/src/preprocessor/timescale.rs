@@ -25,19 +25,18 @@ pub enum TimescaleUnit {
 
 #[derive(Clone, Debug)]
 pub struct Timescale<'a> {
-    def_span: Span<'a>,
+    def_span: Option<Span<'a>>,
     pub unit: (TimescaleValue, TimescaleUnit),
     pub precision: (TimescaleValue, TimescaleUnit),
 }
 
 impl<'a> Timescale<'a> {
-    pub(crate) const fn new_unchecked(
-        def_span: Span<'a>,
+    pub(crate) const fn new_default(
         unit: (TimescaleValue, TimescaleUnit),
         precision: (TimescaleValue, TimescaleUnit),
     ) -> Timescale<'a> {
         Timescale {
-            def_span,
+            def_span: None,
             unit,
             precision,
         }
@@ -50,7 +49,7 @@ impl<'a> Timescale<'a> {
     ) -> Result<Timescale<'a>, PreprocessorError<'a>> {
         if unit.1 > precision.1 {
             Ok(Timescale {
-                def_span,
+                def_span: Some(def_span),
                 unit,
                 precision,
             })
@@ -61,7 +60,7 @@ impl<'a> Timescale<'a> {
                 Err(PreprocessorError::InvalidRelativeTimescales(def_span))
             } else {
                 Ok(Timescale {
-                    def_span,
+                    def_span: Some(def_span),
                     unit,
                     precision,
                 })
@@ -70,7 +69,12 @@ impl<'a> Timescale<'a> {
     }
 
     pub fn is_valid(&self, delay_span: &Span<'a>) -> bool {
-        self.def_span.compare(delay_span) == SpanRelation::Earlier
+        if let Some(def_span) = &self.def_span {
+            def_span.compare(delay_span) == SpanRelation::Earlier
+        } else {
+            // Using a default Timescale
+            true
+        }
     }
 }
 
@@ -89,7 +93,6 @@ fn get_timescale<'s>(
         Token::UnsignedNumber("100") => TimescaleValue::Hundred,
         _ => {
             return Err(PreprocessorError::VerboseError(VerboseError {
-                valid: true,
                 span: spanned_token.1,
                 found: Some(spanned_token.0),
                 expected: vec![Expectation::Label("1, 10, or 100")],
@@ -108,7 +111,6 @@ fn get_timescale<'s>(
         Token::SimpleIdentifier("fs") => TimescaleUnit::FS,
         _ => {
             return Err(PreprocessorError::VerboseError(VerboseError {
-                valid: true,
                 span: spanned_token.1,
                 found: Some(spanned_token.0),
                 expected: vec![Expectation::Label("a recognized unit of time")],
@@ -130,7 +132,6 @@ fn get_divider<'s>(
     match spanned_token.0 {
         Token::Slash => Ok(spanned_token.1),
         _ => Err(PreprocessorError::VerboseError(VerboseError {
-            valid: true,
             span: spanned_token.1,
             found: Some(spanned_token.0),
             expected: vec![Expectation::Token(Token::Slash)],

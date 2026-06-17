@@ -18,16 +18,18 @@
 //!    measurable performance decrease, and should only be used if
 //!    newlines/comments are needed.
 
+mod error;
 pub mod lexer;
 pub mod parser;
 pub mod preprocessor;
 use ariadne::ReportBuilder;
 use ariadne::{Color, Label, ReportKind};
 pub use ariadne::{Report, Source, sources};
+pub use error::*;
 use lexer::*;
 pub use lexer::{LexedSource, Token, lex};
+pub use parser::parse;
 use parser::*;
-pub use parser::{VerboseError, parse};
 pub use preprocessor::*;
 use winnow::Parser;
 use winnow::stream::TokenSlice;
@@ -123,8 +125,19 @@ where
     }
     let mut note = "".to_string();
     let mut note_pad = "".to_string();
+    let total_inclusion_depth = curr_span.inclusion_depth();
+    let mut curr_inclusion_depth = 0;
+    // Only display a max of 7 includes
     loop {
+        if (curr_inclusion_depth == 3) & (total_inclusion_depth > 7) {
+            for _ in 7..=total_inclusion_depth {
+                curr_span = curr_span.included_from.unwrap();
+            }
+            note = format!("{}\n{}╰- ...", note, note_pad);
+            note_pad += "  ";
+        }
         if let Some(included_span) = curr_span.included_from {
+            curr_inclusion_depth += 1;
             curr_span = included_span;
             if note.is_empty() {
                 note = format!("Included from {}", curr_span.file);
@@ -139,6 +152,7 @@ where
             break;
         }
     }
+    debug_assert!(curr_span.included_from.is_none());
     if !note.is_empty() {
         report = report.with_note(note);
     }
