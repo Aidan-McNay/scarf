@@ -71,6 +71,7 @@ fn format(args: &FormatArgs) {
         println!("{:?}", preprocessed_stream);
         let parsed_src = parse(&preprocessed_stream);
         if let Err(err) = parsed_src {
+            println!("{:?}", err);
             let report: Report<'_, (String, std::ops::Range<usize>)> =
                 err.report("P1");
             report.print(&mut error_sources).unwrap()

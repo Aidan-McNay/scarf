@@ -57,10 +57,10 @@ impl<'s> From<(Token<'s>, Span<'s>)> for SpannedToken<'s> {
     }
 }
 
-fn get_expansion_string(expansion_depth: u32, is_last: bool) -> String {
+fn get_expansion_string(expansion_depth: usize, is_first: bool) -> String {
     if expansion_depth == 0 {
         "Original token".to_string()
-    } else if (expansion_depth == 1) && is_last {
+    } else if (expansion_depth == 1) && is_first {
         "Expanded here".to_string()
     } else {
         let suffix = match expansion_depth % 10 {
@@ -92,7 +92,8 @@ where
     M: ToString,
 {
     let mut curr_span: &Span<'s> = &span;
-    let mut expansion_depth: u32 = 0;
+    let mut expansion_depth: usize = curr_span.expansion_depth();
+    let mut expanded = false;
     loop {
         if let Some(expanded_span) = curr_span.expanded_from {
             report = report.with_label(
@@ -100,29 +101,34 @@ where
                     curr_span.file.to_string(),
                     curr_span.bytes.clone(),
                 ))
-                .with_message(get_expansion_string(expansion_depth, false))
+                .with_message(get_expansion_string(
+                    expansion_depth,
+                    expanded == false,
+                ))
                 .with_color(Color::BrightGreen),
             );
             curr_span = expanded_span;
-            expansion_depth += 1;
+            expansion_depth -= 1;
+            expanded = true;
         } else {
             break;
         }
     }
+    if expanded {
+        // Also label expansion in original spot
+        report = report.with_label(
+            Label::new((curr_span.file.to_string(), curr_span.bytes.clone()))
+                .with_message(get_expansion_string(expansion_depth, false))
+                .with_color(Color::BrightGreen),
+        );
+    }
+    curr_span = &span;
     report = report.with_label(
         Label::new((curr_span.file.to_string(), curr_span.bytes.clone()))
             .with_message(msg)
             .with_color(color)
             .with_priority(1),
     );
-    if expansion_depth > 0 {
-        // Also label expansion in original spot
-        report = report.with_label(
-            Label::new((curr_span.file.to_string(), curr_span.bytes.clone()))
-                .with_message(get_expansion_string(expansion_depth, true))
-                .with_color(Color::BrightGreen),
-        );
-    }
     let mut note = "".to_string();
     let mut note_pad = "".to_string();
     let total_inclusion_depth = curr_span.inclusion_depth();

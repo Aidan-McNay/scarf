@@ -65,11 +65,16 @@ impl<'s, T: Iterator<Item = SpannedToken<'s>>> TokenIterator<'s, T> {
         }
     }
 
-    pub fn add_tokens<I>(&mut self, extra_tokens: I)
+    pub fn prepend_tokens<I>(&mut self, extra_tokens: I)
     where
-        I: Iterator<Item = SpannedToken<'s>>,
+        I: Iterator<Item = SpannedToken<'s>>
+            + ExactSizeIterator
+            + std::iter::DoubleEndedIterator,
     {
-        self.extras.extend(extra_tokens)
+        self.extras.reserve(extra_tokens.len());
+        for extra_token in extra_tokens.rev() {
+            self.extras.push_front(extra_token);
+        }
     }
 
     pub fn peek(&mut self) -> Option<&SpannedToken<'s>> {
@@ -199,8 +204,7 @@ pub(crate) fn preprocess_helper<'s>(
                     state.reset_all(spanned_token.1);
                 }
                 Token::DirInclude => {
-                    let include_span =
-                        state.retain_span(spanned_token.1, cache);
+                    let include_span = cache.retain_span(spanned_token.1);
                     preprocess_include(src, dest, state, cache, include_span)?;
                 }
                 Token::DirUndefineall => {

@@ -264,11 +264,15 @@ fn replace_macro_tokens<'a>(
     let mut result_vec = vec![];
     for token in original_stream {
         match token {
-            SpannedToken(Token::SimpleIdentifier(id), _)
+            SpannedToken(Token::SimpleIdentifier(id), id_span)
                 if arguments.contains_key(id) =>
             {
                 let (_, replacement_tokens) = arguments.get(id).unwrap();
-                result_vec.extend(replacement_tokens.clone());
+                result_vec.extend(replacement_tokens.iter().map(
+                    |spanned_token| {
+                        SpannedToken(spanned_token.0.clone(), id_span.clone())
+                    },
+                ));
             }
             SpannedToken(Token::PreprocessorIdentifier(id), span) => {
                 let components = id.split("``");
@@ -334,8 +338,9 @@ fn replace_macro_tokens<'a>(
 }
 
 struct SpanReplacer<'a> {
-    text_macro_span: &'a Span<'a>,
+    text_macro_span: Span<'a>,
     tokens: IntoIter<SpannedToken<'a>>,
+    cache: &'a PreprocessorCache<'a>,
 }
 
 impl<'a> Iterator for SpanReplacer<'a> {
@@ -348,20 +353,73 @@ impl<'a> Iterator for SpanReplacer<'a> {
     }
 }
 
+impl<'a> DoubleEndedIterator for SpanReplacer<'a> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        match self.tokens.next_back() {
+            Some(token) => Some(self.update_span(token)),
+            None => None,
+        }
+    }
+}
+
+/// Create a clone of a span and all is
+fn insert_base_expansion<'a>(
+    cache: &'a PreprocessorCache<'a>,
+    span: &'a Span<'a>,
+    expanded_ref: &'a Span<'a>,
+) -> &'a Span<'a> {
+    let mut new_span = span.clone();
+    match new_span.expanded_from {
+        None => {
+            new_span.expanded_from = Some(expanded_ref);
+        }
+        Some(nested_expansion) => {
+            new_span.expanded_from = Some(insert_base_expansion(
+                cache,
+                nested_expansion,
+                expanded_ref,
+            ));
+        }
+    };
+    cache.retain_span(new_span)
+}
+
 impl<'a> SpanReplacer<'a> {
     fn new(
-        text_macro_span: &'a Span<'a>,
+        text_macro_span: Span<'a>,
         tokens: IntoIter<SpannedToken<'a>>,
+        cache: &'a PreprocessorCache<'a>,
     ) -> Self {
         Self {
             text_macro_span,
             tokens,
+            cache,
         }
     }
 
     fn update_span(&self, mut token: SpannedToken<'a>) -> SpannedToken<'a> {
-        token.1.expanded_from = Some(self.text_macro_span);
+        let original_span = std::mem::take(&mut token.1);
+        // Nested macros
+        let original_span_ref = match self.text_macro_span.expanded_from {
+            Some(prev_expansion) => insert_base_expansion(
+                self.cache,
+                prev_expansion,
+                self.cache.retain_span(original_span),
+            ),
+            None => self.cache.retain_span(original_span),
+        };
+        let new_span = Span {
+            expanded_from: Some(original_span_ref),
+            ..self.text_macro_span.clone()
+        };
+        token.1 = new_span;
         token
+    }
+}
+
+impl<'a> ExactSizeIterator for SpanReplacer<'a> {
+    fn len(&self) -> usize {
+        self.tokens.len()
     }
 }
 
@@ -398,11 +456,9 @@ pub fn preprocess_macro<'s>(
                 state,
                 cache,
             )?;
-            let token_iter = SpanReplacer::new(
-                state.retain_span(macro_span, cache),
-                token_vec.into_iter(),
-            );
-            src.add_tokens(token_iter);
+            let token_iter =
+                SpanReplacer::new(macro_span, token_vec.into_iter(), cache);
+            src.prepend_tokens(token_iter);
             Ok(())
         }
         None => Err(PreprocessorError::UndefinedMacro(text_macro)),

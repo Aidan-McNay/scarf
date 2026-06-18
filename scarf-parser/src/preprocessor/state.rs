@@ -439,15 +439,6 @@ impl<'a> PreprocessorState<'a> {
         }
     }
 
-    /// Retain a span
-    pub(crate) fn retain_span(
-        &mut self,
-        span: Span<'a>,
-        cache: &'a PreprocessorCache<'a>,
-    ) -> &'a Span<'a> {
-        cache.retain_span(span)
-    }
-
     /// Get the included files as a [`Vec`] of (name, content) tuples
     pub fn included_files(&self) -> Vec<(String, String)> {
         self.included_files

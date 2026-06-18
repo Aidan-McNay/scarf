@@ -16,9 +16,9 @@ pub type ByteSpan = Range<usize>;
 /// of the include directive
 ///
 /// If the [`Span`] is part of a `` `define `` directive, each expanded
-/// text macro will have the original [`Span`] of the `` `define `` token,
-/// with [`Span::expanded_from`] referencing the macro expansion
-/// directive
+/// text macro will have the original [`Span`] of the (now expanded) macro,
+/// with [`Span::expanded_from`] referencing the original token (in the
+/// `` `define `` directive) before expansion
 #[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct Span<'a> {
     pub file: &'a str,
@@ -50,11 +50,13 @@ impl<'a> Span<'a> {
         }
     }
     fn indeces_to_compare(&self) -> Vec<Vec<usize>> {
-        let mut indeces = match self.expanded_from {
-            Some(expanded_span) => expanded_span.indeces_to_compare(),
-            None => vec![],
+        let mut indeces = vec![self.include_indeces()];
+        match self.expanded_from {
+            Some(expanded_span) => {
+                indeces.extend(expanded_span.indeces_to_compare())
+            }
+            None => (),
         };
-        indeces.push(self.include_indeces());
         indeces
     }
     /// Compare two [`Span`]s, returning the relationship of the first to the second
@@ -63,13 +65,13 @@ impl<'a> Span<'a> {
     /// # use scarf_syntax::*;
     /// let span1 = Span {
     ///     file: "test",
-    ///     bytes: ByteSpan { start: 0, end: 2 },
+    ///     bytes: (0..2),
     ///     expanded_from: None,
     ///     included_from: None
     /// };
     /// let span2 = Span {
     ///     file: "test",
-    ///     bytes: ByteSpan { start: 6, end: 8 },
+    ///     bytes: (6..8),
     ///     expanded_from: None,
     ///     included_from: None
     /// };
@@ -160,6 +162,130 @@ impl<'a> Span<'a> {
         }
         depth
     }
+}
+
+#[test]
+fn basic_span_comparison() {
+    let span1 = Span {
+        file: "",
+        bytes: (0..2),
+        expanded_from: None,
+        included_from: None,
+    };
+    let span2 = Span {
+        file: "",
+        bytes: (2..4),
+        expanded_from: None,
+        included_from: None,
+    };
+    assert_eq!(span1.compare(&span2), SpanRelation::Earlier)
+}
+
+#[test]
+fn include_span_comparison() {
+    let span1 = Span {
+        file: "",
+        bytes: (2..4),
+        expanded_from: None,
+        included_from: None,
+    };
+    let included_span = Span {
+        file: "",
+        bytes: (0..2),
+        expanded_from: None,
+        included_from: None,
+    };
+    // Included from an earlier point
+    let span2 = Span {
+        file: "",
+        bytes: (4..6),
+        expanded_from: None,
+        included_from: Some(&included_span),
+    };
+    assert_eq!(span1.compare(&span2), SpanRelation::Later)
+}
+
+#[test]
+fn define_span_comparison() {
+    let span1 = Span {
+        file: "",
+        bytes: (2..4),
+        expanded_from: None,
+        included_from: None,
+    };
+    let definition_span = Span {
+        file: "",
+        bytes: (0..2),
+        expanded_from: None,
+        included_from: None,
+    };
+    // Defined earlier, but should still occur later
+    let span2 = Span {
+        file: "",
+        bytes: (4..6),
+        expanded_from: Some(&definition_span),
+        included_from: None,
+    };
+    assert_eq!(span1.compare(&span2), SpanRelation::Earlier)
+}
+
+#[test]
+fn mixed_define_span_comparison() {
+    let definition_span1 = Span {
+        file: "",
+        bytes: (102..104),
+        expanded_from: None,
+        included_from: None,
+    };
+    let span1 = Span {
+        file: "",
+        bytes: (0..2),
+        expanded_from: Some(&definition_span1),
+        included_from: None,
+    };
+    let definition_span2 = Span {
+        file: "",
+        bytes: (100..102),
+        expanded_from: None,
+        included_from: None,
+    };
+    // Defined earlier, but should still occur later
+    let span2 = Span {
+        file: "",
+        bytes: (2..4),
+        expanded_from: Some(&definition_span2),
+        included_from: None,
+    };
+    assert_eq!(span1.compare(&span2), SpanRelation::Earlier)
+}
+
+#[test]
+fn same_definition_span_comparison() {
+    let definition_span1 = Span {
+        file: "",
+        bytes: (2..4),
+        expanded_from: None,
+        included_from: None,
+    };
+    let span1 = Span {
+        file: "",
+        bytes: (100..104),
+        expanded_from: Some(&definition_span1),
+        included_from: None,
+    };
+    let definition_span2 = Span {
+        file: "",
+        bytes: (0..2),
+        expanded_from: None,
+        included_from: None,
+    };
+    let span2 = Span {
+        file: "",
+        bytes: (100..104),
+        expanded_from: Some(&definition_span2),
+        included_from: None,
+    };
+    assert_eq!(span1.compare(&span2), SpanRelation::Later)
 }
 
 /// Metadata for a given syntax token.
