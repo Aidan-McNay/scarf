@@ -6,6 +6,7 @@
 use clap::{Args, Parser, Subcommand};
 use scarf_parser::*;
 use std::path::PathBuf;
+mod cli;
 mod constructs;
 use constructs::constructs;
 
