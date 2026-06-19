@@ -12,4 +12,5 @@ categories = ["command-line-utilities", "development-tools"]
 
 [dependencies]
 scarf-parser = { version = "0.1.0", path = "../scarf-parser" }
+scarf-syntax = { version = "0.2.0", path = "../scarf-syntax" }
 clap = { version = "4.5.39", features = ["derive"] }

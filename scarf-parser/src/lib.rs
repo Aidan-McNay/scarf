@@ -83,7 +83,7 @@ pub(crate) fn kind_color<'s>(kind: &ariadne::ReportKind<'s>) -> Color {
 }
 
 pub(crate) fn attach_span_label<'s, M>(
-    span: Span<'s>,
+    span: &Span<'s>,
     color: ariadne::Color,
     msg: M,
     mut report: ReportBuilder<'s, (String, std::ops::Range<usize>)>,
@@ -91,7 +91,7 @@ pub(crate) fn attach_span_label<'s, M>(
 where
     M: ToString,
 {
-    let mut curr_span: &Span<'s> = &span;
+    let mut curr_span: &Span<'s> = span;
     let mut expansion_depth: usize = curr_span.expansion_depth();
     let mut expanded = false;
     loop {

@@ -185,7 +185,7 @@ fn format_reason_short<'s>(error: &VerboseError<'s>) -> String {
 impl<'s> VerboseError<'s> {
     /// Generate an error report for the [`VerboseError`]
     pub fn report<C>(
-        self,
+        &self,
         code: C,
     ) -> Report<'s, (String, std::ops::Range<usize>)>
     where
@@ -218,7 +218,7 @@ impl<'s> VerboseError<'s> {
         )
         .with_message(format_reason(&self));
         report = attach_span_label(
-            error_span,
+            &error_span,
             Color::Red,
             format_reason_short(&self),
             report,

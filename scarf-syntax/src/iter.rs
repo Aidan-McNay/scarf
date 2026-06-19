@@ -4,6 +4,7 @@
 //! Iterating over a CST
 
 use crate::*;
+use std::cmp::{max, min};
 use std::ops::Add;
 
 /// An iterator over nodes in a syntax tree
@@ -75,12 +76,21 @@ impl<'a: 'b, 'b> Iterator for NodeIter<'a, 'b> {
 }
 
 /// An object that can be represented as a collection of CST nodes
+///
+/// This is implemented by all individual CST nodes (see the associated
+/// data for [`Node`] variants) to represent its subtree.
 pub trait Nodes<'a: 'b, 'b> {
     /// The nodes of the object
     ///
     /// This includes the object itself, as well as any/all children nodes,
     /// provided depth-first.
     fn nodes(&'b self) -> NodeIter<'a, 'b>;
+
+    /// The overall [`Span`] of the nodes.
+    ///
+    /// The resulting [`Span`] is for the overall node; if the node happes
+    /// to go across files, the [`Span`] will only be for the first child node
+    fn span(&'b self) -> Span<'a>;
 
     /// Add all children nodes satisfying the given predicate to
     /// the provided [`Vec`]
@@ -106,6 +116,22 @@ pub trait Nodes<'a: 'b, 'b> {
     }
 }
 
+pub(crate) fn merge_spans<'a>(span1: Span<'a>, span2: Span<'a>) -> Span<'a> {
+    if span1.file == "" {
+        span2
+    } else if span2.file == "" {
+        span1
+    } else if span1.file == span2.file {
+        Span {
+            bytes: (min(span1.bytes.start, span2.bytes.start)
+                ..max(span1.bytes.end, span2.bytes.end)),
+            ..span1
+        }
+    } else {
+        span1
+    }
+}
+
 impl<'a: 'b, 'b, T> Nodes<'a, 'b> for Box<T>
 where
     T: Nodes<'a, 'b>,
@@ -119,6 +145,9 @@ where
         pred: fn(Node<'a, 'b>) -> bool,
     ) {
         self.as_ref().add_nodes(dest, pred);
+    }
+    fn span(&'b self) -> Span<'a> {
+        self.as_ref().span()
     }
 }
 
@@ -140,6 +169,12 @@ where
         match self {
             Some(data) => data.add_nodes(dest, pred),
             None => (),
+        }
+    }
+    fn span(&'b self) -> Span<'a> {
+        match self {
+            Some(data) => data.span(),
+            None => Span::default(),
         }
     }
 }
@@ -164,6 +199,12 @@ where
             member.add_nodes(dest, pred);
         }
     }
+    fn span(&'b self) -> Span<'a> {
+        self.iter()
+            .map(|child_node| child_node.span())
+            .reduce(merge_spans)
+            .unwrap_or(Span::default())
+    }
 }
 
 impl<'a: 'b, 'b, T0, T1> Nodes<'a, 'b> for (T0, T1)
@@ -181,6 +222,9 @@ where
     ) {
         self.0.add_nodes(dest, pred);
         self.1.add_nodes(dest, pred);
+    }
+    fn span(&'b self) -> Span<'a> {
+        merge_spans(self.0.span(), self.1.span())
     }
 }
 
@@ -201,6 +245,10 @@ where
         self.0.add_nodes(dest, pred);
         self.1.add_nodes(dest, pred);
         self.2.add_nodes(dest, pred);
+    }
+    fn span(&'b self) -> Span<'a> {
+        let merge_span = merge_spans(self.0.span(), self.1.span());
+        merge_spans(merge_span, self.2.span())
     }
 }
 
@@ -223,6 +271,11 @@ where
         self.1.add_nodes(dest, pred);
         self.2.add_nodes(dest, pred);
         self.3.add_nodes(dest, pred);
+    }
+    fn span(&'b self) -> Span<'a> {
+        let merge_span = merge_spans(self.0.span(), self.1.span());
+        let merge_span = merge_spans(merge_span, self.2.span());
+        merge_spans(merge_span, self.3.span())
     }
 }
 
@@ -251,6 +304,12 @@ where
         self.2.add_nodes(dest, pred);
         self.3.add_nodes(dest, pred);
         self.4.add_nodes(dest, pred);
+    }
+    fn span(&'b self) -> Span<'a> {
+        let merge_span = merge_spans(self.0.span(), self.1.span());
+        let merge_span = merge_spans(merge_span, self.2.span());
+        let merge_span = merge_spans(merge_span, self.3.span());
+        merge_spans(merge_span, self.4.span())
     }
 }
 
@@ -283,6 +342,13 @@ where
         self.3.add_nodes(dest, pred);
         self.4.add_nodes(dest, pred);
         self.5.add_nodes(dest, pred);
+    }
+    fn span(&'b self) -> Span<'a> {
+        let merge_span = merge_spans(self.0.span(), self.1.span());
+        let merge_span = merge_spans(merge_span, self.2.span());
+        let merge_span = merge_spans(merge_span, self.3.span());
+        let merge_span = merge_spans(merge_span, self.4.span());
+        merge_spans(merge_span, self.5.span())
     }
 }
 
@@ -318,6 +384,14 @@ where
         self.4.add_nodes(dest, pred);
         self.5.add_nodes(dest, pred);
         self.6.add_nodes(dest, pred);
+    }
+    fn span(&'b self) -> Span<'a> {
+        let merge_span = merge_spans(self.0.span(), self.1.span());
+        let merge_span = merge_spans(merge_span, self.2.span());
+        let merge_span = merge_spans(merge_span, self.3.span());
+        let merge_span = merge_spans(merge_span, self.4.span());
+        let merge_span = merge_spans(merge_span, self.5.span());
+        merge_spans(merge_span, self.6.span())
     }
 }
 
@@ -356,6 +430,15 @@ where
         self.5.add_nodes(dest, pred);
         self.6.add_nodes(dest, pred);
         self.7.add_nodes(dest, pred);
+    }
+    fn span(&'b self) -> Span<'a> {
+        let merge_span = merge_spans(self.0.span(), self.1.span());
+        let merge_span = merge_spans(merge_span, self.2.span());
+        let merge_span = merge_spans(merge_span, self.3.span());
+        let merge_span = merge_spans(merge_span, self.4.span());
+        let merge_span = merge_spans(merge_span, self.5.span());
+        let merge_span = merge_spans(merge_span, self.6.span());
+        merge_spans(merge_span, self.7.span())
     }
 }
 
@@ -397,6 +480,16 @@ where
         self.6.add_nodes(dest, pred);
         self.7.add_nodes(dest, pred);
         self.8.add_nodes(dest, pred);
+    }
+    fn span(&'b self) -> Span<'a> {
+        let merge_span = merge_spans(self.0.span(), self.1.span());
+        let merge_span = merge_spans(merge_span, self.2.span());
+        let merge_span = merge_spans(merge_span, self.3.span());
+        let merge_span = merge_spans(merge_span, self.4.span());
+        let merge_span = merge_spans(merge_span, self.5.span());
+        let merge_span = merge_spans(merge_span, self.6.span());
+        let merge_span = merge_spans(merge_span, self.7.span());
+        merge_spans(merge_span, self.8.span())
     }
 }
 
@@ -441,6 +534,17 @@ where
         self.7.add_nodes(dest, pred);
         self.8.add_nodes(dest, pred);
         self.9.add_nodes(dest, pred);
+    }
+    fn span(&'b self) -> Span<'a> {
+        let merge_span = merge_spans(self.0.span(), self.1.span());
+        let merge_span = merge_spans(merge_span, self.2.span());
+        let merge_span = merge_spans(merge_span, self.3.span());
+        let merge_span = merge_spans(merge_span, self.4.span());
+        let merge_span = merge_spans(merge_span, self.5.span());
+        let merge_span = merge_spans(merge_span, self.6.span());
+        let merge_span = merge_spans(merge_span, self.7.span());
+        let merge_span = merge_spans(merge_span, self.8.span());
+        merge_spans(merge_span, self.9.span())
     }
 }
 
@@ -488,6 +592,18 @@ where
         self.8.add_nodes(dest, pred);
         self.9.add_nodes(dest, pred);
         self.10.add_nodes(dest, pred);
+    }
+    fn span(&'b self) -> Span<'a> {
+        let merge_span = merge_spans(self.0.span(), self.1.span());
+        let merge_span = merge_spans(merge_span, self.2.span());
+        let merge_span = merge_spans(merge_span, self.3.span());
+        let merge_span = merge_spans(merge_span, self.4.span());
+        let merge_span = merge_spans(merge_span, self.5.span());
+        let merge_span = merge_spans(merge_span, self.6.span());
+        let merge_span = merge_spans(merge_span, self.7.span());
+        let merge_span = merge_spans(merge_span, self.8.span());
+        let merge_span = merge_spans(merge_span, self.9.span());
+        merge_spans(merge_span, self.10.span())
     }
 }
 
@@ -539,6 +655,19 @@ where
         self.10.add_nodes(dest, pred);
         self.11.add_nodes(dest, pred);
     }
+    fn span(&'b self) -> Span<'a> {
+        let merge_span = merge_spans(self.0.span(), self.1.span());
+        let merge_span = merge_spans(merge_span, self.2.span());
+        let merge_span = merge_spans(merge_span, self.3.span());
+        let merge_span = merge_spans(merge_span, self.4.span());
+        let merge_span = merge_spans(merge_span, self.5.span());
+        let merge_span = merge_spans(merge_span, self.6.span());
+        let merge_span = merge_spans(merge_span, self.7.span());
+        let merge_span = merge_spans(merge_span, self.8.span());
+        let merge_span = merge_spans(merge_span, self.9.span());
+        let merge_span = merge_spans(merge_span, self.10.span());
+        merge_spans(merge_span, self.11.span())
+    }
 }
 
 impl<'a: 'b, 'b> Nodes<'a, 'b> for Metadata<'a> {
@@ -550,6 +679,9 @@ impl<'a: 'b, 'b> Nodes<'a, 'b> for Metadata<'a> {
         _: &mut Vec<Node<'a, 'b>>,
         _: fn(Node<'a, 'b>) -> bool,
     ) {
+    }
+    fn span(&'b self) -> Span<'a> {
+        self.span.clone()
     }
 }
 
@@ -563,6 +695,9 @@ impl<'a: 'b, 'b> Nodes<'a, 'b> for NonTriviaToken<'a> {
         _: fn(Node<'a, 'b>) -> bool,
     ) {
     }
+    fn span(&'b self) -> Span<'a> {
+        Span::default()
+    }
 }
 
 impl<'a: 'b, 'b> Nodes<'a, 'b> for &'a str {
@@ -574,6 +709,9 @@ impl<'a: 'b, 'b> Nodes<'a, 'b> for &'a str {
         _: &mut Vec<Node<'a, 'b>>,
         _: fn(Node<'a, 'b>) -> bool,
     ) {
+    }
+    fn span(&'b self) -> Span<'a> {
+        Span::default()
     }
 }
 

@@ -79,8 +79,7 @@ pub trait LexedSource<'a>:
     }
 
     /// Dump a representation of the lexed source to a file, for debugging
-    fn dump(&self, file_path: &str) -> io::Result<()> {
-        let file_path = Path::new(file_path);
+    fn dump(&self, file_path: &Path) -> io::Result<()> {
         if let Some(parent_dir) = file_path.parent() {
             fs::create_dir_all(parent_dir)?;
         }

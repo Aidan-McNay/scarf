@@ -165,6 +165,22 @@ impl<'a> PreprocessorState<'a> {
             include_history: vec![],
         }
     }
+    /// Make the [`PreprocessorState`] fresh, as though it had just started preprocessing
+    ///
+    /// This retains all files that were read in, avoiding reading in their contents again
+    pub fn make_fresh(&mut self, defines: Vec<Define<'a>>) {
+        self.defines = defines;
+        self.timescales = vec![];
+        self.default_nettypes = vec![];
+        self.unconnected_drives = vec![];
+        self.cell_defines = vec![];
+        self.line_directives = vec![];
+        self.curr_standard = StandardVersion::default();
+        self.warnings = vec![];
+        self.in_define = false;
+        self.in_define_arg = false;
+        self.include_history = vec![];
+    }
     /// Reset all resetable configs
     ///
     /// This is called when a `` `resetall `` is encountered

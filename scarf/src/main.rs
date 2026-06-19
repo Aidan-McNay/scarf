@@ -5,6 +5,9 @@
 
 use clap::{Args, Parser, Subcommand};
 use scarf_parser::*;
+use std::path::PathBuf;
+mod constructs;
+use constructs::constructs;
 
 #[derive(Parser)]
 #[command(version, author, about, long_about = None)]
@@ -17,6 +20,9 @@ struct Cli {
 enum Commands {
     /// Format source files in-place
     Format(FormatArgs),
+
+    /// Check the constructs used
+    Constructs(constructs::ConstructsArgs),
 }
 
 // -----------------------------------------------------------------------
@@ -27,6 +33,10 @@ enum Commands {
 struct FormatArgs {
     /// The file(s) to format
     paths: Vec<String>,
+
+    /// A directory to dump debug output to
+    #[arg(short, long)]
+    debug: Option<PathBuf>,
 }
 
 fn format(args: &FormatArgs) {
@@ -36,9 +46,11 @@ fn format(args: &FormatArgs) {
         let mut state = PreprocessorState::new(vec![], vec![]);
         let (_, src) = state.retain_file(path.clone(), src, &string_cache);
         let lexed_src = lex(src, path.as_str()).process();
-        match lexed_src.dump("./scarf_debug/lex.txt") {
-            Ok(_) => (),
-            Err(err) => println!("{}", err),
+        if let Some(debug_path) = &args.debug {
+            match lexed_src.dump(&debug_path) {
+                Ok(_) => (),
+                Err(err) => println!("{}", err),
+            }
         }
         let lex_errors = lexed_src.report_errors().collect::<Vec<_>>();
         if !lex_errors.is_empty() {
@@ -54,7 +66,7 @@ fn format(args: &FormatArgs) {
             &string_cache,
         );
         let mut error_sources = sources(state.included_files());
-        for warning in state.warnings {
+        for warning in &state.warnings {
             let report: Report<'_, (String, std::ops::Range<usize>)> =
                 warning.into();
             report.print(&mut error_sources).unwrap();
@@ -62,7 +74,7 @@ fn format(args: &FormatArgs) {
         let preprocessed_stream = match preprocess_result {
             Err(err) => {
                 let report: Report<'_, (String, std::ops::Range<usize>)> =
-                    err.into();
+                    (&err).into();
                 report.print(&mut error_sources).unwrap();
                 return;
             }
@@ -103,5 +115,6 @@ fn main() {
     let cli = Cli::parse();
     match &cli.command {
         Commands::Format(args) => format(&args),
+        Commands::Constructs(args) => constructs(&args),
     }
 }

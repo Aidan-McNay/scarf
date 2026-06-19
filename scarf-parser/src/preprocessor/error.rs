@@ -456,7 +456,7 @@ pub enum PreprocessorError<'a> {
 }
 
 fn make_report<'s>(
-    span: Span<'s>,
+    span: &Span<'s>,
     code: &str,
     reason: String,
     code_label: String,
@@ -473,10 +473,10 @@ fn make_report<'s>(
     attach_span_label(span, kind_color(&kind), code_label, report)
 }
 
-impl<'s> From<PreprocessorError<'s>>
+impl<'s> From<&PreprocessorError<'s>>
     for Report<'s, (String, std::ops::Range<usize>)>
 {
-    fn from(s: PreprocessorError<'s>) -> Self {
+    fn from(s: &PreprocessorError<'s>) -> Self {
         match s {
             PreprocessorError::Endif(endif_span) => make_report(
                 endif_span,
@@ -522,7 +522,7 @@ impl<'s> From<PreprocessorError<'s>>
             ).finish(),
             PreprocessorError::InvalidDefineParameter(err_spanned_token) => {
                 make_report(
-                    err_spanned_token.1,
+                    &err_spanned_token.1,
                     "PP7",
                     format!(
                         "Found {}, expected a preprocessor macro parameter/identifier",
@@ -534,7 +534,7 @@ impl<'s> From<PreprocessorError<'s>>
             }
             PreprocessorError::InvalidDefineArgument(err_spanned_token) => {
                 make_report(
-                    err_spanned_token.1,
+                    &err_spanned_token.1,
                     "PP7",
                     format!(
                         "Found {}, expected a comma, ), or a preprocessor macro argument",
@@ -567,7 +567,7 @@ impl<'s> From<PreprocessorError<'s>>
             PreprocessorError::IncompleteDefine(
                 err_spanned_token,
             ) => make_report(
-                err_spanned_token.1,
+                &err_spanned_token.1,
                 "PP10",
                 format!(
                     "Found {}, expected more in the preprocessor definition",
@@ -595,8 +595,8 @@ impl<'s> From<PreprocessorError<'s>>
                 )).finish()
             }
             PreprocessorError::NoDefaultAfterDefault((last_default_arg, no_default_arg)) => {
-                attach_span_label(last_default_arg.1, NOTE_COLOR, format!("{} had a default specified", last_default_arg.0), make_report(
-                    no_default_arg.1,
+                attach_span_label(&last_default_arg.1, NOTE_COLOR, format!("{} had a default specified", last_default_arg.0), make_report(
+                    &no_default_arg.1,
                     "PP15",
                     format!("No default specified for argument after one with a default"),
                     "No default specified".to_string(),
@@ -650,7 +650,7 @@ impl<'s> From<PreprocessorError<'s>>
             }
             PreprocessorError::IncompleteMacroWithToken(err_spanned_token) => {
                 make_report(
-                  err_spanned_token.1,
+                  &err_spanned_token.1,
                   "PP21",
                   format!("Usage of {} is incomplete", err_spanned_token.0),
                   "Expected a complete macro argument or escaped newline after".to_string(),
@@ -687,7 +687,7 @@ impl<'s> From<PreprocessorError<'s>>
           ).finish(),
             PreprocessorError::EndOfFunctionArgument(err_spanned_token) => {
               make_report(
-                err_spanned_token.1,
+                &err_spanned_token.1,
                 "PPX",
                 "(Internal Error) End of function argument not handled correctly".to_string(),
                 "(Internal Error) End of function argument not handled correctly".to_string(),
@@ -745,10 +745,10 @@ pub enum PreprocessorWarning<'a> {
     RedefinedMacro((&'a str, Span<'a>, Span<'a>)),
 }
 
-impl<'s> From<PreprocessorWarning<'s>>
+impl<'s> From<&PreprocessorWarning<'s>>
     for Report<'s, (String, std::ops::Range<usize>)>
 {
-    fn from(s: PreprocessorWarning<'s>) -> Self {
+    fn from(s: &PreprocessorWarning<'s>) -> Self {
         match s {
             PreprocessorWarning::RedefinedMacro((macro_name, macro_span, prev_span)) => {
                 attach_span_label(prev_span, NOTE_COLOR, "Previously defined here", make_report(

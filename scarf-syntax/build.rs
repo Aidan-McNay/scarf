@@ -86,6 +86,12 @@ fn gen_node_def(node_names: &Vec<syn::Ident>) -> TokenStream {
                 #( Node::#node_names(inner_ref) => { inner_ref.add_nodes(dest, pred) } )*
             }
           }
+          fn span(&'b self) -> Span<'a>
+          {
+            match self {
+                #( Node::#node_names(inner_ref) => { inner_ref.span() } )*
+            }
+          }
       }
 
       impl<'a: 'b, 'b> IntoIterator for Node<'a, 'b> {
@@ -102,7 +108,7 @@ fn gen_node_def(node_names: &Vec<syn::Ident>) -> TokenStream {
               self.clone().into()
           }
           /// The child nodes of a given [`Node`]
-          fn children(&self) -> Vec<Node<'a, 'b>> {
+          pub fn children(&self) -> Vec<Node<'a, 'b>> {
               match self {
                   #( Node::#node_names(inner_ref) => { inner_ref.children() } )*
               }
@@ -228,8 +234,33 @@ fn gen_node_enum_impls(node_enums: Vec<syn::ItemEnum>) -> TokenStream {
                 res
             }
         });
+        let variant_spans = item_enum.variants.iter().map(|v| {
+            let syn::Fields::Unnamed(ref unnamed_fields) = v.fields else {
+                panic!(
+                    "Syntax tree enum with named fields: {}",
+                    ident.to_string()
+                );
+            };
+            let expansion_string = unnamed_fields
+                .unnamed
+                .iter()
+                .enumerate()
+                .map(|(i, _)| format!("v{}.span()", i))
+                .collect::<Vec<_>>()
+                .join("; ");
+            if expansion_string.is_empty() {
+                quote!(Span::default())
+            } else {
+                let res: TokenStream = expansion_string
+                    .parse()
+                    .expect("Unable to parse enum expansion");
+                res
+            }
+        });
         let variants_clone = variants.clone();
+        let variants_clone_clone = variants.clone();
         let variant_expansions_clone = variant_expansions.clone();
+        let variant_expansions_clone_clone = variant_expansions.clone();
         tokens.extend(quote! {
             impl<'a: 'b, 'b> Nodes<'a, 'b> for #ident<'a> {
                 fn nodes(&'b self) -> NodeIter<'a, 'b> {
@@ -244,11 +275,16 @@ fn gen_node_enum_impls(node_enums: Vec<syn::ItemEnum>) -> TokenStream {
                         #( #ident::#variants(#variant_expansions) => { #variant_add_nodes; } )*
                     }
                 }
+                fn span(&'b self) -> Span<'a> {
+                    match self {
+                        #( #ident::#variants_clone(#variant_expansions_clone) => { #variant_spans } )*
+                    }
+                }
             }
             impl<'a: 'b, 'b> #ident<'a> {
                 fn children(&'b self) -> Vec<Node<'a, 'b>> {
                     match self {
-                        #( #ident::#variants_clone(#variant_expansions_clone) => { (#variant_children).raw() } )*
+                        #( #ident::#variants_clone_clone(#variant_expansions_clone_clone) => { (#variant_children).raw() } )*
                     }
                 }
             }
@@ -273,6 +309,7 @@ fn gen_node_struct_impls(node_structs: Vec<syn::ItemStruct>) -> TokenStream {
                 quote! {#index}
             });
         let indices_clone = indices.clone();
+        let indices_clone_clone = indices.clone();
         tokens.extend(quote! {
             impl<'a: 'b, 'b> Nodes<'a, 'b> for #ident<'a> {
                 fn nodes(&'b self) -> NodeIter<'a, 'b> {
@@ -285,10 +322,14 @@ fn gen_node_struct_impls(node_structs: Vec<syn::ItemStruct>) -> TokenStream {
                     }
                     #( self.#indices.add_nodes(dest, pred); )*
                 }
+                fn span(&'b self) -> Span<'a> {
+                    let spans = vec![#( self.#indices_clone.span() ),*];
+                    spans.into_iter().reduce(iter::merge_spans).unwrap_or(Span::default())
+                }
             }
             impl<'a: 'b, 'b> #ident<'a> {
                 fn children(&'b self) -> Vec<Node<'a, 'b>> {
-                    (#( self.#indices_clone.nodes() )+*).raw()
+                    (#( self.#indices_clone_clone.nodes() )+*).raw()
                 }
             }
         })
@@ -312,7 +353,7 @@ fn gen_id_def(max_id: u16) -> TokenStream {
         ///     assert!(found_names.insert(name));
         /// }
         /// ```
-        #[derive(Debug, Clone, PartialEq, Eq)]
+        #[derive(Debug, Clone, PartialEq, Eq, Hash)]
         pub struct NodeID(u16);
 
         impl NodeID {

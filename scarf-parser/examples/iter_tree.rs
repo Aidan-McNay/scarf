@@ -16,6 +16,10 @@ struct Cli {
     #[arg(short, long)]
     defines: Vec<String>,
 
+    /// A directory to dump debug output to
+    #[arg(long)]
+    debug: Option<PathBuf>,
+
     path: PathBuf,
 }
 
@@ -31,9 +35,11 @@ fn main() {
         &string_cache,
     );
     let lexed_src = lex(src, path.to_str().unwrap()).process();
-    match lexed_src.dump("./scarf_debug/lex.txt") {
-        Ok(_) => (),
-        Err(err) => println!("{}", err),
+    if let Some(debug_path) = args.debug {
+        match lexed_src.dump(&debug_path) {
+            Ok(_) => (),
+            Err(err) => println!("{}", err),
+        }
     }
     let lex_errors = lexed_src.report_errors().collect::<Vec<_>>();
     if !lex_errors.is_empty() {
@@ -48,7 +54,7 @@ fn main() {
     let preprocess_result =
         preprocess(token_stream.into_iter(), &mut state, &string_cache);
     let mut error_sources = sources(state.included_files());
-    for warning in state.warnings {
+    for warning in &state.warnings {
         let report: Report<'_, (String, std::ops::Range<usize>)> =
             warning.into();
         report.print(&mut error_sources).unwrap();
@@ -56,7 +62,7 @@ fn main() {
     let preprocessed_stream = match preprocess_result {
         Err(err) => {
             let report: Report<'_, (String, std::ops::Range<usize>)> =
-                err.into();
+                (&err).into();
             report.print(&mut error_sources).unwrap();
             return;
         }
