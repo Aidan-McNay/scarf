@@ -3,7 +3,7 @@
 #
 #    maturin generate-ci github -m scarf-python/Cargo.toml -o ./.github/workflows/ci.yaml
 #
-name: CI
+name: Publish (PyPI)
 
 on:
   workflow_dispatch:
