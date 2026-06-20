@@ -20,3 +20,7 @@ classifiers = [
 [project.urls]
 Homepage = "https://github.com/Aidan-McNay/scarf"
 Issues = "https://github.com/Aidan-McNay/scarf/issues"
+
+[tool.maturin.generate-ci.github]
+trusted-publishing = true
+publishing-environment = "release"

@@ -15,7 +15,8 @@ name = "scarf_python"
 crate-type = ["cdylib"]
 
 [dependencies]
-rand = "0.9.0"
+scarf-parser = { version = "0.1", path = "../scarf-parser" }
+scarf-syntax = { version = "0.2", path = "../scarf-syntax" }
 
 [dependencies.pyo3]
 version = "0.29.0"
