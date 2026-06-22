@@ -13,7 +13,9 @@ fn get_keyword_standard<'s>(
     err_span: Span<'s>,
 ) -> Result<StandardVersion, PreprocessorError<'s>> {
     let Some(spanned_token) = preprocess_single(src, state, cache)? else {
-        return Err(PreprocessorError::IncompleteDirective(err_span));
+        return Err(PreprocessorError::IncompleteDirective {
+            directive_span: err_span,
+        });
     };
     match spanned_token.0 {
         Token::StringLiteral(version_spec) => match version_spec {
@@ -26,15 +28,15 @@ fn get_keyword_standard<'s>(
             "1364-2001-noconfig" => Ok(StandardVersion::IEEE1364_2001Noconfig),
             "1364-2001" => Ok(StandardVersion::IEEE1364_2001),
             "1364-1995" => Ok(StandardVersion::IEEE1364_1995),
-            _ => Err(PreprocessorError::InvalidVersionSpecifier((
-                Some(version_spec),
-                spanned_token.1,
-            ))),
+            _ => Err(PreprocessorError::InvalidVersionSpecifier {
+                invalid_version: Token::StringLiteral(version_spec),
+                invalid_version_span: spanned_token.1,
+            }),
         },
-        _ => Err(PreprocessorError::InvalidVersionSpecifier((
-            None,
-            spanned_token.1,
-        ))),
+        _ => Err(PreprocessorError::InvalidVersionSpecifier {
+            invalid_version: spanned_token.0,
+            invalid_version_span: spanned_token.1,
+        }),
     }
 }
 
@@ -43,17 +45,19 @@ pub fn preprocess_keyword_standard<'s>(
     dest: &mut Vec<SpannedToken<'s>>,
     state: &mut PreprocessorState<'s>,
     cache: &'s PreprocessorCache<'s>,
-    begin_span: Span<'s>,
+    begin_keywords_span: Span<'s>,
 ) -> Result<(), PreprocessorError<'s>> {
     let new_standard =
-        get_keyword_standard(src, state, cache, begin_span.clone())?;
+        get_keyword_standard(src, state, cache, begin_keywords_span.clone())?;
     let old_standard = state.curr_standard.clone();
     state.curr_standard = new_standard;
     let result = preprocess_helper(src, dest, state, cache);
     state.curr_standard = old_standard;
     match result {
-        Ok(()) => Err(PreprocessorError::NoEndKeywords(begin_span)),
-        Err(PreprocessorError::EndKeywords(_)) => Ok(()),
+        Ok(()) => Err(PreprocessorError::NoEndKeywords {
+            begin_keywords_span,
+        }),
+        Err(PreprocessorError::EndKeywords { .. }) => Ok(()),
         Err(err) => Err(err),
     }
 }

@@ -5,9 +5,10 @@
 
 use crate::Span;
 use pyo3::prelude::*;
-use scarf_parser;
+use scarf_parser::{self, PreprocessorCache};
 
-#[pyclass(eq, from_py_object, module = "scarf_python")]
+/// A wrapper around [`scarf_parser::Token`]
+#[pyclass(eq, from_py_object, module = "scarf_python", str)]
 #[derive(Clone, PartialEq, Eq)]
 pub enum Token {
     Error(),
@@ -420,6 +421,13 @@ pub enum Token {
     TripleQuoteStringLiteral { text: String },
     PreprocessorTripleQuoteStringLiteral { text: String },
     Newline(),
+}
+
+impl std::fmt::Display for Token {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let rust_token: scarf_parser::Token<'_> = self.into();
+        rust_token.fmt(f)
+    }
 }
 
 impl<'a> From<scarf_parser::Token<'a>> for Token {
@@ -898,6 +906,458 @@ impl<'a> From<scarf_parser::Token<'a>> for Token {
     }
 }
 
+impl<'a> From<&'a Token> for scarf_parser::Token<'a> {
+    fn from(value: &'a Token) -> Self {
+        match value {
+            Token::Error() => scarf_parser::Token::Error,
+            Token::Always() => scarf_parser::Token::Always,
+            Token::And() => scarf_parser::Token::And,
+            Token::Assign() => scarf_parser::Token::Assign,
+            Token::Begin() => scarf_parser::Token::Begin,
+            Token::Buf() => scarf_parser::Token::Buf,
+            Token::Bufif0() => scarf_parser::Token::Bufif0,
+            Token::Bufif1() => scarf_parser::Token::Bufif1,
+            Token::Case() => scarf_parser::Token::Case,
+            Token::Casex() => scarf_parser::Token::Casex,
+            Token::Casez() => scarf_parser::Token::Casez,
+            Token::Cmos() => scarf_parser::Token::Cmos,
+            Token::Deassign() => scarf_parser::Token::Deassign,
+            Token::Default() => scarf_parser::Token::Default,
+            Token::Defparam() => scarf_parser::Token::Defparam,
+            Token::Disable() => scarf_parser::Token::Disable,
+            Token::Edge() => scarf_parser::Token::Edge,
+            Token::Else() => scarf_parser::Token::Else,
+            Token::End() => scarf_parser::Token::End,
+            Token::Endcase() => scarf_parser::Token::Endcase,
+            Token::Endfunction() => scarf_parser::Token::Endfunction,
+            Token::Endmodule() => scarf_parser::Token::Endmodule,
+            Token::Endprimitive() => scarf_parser::Token::Endprimitive,
+            Token::Endspecify() => scarf_parser::Token::Endspecify,
+            Token::Endtable() => scarf_parser::Token::Endtable,
+            Token::Endtask() => scarf_parser::Token::Endtask,
+            Token::Event() => scarf_parser::Token::Event,
+            Token::For() => scarf_parser::Token::For,
+            Token::Force() => scarf_parser::Token::Force,
+            Token::Forever() => scarf_parser::Token::Forever,
+            Token::Fork() => scarf_parser::Token::Fork,
+            Token::Function() => scarf_parser::Token::Function,
+            Token::Highz0() => scarf_parser::Token::Highz0,
+            Token::Highz1() => scarf_parser::Token::Highz1,
+            Token::If() => scarf_parser::Token::If,
+            Token::Ifnone() => scarf_parser::Token::Ifnone,
+            Token::Initial() => scarf_parser::Token::Initial,
+            Token::Inout() => scarf_parser::Token::Inout,
+            Token::Input() => scarf_parser::Token::Input,
+            Token::Integer() => scarf_parser::Token::Integer,
+            Token::Join() => scarf_parser::Token::Join,
+            Token::Large() => scarf_parser::Token::Large,
+            Token::Macromodule() => scarf_parser::Token::Macromodule,
+            Token::Medium() => scarf_parser::Token::Medium,
+            Token::Module() => scarf_parser::Token::Module,
+            Token::Nand() => scarf_parser::Token::Nand,
+            Token::Negedge() => scarf_parser::Token::Negedge,
+            Token::Nmos() => scarf_parser::Token::Nmos,
+            Token::Nor() => scarf_parser::Token::Nor,
+            Token::Not() => scarf_parser::Token::Not,
+            Token::Notif0() => scarf_parser::Token::Notif0,
+            Token::Notif1() => scarf_parser::Token::Notif1,
+            Token::Or() => scarf_parser::Token::Or,
+            Token::Output() => scarf_parser::Token::Output,
+            Token::Parameter() => scarf_parser::Token::Parameter,
+            Token::Pmos() => scarf_parser::Token::Pmos,
+            Token::Posedge() => scarf_parser::Token::Posedge,
+            Token::Primitive() => scarf_parser::Token::Primitive,
+            Token::Pull0() => scarf_parser::Token::Pull0,
+            Token::Pull1() => scarf_parser::Token::Pull1,
+            Token::Pulldown() => scarf_parser::Token::Pulldown,
+            Token::Pullup() => scarf_parser::Token::Pullup,
+            Token::Rcmos() => scarf_parser::Token::Rcmos,
+            Token::Real() => scarf_parser::Token::Real,
+            Token::Realtime() => scarf_parser::Token::Realtime,
+            Token::Reg() => scarf_parser::Token::Reg,
+            Token::Release() => scarf_parser::Token::Release,
+            Token::Repeat() => scarf_parser::Token::Repeat,
+            Token::Rnmos() => scarf_parser::Token::Rnmos,
+            Token::Rpmos() => scarf_parser::Token::Rpmos,
+            Token::Rtran() => scarf_parser::Token::Rtran,
+            Token::Rtranif0() => scarf_parser::Token::Rtranif0,
+            Token::Rtranif1() => scarf_parser::Token::Rtranif1,
+            Token::Scalared() => scarf_parser::Token::Scalared,
+            Token::Small() => scarf_parser::Token::Small,
+            Token::Specify() => scarf_parser::Token::Specify,
+            Token::Specparam() => scarf_parser::Token::Specparam,
+            Token::Strong0() => scarf_parser::Token::Strong0,
+            Token::Strong1() => scarf_parser::Token::Strong1,
+            Token::Supply0() => scarf_parser::Token::Supply0,
+            Token::Supply1() => scarf_parser::Token::Supply1,
+            Token::Table() => scarf_parser::Token::Table,
+            Token::Task() => scarf_parser::Token::Task,
+            Token::Time() => scarf_parser::Token::Time,
+            Token::Tran() => scarf_parser::Token::Tran,
+            Token::Tranif0() => scarf_parser::Token::Tranif0,
+            Token::Tranif1() => scarf_parser::Token::Tranif1,
+            Token::Tri() => scarf_parser::Token::Tri,
+            Token::Tri0() => scarf_parser::Token::Tri0,
+            Token::Tri1() => scarf_parser::Token::Tri1,
+            Token::Triand() => scarf_parser::Token::Triand,
+            Token::Trior() => scarf_parser::Token::Trior,
+            Token::Trireg() => scarf_parser::Token::Trireg,
+            Token::Vectored() => scarf_parser::Token::Vectored,
+            Token::Wait() => scarf_parser::Token::Wait,
+            Token::Wand() => scarf_parser::Token::Wand,
+            Token::Weak0() => scarf_parser::Token::Weak0,
+            Token::Weak1() => scarf_parser::Token::Weak1,
+            Token::While() => scarf_parser::Token::While,
+            Token::Wire() => scarf_parser::Token::Wire,
+            Token::Wor() => scarf_parser::Token::Wor,
+            Token::Xnor() => scarf_parser::Token::Xnor,
+            Token::Xor() => scarf_parser::Token::Xor,
+            Token::Automatic() => scarf_parser::Token::Automatic,
+            Token::Cell() => scarf_parser::Token::Cell,
+            Token::Config() => scarf_parser::Token::Config,
+            Token::Design() => scarf_parser::Token::Design,
+            Token::Endconfig() => scarf_parser::Token::Endconfig,
+            Token::Endgenerate() => scarf_parser::Token::Endgenerate,
+            Token::Generate() => scarf_parser::Token::Generate,
+            Token::Genvar() => scarf_parser::Token::Genvar,
+            Token::Incdir() => scarf_parser::Token::Incdir,
+            Token::Include() => scarf_parser::Token::Include,
+            Token::Instance() => scarf_parser::Token::Instance,
+            Token::Liblist() => scarf_parser::Token::Liblist,
+            Token::Library() => scarf_parser::Token::Library,
+            Token::Localparam() => scarf_parser::Token::Localparam,
+            Token::Noshowcancelled() => scarf_parser::Token::Noshowcancelled,
+            Token::PulsestyleOndetect() => {
+                scarf_parser::Token::PulsestyleOndetect
+            }
+            Token::PulsestyleOnevent() => {
+                scarf_parser::Token::PulsestyleOnevent
+            }
+            Token::Showcancelled() => scarf_parser::Token::Showcancelled,
+            Token::Signed() => scarf_parser::Token::Signed,
+            Token::Unsigned() => scarf_parser::Token::Unsigned,
+            Token::Use() => scarf_parser::Token::Use,
+            Token::Uwire() => scarf_parser::Token::Uwire,
+            Token::Alias() => scarf_parser::Token::Alias,
+            Token::AlwaysComb() => scarf_parser::Token::AlwaysComb,
+            Token::AlwaysFf() => scarf_parser::Token::AlwaysFf,
+            Token::AlwaysLatch() => scarf_parser::Token::AlwaysLatch,
+            Token::Assert() => scarf_parser::Token::Assert,
+            Token::Assume() => scarf_parser::Token::Assume,
+            Token::Before() => scarf_parser::Token::Before,
+            Token::Bind() => scarf_parser::Token::Bind,
+            Token::Bins() => scarf_parser::Token::Bins,
+            Token::Binsof() => scarf_parser::Token::Binsof,
+            Token::Bit() => scarf_parser::Token::Bit,
+            Token::Break() => scarf_parser::Token::Break,
+            Token::Byte() => scarf_parser::Token::Byte,
+            Token::Chandle() => scarf_parser::Token::Chandle,
+            Token::Class() => scarf_parser::Token::Class,
+            Token::Clocking() => scarf_parser::Token::Clocking,
+            Token::Const() => scarf_parser::Token::Const,
+            Token::Constraint() => scarf_parser::Token::Constraint,
+            Token::Context() => scarf_parser::Token::Context,
+            Token::Continue() => scarf_parser::Token::Continue,
+            Token::Cover() => scarf_parser::Token::Cover,
+            Token::Covergroup() => scarf_parser::Token::Covergroup,
+            Token::Coverpoint() => scarf_parser::Token::Coverpoint,
+            Token::Cross() => scarf_parser::Token::Cross,
+            Token::Dist() => scarf_parser::Token::Dist,
+            Token::Do() => scarf_parser::Token::Do,
+            Token::Endclass() => scarf_parser::Token::Endclass,
+            Token::Endclocking() => scarf_parser::Token::Endclocking,
+            Token::Endgroup() => scarf_parser::Token::Endgroup,
+            Token::Endinterface() => scarf_parser::Token::Endinterface,
+            Token::Endpackage() => scarf_parser::Token::Endpackage,
+            Token::Endprogram() => scarf_parser::Token::Endprogram,
+            Token::Endproperty() => scarf_parser::Token::Endproperty,
+            Token::Endsequence() => scarf_parser::Token::Endsequence,
+            Token::Enum() => scarf_parser::Token::Enum,
+            Token::Expect() => scarf_parser::Token::Expect,
+            Token::Export() => scarf_parser::Token::Export,
+            Token::Extends() => scarf_parser::Token::Extends,
+            Token::Extern() => scarf_parser::Token::Extern,
+            Token::Final() => scarf_parser::Token::Final,
+            Token::FirstMatch() => scarf_parser::Token::FirstMatch,
+            Token::Foreach() => scarf_parser::Token::Foreach,
+            Token::Forkjoin() => scarf_parser::Token::Forkjoin,
+            Token::Iff() => scarf_parser::Token::Iff,
+            Token::IgnoreBins() => scarf_parser::Token::IgnoreBins,
+            Token::IllegalBins() => scarf_parser::Token::IllegalBins,
+            Token::Import() => scarf_parser::Token::Import,
+            Token::Inside() => scarf_parser::Token::Inside,
+            Token::Int() => scarf_parser::Token::Int,
+            Token::Interface() => scarf_parser::Token::Interface,
+            Token::Intersect() => scarf_parser::Token::Intersect,
+            Token::JoinAny() => scarf_parser::Token::JoinAny,
+            Token::JoinNone() => scarf_parser::Token::JoinNone,
+            Token::Local() => scarf_parser::Token::Local,
+            Token::Logic() => scarf_parser::Token::Logic,
+            Token::Longint() => scarf_parser::Token::Longint,
+            Token::Matches() => scarf_parser::Token::Matches,
+            Token::Modport() => scarf_parser::Token::Modport,
+            Token::New() => scarf_parser::Token::New,
+            Token::Null() => scarf_parser::Token::Null,
+            Token::Package() => scarf_parser::Token::Package,
+            Token::Packed() => scarf_parser::Token::Packed,
+            Token::Priority() => scarf_parser::Token::Priority,
+            Token::Program() => scarf_parser::Token::Program,
+            Token::Property() => scarf_parser::Token::Property,
+            Token::Protected() => scarf_parser::Token::Protected,
+            Token::Pure() => scarf_parser::Token::Pure,
+            Token::Rand() => scarf_parser::Token::Rand,
+            Token::Randc() => scarf_parser::Token::Randc,
+            Token::Randcase() => scarf_parser::Token::Randcase,
+            Token::Randsequence() => scarf_parser::Token::Randsequence,
+            Token::Ref() => scarf_parser::Token::Ref,
+            Token::Return() => scarf_parser::Token::Return,
+            Token::Sequence() => scarf_parser::Token::Sequence,
+            Token::Shortint() => scarf_parser::Token::Shortint,
+            Token::Shortreal() => scarf_parser::Token::Shortreal,
+            Token::Solve() => scarf_parser::Token::Solve,
+            Token::Static() => scarf_parser::Token::Static,
+            Token::String() => scarf_parser::Token::String,
+            Token::Struct() => scarf_parser::Token::Struct,
+            Token::Super() => scarf_parser::Token::Super,
+            Token::Tagged() => scarf_parser::Token::Tagged,
+            Token::This() => scarf_parser::Token::This,
+            Token::Throughout() => scarf_parser::Token::Throughout,
+            Token::Timeprecision() => scarf_parser::Token::Timeprecision,
+            Token::Timeunit() => scarf_parser::Token::Timeunit,
+            Token::Type() => scarf_parser::Token::Type,
+            Token::Typedef() => scarf_parser::Token::Typedef,
+            Token::Union() => scarf_parser::Token::Union,
+            Token::Unique() => scarf_parser::Token::Unique,
+            Token::Var() => scarf_parser::Token::Var,
+            Token::Virtual() => scarf_parser::Token::Virtual,
+            Token::Void() => scarf_parser::Token::Void,
+            Token::WaitOrder() => scarf_parser::Token::WaitOrder,
+            Token::Wildcard() => scarf_parser::Token::Wildcard,
+            Token::With() => scarf_parser::Token::With,
+            Token::Within() => scarf_parser::Token::Within,
+            Token::AcceptOn() => scarf_parser::Token::AcceptOn,
+            Token::Checker() => scarf_parser::Token::Checker,
+            Token::Endchecker() => scarf_parser::Token::Endchecker,
+            Token::Eventually() => scarf_parser::Token::Eventually,
+            Token::Global() => scarf_parser::Token::Global,
+            Token::Implies() => scarf_parser::Token::Implies,
+            Token::Let() => scarf_parser::Token::Let,
+            Token::Nexttime() => scarf_parser::Token::Nexttime,
+            Token::RejectOn() => scarf_parser::Token::RejectOn,
+            Token::Restrict() => scarf_parser::Token::Restrict,
+            Token::SAlways() => scarf_parser::Token::SAlways,
+            Token::SEventually() => scarf_parser::Token::SEventually,
+            Token::SNexttime() => scarf_parser::Token::SNexttime,
+            Token::SUntil() => scarf_parser::Token::SUntil,
+            Token::SUntilWith() => scarf_parser::Token::SUntilWith,
+            Token::Strong() => scarf_parser::Token::Strong,
+            Token::SyncAcceptOn() => scarf_parser::Token::SyncAcceptOn,
+            Token::SyncRejectOn() => scarf_parser::Token::SyncRejectOn,
+            Token::Unique0() => scarf_parser::Token::Unique0,
+            Token::Until() => scarf_parser::Token::Until,
+            Token::UntilWith() => scarf_parser::Token::UntilWith,
+            Token::Untyped() => scarf_parser::Token::Untyped,
+            Token::Weak() => scarf_parser::Token::Weak,
+            Token::Implements() => scarf_parser::Token::Implements,
+            Token::Interconnect() => scarf_parser::Token::Interconnect,
+            Token::Nettype() => scarf_parser::Token::Nettype,
+            Token::Soft() => scarf_parser::Token::Soft,
+            Token::DirUnderscoreFile() => {
+                scarf_parser::Token::DirUnderscoreFile
+            }
+            Token::DirUnderscoreLine() => {
+                scarf_parser::Token::DirUnderscoreLine
+            }
+            Token::DirBeginKeywords() => scarf_parser::Token::DirBeginKeywords,
+            Token::DirCelldefine() => scarf_parser::Token::DirCelldefine,
+            Token::DirDefaultNettype() => {
+                scarf_parser::Token::DirDefaultNettype
+            }
+            Token::DirDefine() => scarf_parser::Token::DirDefine,
+            Token::DirElse() => scarf_parser::Token::DirElse,
+            Token::DirElsif() => scarf_parser::Token::DirElsif,
+            Token::DirEndKeywords() => scarf_parser::Token::DirEndKeywords,
+            Token::DirEndcelldefine() => scarf_parser::Token::DirEndcelldefine,
+            Token::DirEndif() => scarf_parser::Token::DirEndif,
+            Token::DirIfdef() => scarf_parser::Token::DirIfdef,
+            Token::DirIfndef() => scarf_parser::Token::DirIfndef,
+            Token::DirInclude() => scarf_parser::Token::DirInclude,
+            Token::DirLine() => scarf_parser::Token::DirLine,
+            Token::DirNounconnectedDrive() => {
+                scarf_parser::Token::DirNounconnectedDrive
+            }
+            Token::DirPragma() => scarf_parser::Token::DirPragma,
+            Token::DirResetall() => scarf_parser::Token::DirResetall,
+            Token::DirTimescale() => scarf_parser::Token::DirTimescale,
+            Token::DirUnconnectedDrive() => {
+                scarf_parser::Token::DirUnconnectedDrive
+            }
+            Token::DirUndef() => scarf_parser::Token::DirUndef,
+            Token::DirUndefineall() => scarf_parser::Token::DirUndefineall,
+            Token::Plus() => scarf_parser::Token::Plus,
+            Token::Minus() => scarf_parser::Token::Minus,
+            Token::Exclamation() => scarf_parser::Token::Exclamation,
+            Token::Quest() => scarf_parser::Token::Quest,
+            Token::Tilde() => scarf_parser::Token::Tilde,
+            Token::Amp() => scarf_parser::Token::Amp,
+            Token::TildeAmp() => scarf_parser::Token::TildeAmp,
+            Token::Pipe() => scarf_parser::Token::Pipe,
+            Token::TildePipe() => scarf_parser::Token::TildePipe,
+            Token::Caret() => scarf_parser::Token::Caret,
+            Token::TildeCaret() => scarf_parser::Token::TildeCaret,
+            Token::CaretTilde() => scarf_parser::Token::CaretTilde,
+            Token::Star() => scarf_parser::Token::Star,
+            Token::Slash() => scarf_parser::Token::Slash,
+            Token::Percent() => scarf_parser::Token::Percent,
+            Token::EqEq() => scarf_parser::Token::EqEq,
+            Token::ExclEq() => scarf_parser::Token::ExclEq,
+            Token::PlusEq() => scarf_parser::Token::PlusEq,
+            Token::MinusEq() => scarf_parser::Token::MinusEq,
+            Token::StarEq() => scarf_parser::Token::StarEq,
+            Token::SlashEq() => scarf_parser::Token::SlashEq,
+            Token::PercentEq() => scarf_parser::Token::PercentEq,
+            Token::AmpEq() => scarf_parser::Token::AmpEq,
+            Token::PipeEq() => scarf_parser::Token::PipeEq,
+            Token::CaretEq() => scarf_parser::Token::CaretEq,
+            Token::EqEqEq() => scarf_parser::Token::EqEqEq,
+            Token::ExclEqEq() => scarf_parser::Token::ExclEqEq,
+            Token::EqEqQuest() => scarf_parser::Token::EqEqQuest,
+            Token::ExclEqQuest() => scarf_parser::Token::ExclEqQuest,
+            Token::AmpAmp() => scarf_parser::Token::AmpAmp,
+            Token::AmpAmpAmp() => scarf_parser::Token::AmpAmpAmp,
+            Token::PipePipe() => scarf_parser::Token::PipePipe,
+            Token::StarStar() => scarf_parser::Token::StarStar,
+            Token::Lt() => scarf_parser::Token::Lt,
+            Token::LtEq() => scarf_parser::Token::LtEq,
+            Token::Gt() => scarf_parser::Token::Gt,
+            Token::GtEq() => scarf_parser::Token::GtEq,
+            Token::GtGt() => scarf_parser::Token::GtGt,
+            Token::LtLt() => scarf_parser::Token::LtLt,
+            Token::GtGtEq() => scarf_parser::Token::GtGtEq,
+            Token::LtLtEq() => scarf_parser::Token::LtLtEq,
+            Token::GtGtGt() => scarf_parser::Token::GtGtGt,
+            Token::LtLtLt() => scarf_parser::Token::LtLtLt,
+            Token::GtGtGtEq() => scarf_parser::Token::GtGtGtEq,
+            Token::LtLtLtEq() => scarf_parser::Token::LtLtLtEq,
+            Token::MinusGt() => scarf_parser::Token::MinusGt,
+            Token::MinusGtGt() => scarf_parser::Token::MinusGtGt,
+            Token::LtMinusGt() => scarf_parser::Token::LtMinusGt,
+            Token::PlusPlus() => scarf_parser::Token::PlusPlus,
+            Token::MinusMinus() => scarf_parser::Token::MinusMinus,
+            Token::PlusColon() => scarf_parser::Token::PlusColon,
+            Token::MinusColon() => scarf_parser::Token::MinusColon,
+            Token::PlusSlashMinus() => scarf_parser::Token::PlusSlashMinus,
+            Token::PlusPercentMinus() => scarf_parser::Token::PlusPercentMinus,
+            Token::Paren() => scarf_parser::Token::Paren,
+            Token::EParen() => scarf_parser::Token::EParen,
+            Token::Bracket() => scarf_parser::Token::Bracket,
+            Token::EBracket() => scarf_parser::Token::EBracket,
+            Token::Brace() => scarf_parser::Token::Brace,
+            Token::EBrace() => scarf_parser::Token::EBrace,
+            Token::Colon() => scarf_parser::Token::Colon,
+            Token::SColon() => scarf_parser::Token::SColon,
+            Token::Apost() => scarf_parser::Token::Apost,
+            Token::Comma() => scarf_parser::Token::Comma,
+            Token::Period() => scarf_parser::Token::Period,
+            Token::Pound() => scarf_parser::Token::Pound,
+            Token::Dollar() => scarf_parser::Token::Dollar,
+            Token::At() => scarf_parser::Token::At,
+            Token::AtAt() => scarf_parser::Token::AtAt,
+            Token::Eq() => scarf_parser::Token::Eq,
+            Token::ColonColon() => scarf_parser::Token::ColonColon,
+            Token::ColonEq() => scarf_parser::Token::ColonEq,
+            Token::ColonSlash() => scarf_parser::Token::ColonSlash,
+            Token::PoundPound() => scarf_parser::Token::PoundPound,
+            Token::PoundMinusPound() => scarf_parser::Token::PoundMinusPound,
+            Token::PoundEqPound() => scarf_parser::Token::PoundEqPound,
+            Token::EqGt() => scarf_parser::Token::EqGt,
+            Token::StarGt() => scarf_parser::Token::StarGt,
+            Token::PipeMinusGt() => scarf_parser::Token::PipeMinusGt,
+            Token::PipeEqGt() => scarf_parser::Token::PipeEqGt,
+            Token::Bslash() => scarf_parser::Token::Bslash,
+            Token::Std() => scarf_parser::Token::Std,
+            Token::PathpulseDollar() => scarf_parser::Token::PathpulseDollar,
+            Token::Option() => scarf_parser::Token::Option,
+            Token::TypeOption() => scarf_parser::Token::TypeOption,
+            Token::Randomize() => scarf_parser::Token::Randomize,
+            Token::Sample() => scarf_parser::Token::Sample,
+            Token::OneStep() => scarf_parser::Token::OneStep,
+            Token::DollarSetup() => scarf_parser::Token::DollarSetup,
+            Token::DollarHold() => scarf_parser::Token::DollarHold,
+            Token::DollarSetuphold() => scarf_parser::Token::DollarSetuphold,
+            Token::DollarRecovery() => scarf_parser::Token::DollarRecovery,
+            Token::DollarRemoval() => scarf_parser::Token::DollarRemoval,
+            Token::DollarRecrem() => scarf_parser::Token::DollarRecrem,
+            Token::DollarSkew() => scarf_parser::Token::DollarSkew,
+            Token::DollarTimeskew() => scarf_parser::Token::DollarTimeskew,
+            Token::DollarFullskew() => scarf_parser::Token::DollarFullskew,
+            Token::DollarPeriod() => scarf_parser::Token::DollarPeriod,
+            Token::DollarWidth() => scarf_parser::Token::DollarWidth,
+            Token::DollarNochange() => scarf_parser::Token::DollarNochange,
+            Token::DollarRoot() => scarf_parser::Token::DollarRoot,
+            Token::DollarUnit() => scarf_parser::Token::DollarUnit,
+            Token::DollarFatal() => scarf_parser::Token::DollarFatal,
+            Token::DollarError() => scarf_parser::Token::DollarError,
+            Token::DollarWarning() => scarf_parser::Token::DollarWarning,
+            Token::DollarInfo() => scarf_parser::Token::DollarInfo,
+            Token::OnelineComment { text } => {
+                scarf_parser::Token::OnelineComment(&text)
+            }
+            Token::BlockComment { text } => {
+                scarf_parser::Token::BlockComment(&text)
+            }
+            Token::UnsignedNumber { text } => {
+                scarf_parser::Token::UnsignedNumber(&text)
+            }
+            Token::FixedPointNumber { text } => {
+                scarf_parser::Token::FixedPointNumber(&text)
+            }
+            Token::BinaryNumber { text } => {
+                scarf_parser::Token::BinaryNumber(&text)
+            }
+            Token::OctalNumber { text } => {
+                scarf_parser::Token::OctalNumber(&text)
+            }
+            Token::DecimalNumber { text } => {
+                scarf_parser::Token::DecimalNumber(&text)
+            }
+            Token::HexNumber { text } => scarf_parser::Token::HexNumber(&text),
+            Token::ScientificNumber { text } => {
+                scarf_parser::Token::ScientificNumber(&text)
+            }
+            Token::UnbasedUnsizedLiteral { text } => {
+                scarf_parser::Token::UnbasedUnsizedLiteral(&text)
+            }
+            Token::SystemTfIdentifier { text } => {
+                scarf_parser::Token::SystemTfIdentifier(&text)
+            }
+            Token::SimpleIdentifier { text } => {
+                scarf_parser::Token::SimpleIdentifier(&text)
+            }
+            Token::EscapedIdentifier { text } => {
+                scarf_parser::Token::EscapedIdentifier(&text)
+            }
+            Token::PreprocessorIdentifier { text } => {
+                scarf_parser::Token::PreprocessorIdentifier(&text)
+            }
+            Token::TextMacro { text } => scarf_parser::Token::TextMacro(&text),
+            Token::StringLiteral { text } => {
+                scarf_parser::Token::StringLiteral(&text)
+            }
+            Token::PreprocessorStringLiteral { text } => {
+                scarf_parser::Token::PreprocessorStringLiteral(&text)
+            }
+            Token::TripleQuoteStringLiteral { text } => {
+                scarf_parser::Token::TripleQuoteStringLiteral(&text)
+            }
+            Token::PreprocessorTripleQuoteStringLiteral { text } => {
+                scarf_parser::Token::PreprocessorTripleQuoteStringLiteral(&text)
+            }
+            Token::Newline() => scarf_parser::Token::Newline,
+        }
+    }
+}
+
 /// A source file [`Token`] with an associated [`Span`]
 #[pyclass(eq, from_py_object, module = "scarf_python")]
 #[derive(Clone, PartialEq, Eq)]
@@ -914,5 +1374,18 @@ impl<'a> From<scarf_parser::SpannedToken<'a>> for SpannedToken {
             token: value.0.into(),
             span: value.1.into(),
         }
+    }
+}
+
+impl<'a> SpannedToken {
+    /// Turn a [`SpannedToken`] into a [`scarf_parser::SpannedToken`]
+    pub fn to_rust(
+        &'a self,
+        cache: &'a PreprocessorCache<'a>,
+    ) -> scarf_parser::SpannedToken<'a> {
+        scarf_parser::SpannedToken(
+            (&self.token).into(),
+            (&self.span).to_span(cache),
+        )
     }
 }

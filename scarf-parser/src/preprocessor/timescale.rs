@@ -54,10 +54,14 @@ impl<'a> Timescale<'a> {
                 precision,
             })
         } else if unit.1 < precision.1 {
-            Err(PreprocessorError::InvalidRelativeTimescales(def_span))
+            Err(PreprocessorError::InvalidRelativeTimescales {
+                timescale_span: def_span,
+            })
         } else {
             if precision.0 > unit.0 {
-                Err(PreprocessorError::InvalidRelativeTimescales(def_span))
+                Err(PreprocessorError::InvalidRelativeTimescales {
+                    timescale_span: def_span,
+                })
             } else {
                 Ok(Timescale {
                     def_span: Some(def_span),
@@ -85,22 +89,28 @@ fn get_timescale<'s>(
     def_span: Span<'s>,
 ) -> Result<(TimescaleValue, TimescaleUnit), PreprocessorError<'s>> {
     let Some(spanned_token) = preprocess_single(src, state, cache)? else {
-        return Err(PreprocessorError::IncompleteDirective(def_span));
+        return Err(PreprocessorError::IncompleteDirective {
+            directive_span: def_span,
+        });
     };
     let timescale_value = match spanned_token.0 {
         Token::UnsignedNumber("1") => TimescaleValue::One,
         Token::UnsignedNumber("10") => TimescaleValue::Ten,
         Token::UnsignedNumber("100") => TimescaleValue::Hundred,
         _ => {
-            return Err(PreprocessorError::VerboseError(VerboseError {
-                span: spanned_token.1,
-                found: Some(spanned_token.0),
-                expected: vec![Expectation::Label("1, 10, or 100")],
-            }));
+            return Err(PreprocessorError::VerboseError {
+                err: VerboseError {
+                    span: spanned_token.1,
+                    found: Some(spanned_token.0),
+                    expected: vec![Expectation::Label("1, 10, or 100")],
+                },
+            });
         }
     };
     let Some(spanned_token) = preprocess_single(src, state, cache)? else {
-        return Err(PreprocessorError::IncompleteDirective(def_span));
+        return Err(PreprocessorError::IncompleteDirective {
+            directive_span: def_span,
+        });
     };
     let timescale_unit = match spanned_token.0 {
         Token::SimpleIdentifier("s") => TimescaleUnit::S,
@@ -110,11 +120,15 @@ fn get_timescale<'s>(
         Token::SimpleIdentifier("ps") => TimescaleUnit::PS,
         Token::SimpleIdentifier("fs") => TimescaleUnit::FS,
         _ => {
-            return Err(PreprocessorError::VerboseError(VerboseError {
-                span: spanned_token.1,
-                found: Some(spanned_token.0),
-                expected: vec![Expectation::Label("a recognized unit of time")],
-            }));
+            return Err(PreprocessorError::VerboseError {
+                err: VerboseError {
+                    span: spanned_token.1,
+                    found: Some(spanned_token.0),
+                    expected: vec![Expectation::Label(
+                        "a recognized unit of time",
+                    )],
+                },
+            });
         }
     };
     Ok((timescale_value, timescale_unit))
@@ -127,15 +141,19 @@ fn get_divider<'s>(
     def_span: Span<'s>,
 ) -> Result<Span<'s>, PreprocessorError<'s>> {
     let Some(spanned_token) = preprocess_single(src, state, cache)? else {
-        return Err(PreprocessorError::IncompleteDirective(def_span));
+        return Err(PreprocessorError::IncompleteDirective {
+            directive_span: def_span,
+        });
     };
     match spanned_token.0 {
         Token::Slash => Ok(spanned_token.1),
-        _ => Err(PreprocessorError::VerboseError(VerboseError {
-            span: spanned_token.1,
-            found: Some(spanned_token.0),
-            expected: vec![Expectation::Token(Token::Slash)],
-        })),
+        _ => Err(PreprocessorError::VerboseError {
+            err: VerboseError {
+                span: spanned_token.1,
+                found: Some(spanned_token.0),
+                expected: vec![Expectation::Token(Token::Slash)],
+            },
+        }),
     }
 }
 

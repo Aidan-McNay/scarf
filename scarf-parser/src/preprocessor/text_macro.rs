@@ -21,41 +21,43 @@ fn get_text_macro_args<'s>(
             }
             Some(SpannedToken(Token::Newline, _)) => (),
             _ => {
-                return Err(PreprocessorError::NoMacroArguments((
-                    define_span.clone(),
-                    text_macro,
-                )));
+                return Err(PreprocessorError::NoMacroArguments {
+                    macro_name: text_macro.0,
+                    define_span: define_span.clone(),
+                    use_span: text_macro.1,
+                });
             }
         }
     };
     let mut arg_vec: Vec<Vec<SpannedToken<'s>>> = vec![];
-    let end_span = loop {
-        let mut new_arg: Vec<SpannedToken<'s>> = vec![];
-        let prev_in_define_arg = state.enter_define_arg();
-        let result = preprocess_helper(src, &mut new_arg, state, cache);
-        state.exit_define_arg(prev_in_define_arg);
-        match result {
-            Ok(()) => {
-                return Err(PreprocessorError::IncompleteDirective(paren_span));
+    let end_span =
+        loop {
+            let mut new_arg: Vec<SpannedToken<'s>> = vec![];
+            let prev_in_define_arg = state.enter_define_arg();
+            let result = preprocess_helper(src, &mut new_arg, state, cache);
+            state.exit_define_arg(prev_in_define_arg);
+            match result {
+                Ok(()) => {
+                    return Err(PreprocessorError::IncompleteDirective {
+                        directive_span: paren_span,
+                    });
+                }
+                Err(PreprocessorError::EndOfFunctionArgument(
+                    SpannedToken(Token::EParen, eparen_span),
+                )) => {
+                    arg_vec.push(new_arg);
+                    break eparen_span;
+                }
+                Err(PreprocessorError::EndOfFunctionArgument(
+                    SpannedToken(Token::Comma, _),
+                )) => {
+                    arg_vec.push(new_arg);
+                }
+                Err(err) => {
+                    return Err(err);
+                }
             }
-            Err(PreprocessorError::EndOfFunctionArgument(SpannedToken(
-                Token::EParen,
-                eparen_span,
-            ))) => {
-                arg_vec.push(new_arg);
-                break eparen_span;
-            }
-            Err(PreprocessorError::EndOfFunctionArgument(SpannedToken(
-                Token::Comma,
-                _,
-            ))) => {
-                arg_vec.push(new_arg);
-            }
-            Err(err) => {
-                return Err(err);
-            }
-        }
-    };
+        };
     let mut overall_span = text_macro.1;
     overall_span.bytes.end = end_span.bytes.end;
     Ok((arg_vec, overall_span))
@@ -71,15 +73,13 @@ fn resolve_text_macro_args<'s>(
     PreprocessorError<'s>,
 > {
     if specified_args.len() > original_args.len() {
-        return Err(PreprocessorError::TooManyMacroArguments((
-            define_span.clone(),
-            (
-                text_macro.0,
-                original_args.len(),
-                specified_args.len(),
-                text_macro.1,
-            ),
-        )));
+        return Err(PreprocessorError::TooManyMacroArguments {
+            macro_name: text_macro.0,
+            define_span: define_span.clone(),
+            use_span: text_macro.1,
+            expected: original_args.len(),
+            found: specified_args.len(),
+        });
     }
     let mut specified_args_iter = specified_args.into_iter();
     let mut resolved_args = HashMap::new();
@@ -95,10 +95,11 @@ fn resolve_text_macro_args<'s>(
                         .insert(arg_name.0, (arg_name.1, default_tokens));
                 }
                 None => {
-                    return Err(PreprocessorError::MissingMacroArgument((
-                        define_span.clone(),
-                        (arg_name.0, text_macro.1),
-                    )));
+                    return Err(PreprocessorError::MissingMacroArgument {
+                        define_span: define_span.clone(),
+                        use_span: text_macro.1,
+                        param_name: arg_name.0,
+                    });
                 }
             },
         }
@@ -114,9 +115,10 @@ fn get_identifier_substitute<'a>(
     if replacement_tokens_len > 1 {
         // Only currently support a max of one token
         let err_span = replacement_tokens.first().unwrap().1.clone();
-        return Err(PreprocessorError::InvalidIdentifierFormation((
-            arg_name, err_span,
-        )));
+        return Err(PreprocessorError::InvalidIdentifierFormation {
+            param_name: arg_name,
+            arg_span: err_span,
+        });
     } else if replacement_tokens_len == 1 {
         let replacement_token = replacement_tokens.first().unwrap().clone();
         match replacement_token.0 {
@@ -138,10 +140,10 @@ fn get_identifier_substitute<'a>(
             | Token::StringLiteral(_)
             | Token::TripleQuoteStringLiteral(_)
             | Token::Newline => {
-                return Err(PreprocessorError::InvalidIdentifierFormation((
-                    arg_name,
-                    replacement_token.1,
-                )));
+                return Err(PreprocessorError::InvalidIdentifierFormation {
+                    param_name: arg_name,
+                    arg_span: replacement_token.1,
+                });
             }
             other => Ok(other.as_str()),
         }
@@ -159,9 +161,10 @@ fn get_string_substitute<'a>(
     if replacement_tokens_len > 1 {
         // Only currently support a max of one token
         let err_span = replacement_tokens.first().unwrap().1.clone();
-        return Err(PreprocessorError::InvalidIdentifierFormation((
-            id_name, err_span,
-        )));
+        return Err(PreprocessorError::InvalidIdentifierFormation {
+            param_name: id_name,
+            arg_span: err_span,
+        });
     } else if replacement_tokens_len == 1 {
         let replacement_token = replacement_tokens.first().unwrap().clone();
         match replacement_token.0 {
@@ -196,10 +199,10 @@ fn get_string_substitute<'a>(
             | Token::PreprocessorIdentifier(_)
             | Token::TextMacro(_)
             | Token::Newline => {
-                return Err(PreprocessorError::InvalidIdentifierFormation((
-                    id_name,
-                    replacement_token.1,
-                )));
+                return Err(PreprocessorError::InvalidIdentifierFormation {
+                    param_name: id_name,
+                    arg_span: replacement_token.1,
+                });
             }
             other => {
                 *str_to_append += other.as_str();
@@ -461,7 +464,10 @@ pub fn preprocess_macro<'s>(
             src.prepend_tokens(token_iter);
             Ok(())
         }
-        None => Err(PreprocessorError::UndefinedMacro(text_macro)),
+        None => Err(PreprocessorError::UndefinedMacro {
+            undefined_name: text_macro.0,
+            undefined_span: text_macro.1,
+        }),
     }
 }
 

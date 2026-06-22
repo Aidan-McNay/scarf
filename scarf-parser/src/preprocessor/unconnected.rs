@@ -18,16 +18,18 @@ fn get_unconnected_drive<'s>(
     directive_span: Span<'s>,
 ) -> Result<UnconnectedDrive, PreprocessorError<'s>> {
     let Some(spanned_token) = src.next() else {
-        return Err(PreprocessorError::IncompleteDirective(directive_span));
+        return Err(PreprocessorError::IncompleteDirective { directive_span });
     };
     match spanned_token.0 {
         Token::Pull0 => Ok(UnconnectedDrive::PullDown),
         Token::Pull1 => Ok(UnconnectedDrive::PullUp),
-        _ => Err(PreprocessorError::VerboseError(VerboseError {
-            span: spanned_token.1,
-            found: Some(spanned_token.0),
-            expected: vec![Expectation::Label("a valid unconnected drive")],
-        })),
+        _ => Err(PreprocessorError::VerboseError {
+            err: VerboseError {
+                span: spanned_token.1,
+                found: Some(spanned_token.0),
+                expected: vec![Expectation::Label("a valid unconnected drive")],
+            },
+        }),
     }
 }
 

@@ -22,10 +22,12 @@ pub struct PreprocessorCache<'a> {
 }
 
 impl<'a> PreprocessorCache<'a> {
-    pub(crate) fn retain_span(&self, span: Span<'a>) -> &Span<'a> {
+    /// Store a [`Span`] for the cache's lifetime
+    pub fn retain_span(&self, span: Span<'a>) -> &Span<'a> {
         self.spans.push_get(Box::new(span))
     }
-    pub(crate) fn retain_string(&self, string: String) -> &str {
+    /// Store a [`String`] for the cache's lifetime
+    pub fn retain_string(&self, string: String) -> &str {
         self.strings.push_get(string.into_boxed_str())
     }
     /// Create a new cache for storing preprocessor results

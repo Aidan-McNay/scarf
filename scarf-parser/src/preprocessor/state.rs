@@ -143,7 +143,7 @@ pub struct PreprocessorState<'a> {
     pub warnings: Vec<PreprocessorWarning<'a>>,
     pub(crate) in_define: bool,
     pub(crate) in_define_arg: bool,
-    pub(crate) include_history: Vec<Span<'a>>,
+    pub(crate) include_depth: usize,
 }
 
 impl<'a> PreprocessorState<'a> {
@@ -162,7 +162,7 @@ impl<'a> PreprocessorState<'a> {
             warnings: vec![],
             in_define: false,
             in_define_arg: false,
-            include_history: vec![],
+            include_depth: 0,
         }
     }
     /// Make the [`PreprocessorState`] fresh, as though it had just started preprocessing
@@ -179,7 +179,7 @@ impl<'a> PreprocessorState<'a> {
         self.warnings = vec![];
         self.in_define = false;
         self.in_define_arg = false;
-        self.include_history = vec![];
+        self.include_depth = 0;
     }
     /// Reset all resetable configs
     ///
@@ -345,7 +345,7 @@ impl<'a> PreprocessorState<'a> {
                 return Some(full_path);
             }
         }
-        Some(PathBuf::from(include_path))
+        None
     }
 
     /// Add a compiler directive timescale
@@ -404,11 +404,14 @@ impl<'a> PreprocessorState<'a> {
     ) -> Result<(&'a str, &'a str), PreprocessorError<'a>> {
         let include_path_buf =
             self.get_file_path(include_path).ok_or_else(|| {
-                PreprocessorError::Include(
-                    include_path_span.clone(),
-                    include_path.to_string(),
-                    io::Error::new(io::ErrorKind::NotFound, "File not found"),
-                )
+                PreprocessorError::Include {
+                    include_path,
+                    include_path_span: include_path_span.clone(),
+                    read_err: io::Error::new(
+                        io::ErrorKind::NotFound,
+                        "File not found",
+                    ),
+                }
             })?;
         match self
             .included_files
@@ -420,12 +423,10 @@ impl<'a> PreprocessorState<'a> {
                     include_path_buf.to_str().unwrap().to_owned(),
                 );
                 let file_contents = std::fs::read_to_string(&cached_path)
-                    .map_err(|err| {
-                        PreprocessorError::Include(
-                            include_path_span,
-                            include_path.to_string(),
-                            err,
-                        )
+                    .map_err(|err| PreprocessorError::Include {
+                        include_path,
+                        include_path_span,
+                        read_err: err,
                     })?;
                 let cached_contents = cache.retain_string(file_contents);
                 self.included_files.insert(cached_path, cached_contents);

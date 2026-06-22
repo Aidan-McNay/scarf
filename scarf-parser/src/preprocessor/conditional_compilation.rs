@@ -63,13 +63,13 @@ fn preprocess_untaken_conditional<'s>(
                 break Ok(());
             }
             Some(SpannedToken(Token::DirEndif, endif_span)) => {
-                break Err(PreprocessorError::Endif(endif_span));
+                break Err(PreprocessorError::Endif { endif_span });
             }
             Some(SpannedToken(Token::DirElse, else_span)) => {
-                break Err(PreprocessorError::Else(else_span));
+                break Err(PreprocessorError::Else { else_span });
             }
             Some(SpannedToken(Token::DirElsif, elsif_span)) => {
-                break Err(PreprocessorError::Elsif(elsif_span));
+                break Err(PreprocessorError::Elsif { elsif_span });
             }
             Some(SpannedToken(Token::DirIfdef, _))
             | Some(SpannedToken(Token::DirIfndef, _)) => {
@@ -78,7 +78,7 @@ fn preprocess_untaken_conditional<'s>(
                         Ok(()) => {
                             return Ok(());
                         }
-                        Err(PreprocessorError::EndKeywords(_)) => {
+                        Err(PreprocessorError::Endif { .. }) => {
                             break 'inner_conditional;
                         }
                         _ => (),
@@ -95,7 +95,9 @@ fn get_ifdef_condition<'s>(
     ifdef_span: Span<'s>,
 ) -> Result<IfdefCondition<'s>, PreprocessorError<'s>> {
     let Some(spanned_token) = src.next() else {
-        return Err(PreprocessorError::IncompleteDirective(ifdef_span));
+        return Err(PreprocessorError::IncompleteDirective {
+            directive_span: ifdef_span,
+        });
     };
     match spanned_token.0 {
         Token::SimpleIdentifier(id_str) => Ok(IfdefCondition::TextMacro(
@@ -108,11 +110,13 @@ fn get_ifdef_condition<'s>(
             let ifdef_macro_expression =
                 get_ifdef_macro_expression(src, ifdef_span, 0)?;
             let Some(eparen_token) = src.next() else {
-                return Err(PreprocessorError::VerboseError(VerboseError {
-                    span: spanned_token.1,
-                    found: None,
-                    expected: vec![Expectation::Token(Token::EParen)],
-                }));
+                return Err(PreprocessorError::VerboseError {
+                    err: VerboseError {
+                        span: spanned_token.1,
+                        found: None,
+                        expected: vec![Expectation::Token(Token::EParen)],
+                    },
+                });
             };
             Ok(IfdefCondition::ParenMacro(Box::new((
                 spanned_token.1,
@@ -121,13 +125,15 @@ fn get_ifdef_condition<'s>(
             ))))
         }
         _ => {
-            return Err(PreprocessorError::VerboseError(VerboseError {
-                span: spanned_token.1,
-                found: Some(spanned_token.0),
-                expected: vec![Expectation::Label(
-                    "a preprocessor macro expression",
-                )],
-            }));
+            return Err(PreprocessorError::VerboseError {
+                err: VerboseError {
+                    span: spanned_token.1,
+                    found: Some(spanned_token.0),
+                    expected: vec![Expectation::Label(
+                        "a preprocessor macro expression",
+                    )],
+                },
+            });
         }
     }
 }
@@ -158,7 +164,9 @@ fn get_ifdef_macro_expression<'s>(
     min_bp: u8,
 ) -> Result<IfdefMacroExpression<'s>, PreprocessorError<'s>> {
     let Some(spanned_token) = src.next() else {
-        return Err(PreprocessorError::IncompleteDirective(previous_span));
+        return Err(PreprocessorError::IncompleteDirective {
+            directive_span: previous_span,
+        });
     };
     let mut lhs = match spanned_token.0 {
         Token::SimpleIdentifier(id_str) => IfdefMacroExpression::Text(
@@ -172,11 +180,15 @@ fn get_ifdef_macro_expression<'s>(
                 get_ifdef_macro_expression(src, previous_span.clone(), 0)?;
             let Some(SpannedToken(Token::EParen, eparen_span)) = src.next()
             else {
-                return Err(PreprocessorError::VerboseError(VerboseError {
-                    span: spanned_token.1,
-                    found: Some(Token::Paren),
-                    expected: vec![Expectation::Label("a closing parenthesis")],
-                }));
+                return Err(PreprocessorError::VerboseError {
+                    err: VerboseError {
+                        span: spanned_token.1,
+                        found: Some(Token::Paren),
+                        expected: vec![Expectation::Label(
+                            "a closing parenthesis",
+                        )],
+                    },
+                });
             };
             IfdefMacroExpression::Paren(Box::new((
                 spanned_token.1,
@@ -190,13 +202,15 @@ fn get_ifdef_macro_expression<'s>(
             IfdefMacroExpression::Not(Box::new((spanned_token.1, negated_expr)))
         }
         _ => {
-            return Err(PreprocessorError::VerboseError(VerboseError {
-                span: spanned_token.1,
-                found: Some(spanned_token.0),
-                expected: vec![Expectation::Label(
-                    "a preprocessor macro expression",
-                )],
-            }));
+            return Err(PreprocessorError::VerboseError {
+                err: VerboseError {
+                    span: spanned_token.1,
+                    found: Some(spanned_token.0),
+                    expected: vec![Expectation::Label(
+                        "a preprocessor macro expression",
+                    )],
+                },
+            });
         }
     };
     loop {
@@ -320,13 +334,18 @@ pub fn preprocess_ifdef<'s>(
     dest: &mut Vec<SpannedToken<'s>>,
     state: &mut PreprocessorState<'s>,
     cache: &'s PreprocessorCache<'s>,
-    ifdef_span: Span<'s>,
+    mut ifdef_span: Span<'s>,
     is_ifdef: bool, // False for ifndef
 ) -> Result<(), PreprocessorError<'s>> {
     let ifdef_condition = get_ifdef_condition(src, ifdef_span.clone())?;
     let mut valid_condition_found =
         ifdef_condition_true(ifdef_condition, state, cache) ^ !is_ifdef;
     let mut curr_condition_valid = valid_condition_found;
+    let mut conditional_token = if is_ifdef {
+        Token::DirIfdef
+    } else {
+        Token::DirIfndef
+    };
     loop {
         let result = if curr_condition_valid {
             preprocess_helper(src, dest, state, cache)
@@ -335,19 +354,15 @@ pub fn preprocess_ifdef<'s>(
         };
         match result {
             Ok(()) => {
-                let conditional_token = if is_ifdef {
-                    Token::DirIfdef
-                } else {
-                    Token::DirIfndef
-                };
-                return Err(PreprocessorError::NoEndif(
-                    conditional_token,
-                    ifdef_span,
-                ));
+                return Err(PreprocessorError::NoEndif {
+                    cond_token: conditional_token,
+                    cond_token_span: ifdef_span,
+                });
             }
-            Err(PreprocessorError::Endif(_)) => return Ok(()),
-            Err(PreprocessorError::Elsif(elsif_span)) => {
-                let ifdef_condition = get_ifdef_condition(src, elsif_span)?;
+            Err(PreprocessorError::Endif { .. }) => return Ok(()),
+            Err(PreprocessorError::Elsif { elsif_span }) => {
+                let ifdef_condition =
+                    get_ifdef_condition(src, elsif_span.clone())?;
                 if valid_condition_found {
                     curr_condition_valid = false;
                 } else {
@@ -355,9 +370,11 @@ pub fn preprocess_ifdef<'s>(
                         ifdef_condition_true(ifdef_condition, state, cache);
                     valid_condition_found = curr_condition_valid;
                 };
+                ifdef_span = elsif_span;
+                conditional_token = Token::DirElsif;
                 ()
             }
-            Err(PreprocessorError::Else(else_span)) => {
+            Err(PreprocessorError::Else { else_span }) => {
                 let result = if !valid_condition_found {
                     preprocess_helper(src, dest, state, cache)
                 } else {
@@ -365,12 +382,12 @@ pub fn preprocess_ifdef<'s>(
                 };
                 match result {
                     Ok(()) => {
-                        return Err(PreprocessorError::NoEndif(
-                            Token::DirElse,
-                            else_span,
-                        ));
+                        return Err(PreprocessorError::NoEndif {
+                            cond_token: Token::DirElse,
+                            cond_token_span: else_span,
+                        });
                     }
-                    Err(PreprocessorError::Endif(_)) => return Ok(()),
+                    Err(PreprocessorError::Endif { .. }) => return Ok(()),
                     Err(err) => return Err(err),
                 }
             }
@@ -717,4 +734,67 @@ fn precedence() {
         `endif",
         vec![Token::SimpleIdentifier("or_higher_than_equivalence")]
     )
+}
+
+#[test]
+fn nested_ifndef_else() {
+    check_preprocessor!(
+        "`define TEST
+        `ifdef TEST
+        this_should_be_included
+        `else
+        `ifdef TEST
+        this_should_not_be_included
+        `endif
+        `endif",
+        vec![Token::SimpleIdentifier("this_should_be_included")]
+    );
+    check_preprocessor!(
+        "`define TEST
+        `ifdef TEST
+        this_should_be_included
+        `else
+        `ifdef TEST2
+        this_should_not_be_included
+        `endif
+        `endif",
+        vec![Token::SimpleIdentifier("this_should_be_included")]
+    );
+    check_preprocessor!(
+        "`define TEST
+        `ifdef TEST
+        this_should_be_included
+        `elsif TEST
+        `ifdef TEST
+        this_should_not_be_included
+        `endif
+        `endif",
+        vec![Token::SimpleIdentifier("this_should_be_included")]
+    );
+    check_preprocessor!(
+        "`define TEST
+        `ifdef TEST
+        this_should_be_included
+        `elsif TEST
+        `ifdef TEST2
+        this_should_not_be_included
+        `endif
+        `endif",
+        vec![Token::SimpleIdentifier("this_should_be_included")]
+    );
+    check_preprocessor!(
+        "`define TEST
+        `ifdef TEST
+        this_should_be_included
+        `else
+        `ifdef TEST
+        `ifdef TEST
+        `ifdef TEST
+        this_should_not_be_included
+        `endif
+        `endif
+        `endif
+        `endif",
+        vec![Token::SimpleIdentifier("this_should_be_included")]
+    );
 }

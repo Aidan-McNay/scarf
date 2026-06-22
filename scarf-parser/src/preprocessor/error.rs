@@ -33,9 +33,12 @@ pub enum PreprocessorError<'a> {
     ///     &mut state,
     ///     &cache,
     /// );
-    /// assert!(matches!(preprocess_result, Err(PreprocessorError::Endif(_))));
+    /// assert!(matches!(preprocess_result, Err(PreprocessorError::Endif{ .. })));
     /// ```
-    Endif(Span<'a>),
+    Endif {
+        /// The [`Span`] of the `` `endif ``
+        endif_span: Span<'a>,
+    },
     /// No terminating `` `endif `` for a conditional preprocessor block
     ///
     /// ```rust
@@ -51,9 +54,18 @@ pub enum PreprocessorError<'a> {
     ///     &mut state,
     ///     &cache,
     /// );
-    /// assert!(matches!(preprocess_result, Err(PreprocessorError::NoEndif(Token::DirIfdef, _))));
+    /// assert!(matches!(preprocess_result, Err(PreprocessorError::NoEndif{
+    ///     cond_token: Token::DirIfdef,
+    ///     ..
+    /// })));
     /// ```
-    NoEndif(Token<'a>, Span<'a>),
+    NoEndif {
+        /// The conditional token (either [`Token::DirIfdef`], [`Token::DirIfndef`],
+        /// [`Token::DirElsif`], or [`Token::DirElse`]) with no matching `` `endif ``
+        cond_token: Token<'a>,
+        /// The [`Span`] of the conditional token
+        cond_token_span: Span<'a>,
+    },
     /// An `` `elsif `` encountered outside a conditional preprocessor block
     ///
     /// ```rust
@@ -69,9 +81,12 @@ pub enum PreprocessorError<'a> {
     ///     &mut state,
     ///     &cache,
     /// );
-    /// assert!(matches!(preprocess_result, Err(PreprocessorError::Elsif(_))));
+    /// assert!(matches!(preprocess_result, Err(PreprocessorError::Elsif{ .. })));
     /// ```
-    Elsif(Span<'a>),
+    Elsif {
+        /// The [`Span`] of the `` `elsif ``
+        elsif_span: Span<'a>,
+    },
     /// An `` `else `` encountered outside a conditional preprocessor block
     ///
     /// ```rust
@@ -87,9 +102,12 @@ pub enum PreprocessorError<'a> {
     ///     &mut state,
     ///     &cache,
     /// );
-    /// assert!(matches!(preprocess_result, Err(PreprocessorError::Else(_))));
+    /// assert!(matches!(preprocess_result, Err(PreprocessorError::Else{ .. })));
     /// ```
-    Else(Span<'a>),
+    Else {
+        /// The [`Span`] of the `` `else ``
+        else_span: Span<'a>,
+    },
     /// An `` `end_keywords `` encountered outside a `` `begin_keywords `` block
     ///
     /// ```rust
@@ -105,9 +123,12 @@ pub enum PreprocessorError<'a> {
     ///     &mut state,
     ///     &cache,
     /// );
-    /// assert!(matches!(preprocess_result, Err(PreprocessorError::EndKeywords(_))));
+    /// assert!(matches!(preprocess_result, Err(PreprocessorError::EndKeywords{ .. })));
     /// ```
-    EndKeywords(Span<'a>),
+    EndKeywords {
+        /// The [`Span`] of the `` `end_keywords ``
+        end_keywords_span: Span<'a>,
+    },
     /// No terminating `` `end_keywords `` for a `` `begin_keywords `` block
     ///
     /// ```rust
@@ -123,9 +144,12 @@ pub enum PreprocessorError<'a> {
     ///     &mut state,
     ///     &cache,
     /// );
-    /// assert!(matches!(preprocess_result, Err(PreprocessorError::NoEndKeywords(_))));
+    /// assert!(matches!(preprocess_result, Err(PreprocessorError::NoEndKeywords{ .. })));
     /// ```
-    NoEndKeywords(Span<'a>),
+    NoEndKeywords {
+        /// The [`Span`] of the unterminated `` `begin_keywords ``
+        begin_keywords_span: Span<'a>,
+    },
     /// A missing parameter in a `` `define `` function declaration where one is expected
     ///
     /// ```rust
@@ -141,9 +165,17 @@ pub enum PreprocessorError<'a> {
     ///     &mut state,
     ///     &cache,
     /// );
-    /// assert!(matches!(preprocess_result, Err(PreprocessorError::InvalidDefineParameter(_))));
+    /// assert!(matches!(preprocess_result, Err(PreprocessorError::InvalidDefineParameter{
+    ///     other_token: Token::EParen,
+    ///     ..
+    /// })));
     /// ```
-    InvalidDefineParameter(SpannedToken<'a>),
+    InvalidDefineParameter {
+        /// The [`Token`] found instead of the `` `define `` parameter
+        other_token: Token<'a>,
+        /// The [`Span`] of the token found instead
+        other_span: Span<'a>,
+    },
     /// A missing or invalid argument specification in a `` `define `` function
     ///
     /// ```rust
@@ -159,9 +191,17 @@ pub enum PreprocessorError<'a> {
     ///     &mut state,
     ///     &cache,
     /// );
-    /// assert!(matches!(preprocess_result, Err(PreprocessorError::InvalidDefineArgument(_))));
+    /// assert!(matches!(preprocess_result, Err(PreprocessorError::InvalidDefineArgument{
+    ///     other_token: Token::SimpleIdentifier("c"),
+    ///     ..
+    /// })));
     /// ```
-    InvalidDefineArgument(SpannedToken<'a>),
+    InvalidDefineArgument {
+        /// The [`Token`] found instead of the valid `` `define `` argument
+        other_token: Token<'a>,
+        /// The [`Span`] of the token found instead
+        other_span: Span<'a>,
+    },
     /// An invalid version specifier for a `` `begin_keywords `` directive
     ///
     /// ```rust
@@ -177,9 +217,20 @@ pub enum PreprocessorError<'a> {
     ///     &mut state,
     ///     &cache,
     /// );
-    /// assert!(matches!(preprocess_result, Err(PreprocessorError::InvalidVersionSpecifier(_))));
+    /// assert!(matches!(preprocess_result, Err(PreprocessorError::InvalidVersionSpecifier{
+    ///     invalid_version: Token::StringLiteral("MyVersion"),
+    ///     ..
+    /// })));
     /// ```
-    InvalidVersionSpecifier((Option<&'a str>, Span<'a>)),
+    InvalidVersionSpecifier {
+        /// The [`Token`] provided instead of a valid version specifier
+        ///
+        /// If the token is a [`Token::StringLiteral`], the string isn't a version recognized
+        /// by 1800-2023
+        invalid_version: Token<'a>,
+        /// The [`Span`] of the invalid version specifier
+        invalid_version_span: Span<'a>,
+    },
     /// A directive that doesn't have all of the required components
     ///
     /// In general, [`PreprocessorError::VerboseError`] is preferred, but may
@@ -196,9 +247,15 @@ pub enum PreprocessorError<'a> {
     ///     &mut state,
     ///     &cache,
     /// );
-    /// assert!(matches!(preprocess_result, Err(PreprocessorError::IncompleteDirective(_))));
+    /// assert!(matches!(preprocess_result, Err(PreprocessorError::IncompleteDirective{ .. })));
     /// ```
-    IncompleteDirective(Span<'a>),
+    IncompleteDirective {
+        /// The [`Span`] of the incomplete preprocessor directive
+        ///
+        /// This is usually the primary directive, but can be other more indicative
+        /// tokens as well, such as an unmatched opening parenthesis
+        directive_span: Span<'a>,
+    },
     /// An incomplete preprocessor definition, specifically with function macro arguments
     ///
     /// ```rust
@@ -214,9 +271,20 @@ pub enum PreprocessorError<'a> {
     ///     &mut state,
     ///     &cache,
     /// );
-    /// assert!(matches!(preprocess_result, Err(PreprocessorError::IncompleteDefine(_))));
+    /// assert!(matches!(preprocess_result, Err(PreprocessorError::IncompleteDefine{
+    ///     other_token: Token::Paren,
+    ///     ..
+    /// })));
     /// ```
-    IncompleteDefine(SpannedToken<'a>),
+    IncompleteDefine {
+        /// If known, the [`Token`] found instead of a valid function macro argument specification
+        ///
+        /// In the case that the token wasn't tracked, the opening [`Token::Paren`] is referenced
+        /// instead
+        other_token: Token<'a>,
+        /// The [`Span`] of the token found instead
+        other_span: Span<'a>,
+    },
     /// Use of a text macro that wasn't previously defined
     ///
     /// ```rust
@@ -232,9 +300,17 @@ pub enum PreprocessorError<'a> {
     ///     &mut state,
     ///     &cache,
     /// );
-    /// assert!(matches!(preprocess_result, Err(PreprocessorError::UndefinedMacro(_))));
+    /// assert!(matches!(preprocess_result, Err(PreprocessorError::UndefinedMacro{
+    ///     undefined_name: "TEST",
+    ///     ..
+    /// })));
     /// ```
-    UndefinedMacro((&'a str, Span<'a>)),
+    UndefinedMacro {
+        /// The name of the undefined macro
+        undefined_name: &'a str,
+        /// The [`Span`] of the undefined macro
+        undefined_span: Span<'a>,
+    },
     /// Specifying a macro parameter that was already specified
     ///
     /// ```rust
@@ -250,9 +326,22 @@ pub enum PreprocessorError<'a> {
     ///     &mut state,
     ///     &cache,
     /// );
-    /// assert!(matches!(preprocess_result, Err(PreprocessorError::DuplicateMacroParameter(_))));
+    /// assert!(matches!(preprocess_result, Err(PreprocessorError::DuplicateMacroParameter{
+    ///     define_name: "TEST",
+    ///     param_name: "a",
+    ///     ..
+    /// })));
     /// ```
-    DuplicateMacroParameter((&'a str, &'a str, Span<'a>, Span<'a>)),
+    DuplicateMacroParameter {
+        /// The name of the macro for which duplicate parameters were specified
+        define_name: &'a str,
+        /// The name of the parameter that was specified multiple times
+        param_name: &'a str,
+        /// The [`Span`] of the duplicate specification
+        dup_span: Span<'a>,
+        /// The [`Span`] of the previous/original specification
+        prev_span: Span<'a>,
+    },
     /// Attempting to have a macro parameter with no default value after one that does
     ///
     /// ```rust
@@ -268,9 +357,22 @@ pub enum PreprocessorError<'a> {
     ///     &mut state,
     ///     &cache,
     /// );
-    /// assert!(matches!(preprocess_result, Err(PreprocessorError::NoDefaultAfterDefault(_))));
+    /// assert!(matches!(preprocess_result, Err(PreprocessorError::NoDefaultAfterDefault{
+    ///     default_param: "a",
+    ///     non_default_param: "b",
+    ///     ..
+    /// })));
     /// ```
-    NoDefaultAfterDefault((SpannedString<'a>, SpannedString<'a>)),
+    NoDefaultAfterDefault {
+        /// The name of the previously-specified default parameter
+        default_param: &'a str,
+        /// The [`Span`] of the previously-specified default parameter
+        default_param_span: Span<'a>,
+        /// The name of the non-default parameter
+        non_default_param: &'a str,
+        /// The [`Span`] of the non-default parameter
+        non_default_param_span: Span<'a>,
+    },
     /// Specifying no arguments for a macro function that takes arguments
     ///
     /// ```rust
@@ -287,9 +389,19 @@ pub enum PreprocessorError<'a> {
     ///     &mut state,
     ///     &cache,
     /// );
-    /// assert!(matches!(preprocess_result, Err(PreprocessorError::NoMacroArguments(_))));
+    /// assert!(matches!(preprocess_result, Err(PreprocessorError::NoMacroArguments{
+    ///     macro_name: "TEST",
+    ///     ..
+    /// })));
     /// ```
-    NoMacroArguments((Span<'a>, (&'a str, Span<'a>))),
+    NoMacroArguments {
+        /// The name of the macro
+        macro_name: &'a str,
+        /// The [`Span`] of the macro definition (with arguments)
+        define_span: Span<'a>,
+        /// The [`Span`] where the macro was used with no arguments
+        use_span: Span<'a>,
+    },
     /// Specifying too many arguments for a macro function
     ///
     /// ```rust
@@ -306,9 +418,25 @@ pub enum PreprocessorError<'a> {
     ///     &mut state,
     ///     &cache,
     /// );
-    /// assert!(matches!(preprocess_result, Err(PreprocessorError::TooManyMacroArguments(_))));
+    /// assert!(matches!(preprocess_result, Err(PreprocessorError::TooManyMacroArguments{
+    ///     macro_name: "TEST",
+    ///     expected: 2,
+    ///     found: 3,
+    ///     ..
+    /// })));
     /// ```
-    TooManyMacroArguments((Span<'a>, (&'a str, usize, usize, Span<'a>))),
+    TooManyMacroArguments {
+        /// The name of the macro
+        macro_name: &'a str,
+        /// The [`Span`] of the macro definition
+        define_span: Span<'a>,
+        /// The [`Span`] where the macro was used with too many arguments
+        use_span: Span<'a>,
+        /// How many arguments were expected
+        expected: usize,
+        /// How many arguments were found
+        found: usize,
+    },
     /// Missing an argument in a macro function use
     ///
     /// ```rust
@@ -325,9 +453,19 @@ pub enum PreprocessorError<'a> {
     ///     &mut state,
     ///     &cache,
     /// );
-    /// assert!(matches!(preprocess_result, Err(PreprocessorError::MissingMacroArgument(_))));
+    /// assert!(matches!(preprocess_result, Err(PreprocessorError::MissingMacroArgument{
+    ///     param_name: "b",
+    ///     ..
+    /// })));
     /// ```
-    MissingMacroArgument((Span<'a>, (&'a str, Span<'a>))),
+    MissingMacroArgument {
+        /// The [`Span`] of the macro definition
+        define_span: Span<'a>,
+        /// The [`Span`] where the macro was used with a missing argument
+        use_span: Span<'a>,
+        /// The name of the missing parameter
+        param_name: &'a str,
+    },
     /// An invalid preprocessor identifier specification
     ///
     /// ```rust
@@ -344,9 +482,17 @@ pub enum PreprocessorError<'a> {
     ///     &mut state,
     ///     &cache,
     /// );
-    /// assert!(matches!(preprocess_result, Err(PreprocessorError::InvalidIdentifierFormation(_))));
+    /// assert!(matches!(preprocess_result, Err(PreprocessorError::InvalidIdentifierFormation{
+    ///     param_name: "a",
+    ///     ..
+    /// })));
     /// ```
-    InvalidIdentifierFormation((&'a str, Span<'a>)),
+    InvalidIdentifierFormation {
+        /// The name of the parameter used in a preprocessor identifier
+        param_name: &'a str,
+        /// The [`Span`] of the invalid argument
+        arg_span: Span<'a>,
+    },
     /// A precision that is less precise than the unit in a `` `timescale `` directive
     ///
     /// ```rust
@@ -362,9 +508,12 @@ pub enum PreprocessorError<'a> {
     ///     &mut state,
     ///     &cache,
     /// );
-    /// assert!(matches!(preprocess_result, Err(PreprocessorError::InvalidRelativeTimescales(_))));
+    /// assert!(matches!(preprocess_result, Err(PreprocessorError::InvalidRelativeTimescales{ .. })));
     /// ```
-    InvalidRelativeTimescales(Span<'a>),
+    InvalidRelativeTimescales {
+        /// The [`Span`] of the `` `timescale `` directive
+        timescale_span: Span<'a>,
+    },
     /// An incomplete macro due to mismatching grouping tokens (`[]`, `()`, or `{}`)
     ///
     /// ```rust
@@ -381,9 +530,18 @@ pub enum PreprocessorError<'a> {
     ///     &mut state,
     ///     &cache,
     /// );
-    /// assert!(matches!(preprocess_result, Err(PreprocessorError::IncompleteMacroWithToken(_))));
+    /// assert!(matches!(preprocess_result, Err(PreprocessorError::IncompleteMacroWithToken{
+    ///     error_token: Token::EBracket,
+    ///     ..
+    /// })));
     /// ```
-    IncompleteMacroWithToken(SpannedToken<'a>),
+    IncompleteMacroWithToken {
+        /// The error-causing [`Token`] (either [`Token::EParen`],
+        /// [`Token::EBracket`], or [`Token::EBrace`])
+        error_token: Token<'a>,
+        /// The error-causing [`Span`]
+        error_span: Span<'a>,
+    },
     /// An error reading a file specified by an  `` `include `` macro
     ///
     /// ```rust
@@ -399,9 +557,19 @@ pub enum PreprocessorError<'a> {
     ///     &mut state,
     ///     &cache,
     /// );
-    /// assert!(matches!(preprocess_result, Err(PreprocessorError::Include(_, _, _))));
+    /// assert!(matches!(preprocess_result, Err(PreprocessorError::Include{
+    ///     include_path: "other.v",
+    ///     ..
+    /// })));
     /// ```
-    Include(Span<'a>, String, io::Error),
+    Include {
+        /// The path for the `` `include `` directive
+        include_path: &'a str,
+        /// The [`Span`] of the include path
+        include_path_span: Span<'a>,
+        /// The [`io::Error`] raised when attempting to read the file
+        read_err: io::Error,
+    },
     /// The maximum include depth was hit, likely as a result of a self-referential
     /// `` `include `` sequence
     ///
@@ -423,9 +591,12 @@ pub enum PreprocessorError<'a> {
     ///     &mut state,
     ///     &cache,
     /// );
-    /// assert!(matches!(preprocess_result, Err(PreprocessorError::IncludeDepth(_, _))));
+    /// assert!(matches!(preprocess_result, Err(PreprocessorError::IncludeDepth{ .. })));
     /// ```
-    IncludeDepth(Span<'a>, Vec<Span<'a>>),
+    IncludeDepth {
+        /// The [`Span`] of the `` `include `` directive that exceeded the limit
+        include_span: Span<'a>,
+    },
     /// A [`VerboseError`] detailing the expected and found tokens, for a case not covered above
     ///
     /// This is most commonly used when we can provide the user with a bit more context
@@ -444,9 +615,17 @@ pub enum PreprocessorError<'a> {
     ///     &cache,
     /// );
     /// // Expects a line number
-    /// assert!(matches!(preprocess_result, Err(PreprocessorError::VerboseError(_))));
+    /// assert!(matches!(preprocess_result, Err(PreprocessorError::VerboseError{
+    ///     err: VerboseError{
+    ///         found: Some(Token::Newline),
+    ///         ..
+    ///     }
+    /// })));
     /// ```
-    VerboseError(VerboseError<'a>),
+    VerboseError {
+        /// The [`VerboseError`] for the preprocessor error
+        err: VerboseError<'a>,
+    },
     // Internal "errors" used for communication
     // - Should not be exposed outside of main preprocess function
     /// **INTERNAL**: A newline encountered in a `` `define `` directive
@@ -478,168 +657,168 @@ impl<'s> From<&PreprocessorError<'s>>
 {
     fn from(s: &PreprocessorError<'s>) -> Self {
         match s {
-            PreprocessorError::Endif(endif_span) => make_report(
+            PreprocessorError::Endif{endif_span} => make_report(
                 endif_span,
                 "PP1",
                 "Unexpected `endif".to_string(),
                 "Unexpected `endif".to_string(),
                 ReportKind::Error,
             ).finish(),
-            PreprocessorError::NoEndif(token, ifdef_span) => make_report(
-                ifdef_span,
+            PreprocessorError::NoEndif{cond_token, cond_token_span} => make_report(
+                cond_token_span,
                 "PP2",
-                format!("No matching `endif for {token}"),
+                format!("No matching `endif for {cond_token}"),
                 "No matching `endif".to_owned(),
                 ReportKind::Error,
             ).finish(),
-            PreprocessorError::Elsif(elsif_span) => make_report(
+            PreprocessorError::Elsif{elsif_span} => make_report(
                 elsif_span,
                 "PP3",
                 "Unexpected `elsif".to_string(),
                 "Unexpected `elsif".to_string(),
                 ReportKind::Error,
             ).finish(),
-            PreprocessorError::Else(else_span) => make_report(
+            PreprocessorError::Else{else_span} => make_report(
                 else_span,
                 "PP4",
                 "Unexpected `else".to_string(),
                 "Unexpected `else".to_string(),
                 ReportKind::Error,
             ).finish(),
-            PreprocessorError::EndKeywords(end_keywords_span) => make_report(
+            PreprocessorError::EndKeywords{end_keywords_span} => make_report(
                 end_keywords_span,
                 "PP5",
                 "`end_keywords with no previous `begin_keywords".to_string(),
                 "No matching `begin_keywords".to_string(),
                 ReportKind::Error,
             ).finish(),
-            PreprocessorError::NoEndKeywords(begin_span) => make_report(
-                begin_span,
+            PreprocessorError::NoEndKeywords{begin_keywords_span} => make_report(
+                begin_keywords_span,
                 "PP6",
                 "`begin_keywords with no matching `end_keywords".to_string(),
                 "No matching `end_keywords".to_string(),
                 ReportKind::Error,
             ).finish(),
-            PreprocessorError::InvalidDefineParameter(err_spanned_token) => {
+            PreprocessorError::InvalidDefineParameter{other_token, other_span} => {
                 make_report(
-                    &err_spanned_token.1,
+                    other_span,
                     "PP7",
                     format!(
                         "Found {}, expected a preprocessor macro parameter/identifier",
-                        err_spanned_token.0
+                        other_token
                     ),
-                    format!("Unexpected {}", err_spanned_token.0),
+                    format!("Unexpected {}", other_token),
                     ReportKind::Error,
                 ).finish()
             }
-            PreprocessorError::InvalidDefineArgument(err_spanned_token) => {
+            PreprocessorError::InvalidDefineArgument{other_token, other_span} => {
                 make_report(
-                    &err_spanned_token.1,
+                    other_span,
                     "PP7",
                     format!(
                         "Found {}, expected a comma, ), or a preprocessor macro argument",
-                        err_spanned_token.0
+                        other_token
                     ),
-                    format!("Unexpected {}", err_spanned_token.0),
+                    format!("Unexpected {}", other_token),
                     ReportKind::Error,
                 ).finish()
             }
-            PreprocessorError::InvalidVersionSpecifier((
-                spec_string,
-                spec_span,
-            )) => make_report(
-                spec_span,
+            PreprocessorError::InvalidVersionSpecifier{
+                    invalid_version,
+                    invalid_version_span,
+            } => make_report(
+                invalid_version_span,
                 "PP8",
-                match spec_string {
-                    Some(version_string) => format!("{version_string} is not a valid version specifier"),
-                    None => "Not a valid version specifier".to_string()
+                match invalid_version {
+                    Token::StringLiteral(invalid_version_str) => format!("{invalid_version_str} is not a valid version specifier"),
+                    _ => format!("A {} isn't a version specifier", invalid_version)
                 },
                 "Invalid version specifier".to_string(),
                 ReportKind::Error,
             ).finish(),
-            PreprocessorError::IncompleteDirective(span) => make_report(
-                span,
+            PreprocessorError::IncompleteDirective{directive_span} => make_report(
+                directive_span,
                 "PP9",
                 "Incomplete directive".to_string(),
                 "Expected a complete directive".to_string(),
                 ReportKind::Error,
             ).finish(),
-            PreprocessorError::IncompleteDefine(
-                err_spanned_token,
-            ) => make_report(
-                &err_spanned_token.1,
+            PreprocessorError::IncompleteDefine{
+                other_token, other_span
+            } => make_report(
+                other_span,
                 "PP10",
                 format!(
                     "Found {}, expected more in the preprocessor definition",
-                    err_spanned_token.0
+                    other_token
                 ),
                 "Expected more after".to_string(),
                 ReportKind::Error,
             ).finish(),
-            PreprocessorError::UndefinedMacro((macro_name, macro_span)) => {
+            PreprocessorError::UndefinedMacro{undefined_name, undefined_span} => {
                 make_report(
-                    macro_span,
+                    undefined_span,
                     "PP11",
-                    format!("{macro_name} has not been previously defined"),
+                    format!("{undefined_name} has not been previously defined"),
                     "Not previously defined".to_string(),
                     ReportKind::Error,
                 ).finish()
             }
-            PreprocessorError::DuplicateMacroParameter((define_name, arg_name, arg_span, prev_span)) => {
+            PreprocessorError::DuplicateMacroParameter{define_name, param_name, dup_span, prev_span} => {
                 attach_span_label(prev_span, NOTE_COLOR, "Previously declared here", make_report(
-                    arg_span,
+                    dup_span,
                     "PP14",
-                    format!("'{arg_name}' was already declared as a macro parameter for {define_name}"),
+                    format!("'{param_name}' was already declared as a macro parameter for {define_name}"),
                     "Duplicate parameter declaration".to_string(),
                     ReportKind::Error,
                 )).finish()
             }
-            PreprocessorError::NoDefaultAfterDefault((last_default_arg, no_default_arg)) => {
-                attach_span_label(&last_default_arg.1, NOTE_COLOR, format!("{} had a default specified", last_default_arg.0), make_report(
-                    &no_default_arg.1,
+            PreprocessorError::NoDefaultAfterDefault{default_param, default_param_span, non_default_param, non_default_param_span} => {
+                attach_span_label(default_param_span, NOTE_COLOR, format!("{} had a default specified", default_param), make_report(
+                    non_default_param_span,
                     "PP15",
                     format!("No default specified for argument after one with a default"),
-                    "No default specified".to_string(),
+                    format!("No default specified for {}", non_default_param),
                     ReportKind::Error,
                 )).finish()
             }
-            PreprocessorError::NoMacroArguments((define_span, (macro_name, macro_span))) => {
+            PreprocessorError::NoMacroArguments{macro_name, define_span, use_span} => {
                 attach_span_label(define_span, NOTE_COLOR, "Macro defined here", make_report(
-                    macro_span,
+                    use_span,
                     "PP16",
                     format!("Expected arguments when using {macro_name}"),
                     "Expected arguments not present".to_string(),
                     ReportKind::Error,
                 )).finish()
             }
-            PreprocessorError::TooManyMacroArguments((define_span, (macro_name, expected, found, macro_span))) => {
+            PreprocessorError::TooManyMacroArguments{macro_name, define_span, use_span, expected, found} => {
                 attach_span_label(define_span, NOTE_COLOR, format!("Macro definition expects {expected} arguments"), make_report(
-                    macro_span,
+                    use_span,
                     "PP17",
                     format!("{} expected {} arguments, but {} were provided", macro_name, expected, found),
                     format!("{found} arguments provided"),
                     ReportKind::Error,
                 )).finish()
             }
-            PreprocessorError::MissingMacroArgument((define_span, (arg_name, macro_span))) => {
+            PreprocessorError::MissingMacroArgument{define_span, use_span, param_name} => {
                 attach_span_label(define_span, NOTE_COLOR, "Macro defined here", make_report(
-                    macro_span,
+                    use_span,
                     "PP18",
-                    format!("'{arg_name}' wasn't specified and has no default"),
+                    format!("'{param_name}' wasn't specified and has no default"),
                     "Missing argument".to_string(),
                     ReportKind::Error,
                 )).finish()
             }
-            PreprocessorError::InvalidIdentifierFormation((arg_name, arg_span)) => {
+            PreprocessorError::InvalidIdentifierFormation{param_name, arg_span} => {
                 make_report(
                     arg_span,
                     "PP19",
-                    format!("The argument for '{arg_name}' cannot be concatenated into an identifier"),
+                    format!("The argument for '{param_name}' cannot be concatenated into an identifier"),
                     "No valid conversion to identifier".to_string(),
                     ReportKind::Error,
                 ).finish()
             }
-            PreprocessorError::InvalidRelativeTimescales(timescale_span) => {
+            PreprocessorError::InvalidRelativeTimescales{timescale_span} => {
                 make_report(
                     timescale_span,
                     "PP20",
@@ -648,35 +827,35 @@ impl<'s> From<&PreprocessorError<'s>>
                     ReportKind::Error,
                 ).finish()
             }
-            PreprocessorError::IncompleteMacroWithToken(err_spanned_token) => {
+            PreprocessorError::IncompleteMacroWithToken{error_token, error_span} => {
                 make_report(
-                  &err_spanned_token.1,
+                    error_span,
                   "PP21",
-                  format!("Usage of {} is incomplete", err_spanned_token.0),
+                  format!("Usage of {} resulted in an incomplete macro", error_token),
                   "Expected a complete macro argument or escaped newline after".to_string(),
                   ReportKind::Error,
               ).finish()
             }
-            PreprocessorError::Include(span, path, io_error) => {
+            PreprocessorError::Include{include_path, include_path_span, read_err} => {
                 make_report(
-                    span,
+                    include_path_span,
                     "PP22",
-                    format!("Error when reading {}", path),
-                    io_error.to_string(),
+                    format!("Error when reading {}", include_path),
+                    read_err.to_string(),
                     ReportKind::Error,
                 ).finish()
             }
-            PreprocessorError::IncludeDepth(span, _prev_include_spans) => {
+            PreprocessorError::IncludeDepth{include_span} => {
                 make_report(
-                    span,
+                    include_span,
                     "PP23",
                     format!("Include depth of {} reached", MAX_INCLUDE_DEPTH),
                     "Check for an `include loop".to_string(),
                     ReportKind::Error,
                 ).finish()
             }
-            PreprocessorError::VerboseError(verbose_error) => {
-              verbose_error.report("PP24")
+            PreprocessorError::VerboseError{err} => {
+              err.report("PP24")
             },
             PreprocessorError::NewlineInDefine(newline_span) => make_report(
               newline_span,

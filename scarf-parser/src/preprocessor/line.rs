@@ -13,17 +13,19 @@ fn get_line_number<'s>(
     directive_span: Span<'s>,
 ) -> Result<(&'s str, Span<'s>), PreprocessorError<'s>> {
     let Some(spanned_token) = preprocess_single(src, state, cache)? else {
-        return Err(PreprocessorError::IncompleteDirective(directive_span));
+        return Err(PreprocessorError::IncompleteDirective { directive_span });
     };
     match spanned_token {
         SpannedToken(Token::UnsignedNumber(num_text), num_span) => {
             Ok((num_text, num_span))
         }
-        _ => Err(PreprocessorError::VerboseError(VerboseError {
-            span: spanned_token.1,
-            found: Some(spanned_token.0),
-            expected: vec![Expectation::Label("a line number")],
-        })),
+        _ => Err(PreprocessorError::VerboseError {
+            err: VerboseError {
+                span: spanned_token.1,
+                found: Some(spanned_token.0),
+                expected: vec![Expectation::Label("a line number")],
+            },
+        }),
     }
 }
 
@@ -34,17 +36,19 @@ fn get_line_file<'s>(
     directive_span: Span<'s>,
 ) -> Result<(&'s str, Span<'s>), PreprocessorError<'s>> {
     let Some(spanned_token) = preprocess_single(src, state, cache)? else {
-        return Err(PreprocessorError::IncompleteDirective(directive_span));
+        return Err(PreprocessorError::IncompleteDirective { directive_span });
     };
     match spanned_token {
         SpannedToken(Token::StringLiteral(file_name), file_name_span) => {
             Ok((file_name, file_name_span))
         }
-        _ => Err(PreprocessorError::VerboseError(VerboseError {
-            span: spanned_token.1,
-            found: Some(spanned_token.0),
-            expected: vec![Expectation::Label("a file name")],
-        })),
+        _ => Err(PreprocessorError::VerboseError {
+            err: VerboseError {
+                span: spanned_token.1,
+                found: Some(spanned_token.0),
+                expected: vec![Expectation::Label("a file name")],
+            },
+        }),
     }
 }
 
@@ -61,7 +65,7 @@ fn get_line_level<'s>(
     directive_span: Span<'s>,
 ) -> Result<(LineDirectiveLevel, Span<'s>), PreprocessorError<'s>> {
     let Some(spanned_token) = preprocess_single(src, state, cache)? else {
-        return Err(PreprocessorError::IncompleteDirective(directive_span));
+        return Err(PreprocessorError::IncompleteDirective { directive_span });
     };
     match spanned_token {
         SpannedToken(Token::UnsignedNumber("0"), num_span) => {
@@ -73,11 +77,13 @@ fn get_line_level<'s>(
         SpannedToken(Token::UnsignedNumber("2"), num_span) => {
             Ok((LineDirectiveLevel::ExitInclude, num_span))
         }
-        _ => Err(PreprocessorError::VerboseError(VerboseError {
-            span: spanned_token.1,
-            found: Some(spanned_token.0),
-            expected: vec![Expectation::Label("a line number")],
-        })),
+        _ => Err(PreprocessorError::VerboseError {
+            err: VerboseError {
+                span: spanned_token.1,
+                found: Some(spanned_token.0),
+                expected: vec![Expectation::Label("a line number")],
+            },
+        }),
     }
 }
 

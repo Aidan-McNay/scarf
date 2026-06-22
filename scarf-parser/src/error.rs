@@ -14,6 +14,11 @@ use winnow::{
     stream::Stream,
 };
 
+/// A trait for displaying a short representation of an object as a [`String`]
+pub(crate) trait DisplayShort {
+    fn to_short_string(&self) -> String;
+}
+
 /// Something the parser expected to find instead of what was found,
 /// in the case of an error
 #[derive(Debug, Clone, PartialEq)]
@@ -24,6 +29,16 @@ pub enum Expectation<'s> {
     Label(&'s str),
     /// The end of a file
     EOI,
+}
+
+impl<'a> std::fmt::Display for Expectation<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Expectation::Token(token) => token.fmt(f),
+            Expectation::Label(label) => write!(f, "{}", label),
+            Expectation::EOI => write!(f, "end of input"),
+        }
+    }
 }
 
 /// A verbose error message describing the error location, what was
@@ -113,6 +128,32 @@ impl<'s> ParserError<Tokens<'s>> for VerboseError<'s> {
         }
     }
 }
+
+impl<'s> VerboseError<'s> {
+    /// Similar to [`VerboseError::or`], but modifies an existing
+    /// error instead of creating a new one
+    pub(crate) fn or_in_place(&mut self, mut other: Self) {
+        // Prefer errors that got to the end of the input
+        match (self.found, other.found) {
+            (None, Some(_)) => (),
+            (Some(_), None) => *self = other,
+            (None, None) => {
+                self.expected.append(&mut other.expected);
+            }
+            (Some(_), Some(_)) => {
+                // Prefer the one with a later span (a.k.a. got farther)
+                match self.span.compare(&other.span) {
+                    SpanRelation::Later => (),
+                    SpanRelation::Earlier => *self = other,
+                    SpanRelation::Same => {
+                        self.expected.append(&mut other.expected);
+                    }
+                }
+            }
+        }
+    }
+}
+
 impl<'s> AddContext<Tokens<'s>, Token<'s>> for VerboseError<'s> {
     fn add_context(
         mut self,
@@ -136,49 +177,41 @@ impl<'s> AddContext<Tokens<'s>, &'s str> for VerboseError<'s> {
     }
 }
 
-fn format_expectation<'s>(pattern: &Expectation<'s>) -> String {
-    match pattern {
-        Expectation::Token(token) => token.to_string(),
-        Expectation::Label(label) => label.to_string(),
-        Expectation::EOI => "end of input".to_string(),
-    }
-}
-
-fn format_reason<'s>(error: &VerboseError<'s>) -> String {
-    let found_str = match error.found {
-        Some(tok) => tok.to_string(),
-        None => "end of input".to_owned(),
-    };
-    let mut dedup_expected: Vec<Expectation<'s>> = vec![];
-    for expected in error.expected.iter() {
-        if !dedup_expected.contains(expected) {
-            dedup_expected.push(expected.clone());
-        }
-    }
-    let expected_str = match &dedup_expected[..] {
-        [] => "something else".to_owned(),
-        [expected] => format_expectation(expected),
-        _ => {
-            let mut temp_expected_str = String::new();
-            for expected in &dedup_expected[..dedup_expected.len() - 1] {
-                temp_expected_str
-                    .push_str(format_expectation(expected).as_str());
-                temp_expected_str.push_str(", ");
+impl<'a> fmt::Display for VerboseError<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "found ")?;
+        match self.found {
+            Some(tok) => tok.fmt(f)?,
+            None => write!(f, "end of input")?,
+        };
+        write!(f, ", expected ")?;
+        let mut dedup_expected: Vec<Expectation<'a>> = vec![];
+        for expected in self.expected.iter() {
+            if !dedup_expected.contains(expected) {
+                dedup_expected.push(expected.clone());
             }
-            temp_expected_str.push_str("or ");
-            temp_expected_str.push_str(
-                format_expectation(dedup_expected.last().unwrap()).as_str(),
-            );
-            temp_expected_str
         }
-    };
-    format!("found {}, expected {}", found_str, expected_str)
+        match &dedup_expected[..] {
+            [] => write!(f, "something else"),
+            [expected] => expected.fmt(f),
+            _ => {
+                for expected in &dedup_expected[..dedup_expected.len() - 1] {
+                    expected.fmt(f)?;
+                    write!(f, ", ")?;
+                }
+                write!(f, "or ")?;
+                dedup_expected.last().unwrap().fmt(f)
+            }
+        }
+    }
 }
 
-fn format_reason_short<'s>(error: &VerboseError<'s>) -> String {
-    match error.found {
-        Some(tok) => format!("Didn't expect {}", tok.to_string()),
-        None => "Didn't expect end of input".to_owned(),
+impl<'a> DisplayShort for VerboseError<'a> {
+    fn to_short_string(&self) -> String {
+        match self.found {
+            Some(tok) => format!("Didn't expect {}", tok.to_string()),
+            None => "Didn't expect end of input".to_owned(),
+        }
     }
 }
 
@@ -216,38 +249,13 @@ impl<'s> VerboseError<'s> {
         .with_config(
             ariadne::Config::new().with_index_type(ariadne::IndexType::Byte),
         )
-        .with_message(format_reason(&self));
+        .with_message(self.to_string());
         report = attach_span_label(
             &error_span,
             Color::Red,
-            format_reason_short(&self),
+            self.to_short_string(),
             report,
         );
         report.finish()
-    }
-}
-
-impl<'s> VerboseError<'s> {
-    /// Similar to [`VerboseError::or`], but modifies an existing
-    /// error instead of creating a new one
-    pub(crate) fn or_in_place(&mut self, mut other: Self) {
-        // Prefer errors that got to the end of the input
-        match (self.found, other.found) {
-            (None, Some(_)) => (),
-            (Some(_), None) => *self = other,
-            (None, None) => {
-                self.expected.append(&mut other.expected);
-            }
-            (Some(_), Some(_)) => {
-                // Prefer the one with a later span (a.k.a. got farther)
-                match self.span.compare(&other.span) {
-                    SpanRelation::Later => (),
-                    SpanRelation::Earlier => *self = other,
-                    SpanRelation::Same => {
-                        self.expected.append(&mut other.expected);
-                    }
-                }
-            }
-        }
     }
 }

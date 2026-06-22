@@ -61,11 +61,8 @@ fn format(args: &FormatArgs) {
             return;
         }
         let token_stream = lexed_src.tokens();
-        let preprocess_result = preprocess(
-            &mut TokenIterator::new(token_stream.into_iter()),
-            &mut state,
-            &string_cache,
-        );
+        let preprocess_result =
+            preprocess(token_stream, &mut state, &string_cache);
         let mut error_sources = sources(state.included_files());
         for warning in &state.warnings {
             let report: Report<'_, (String, std::ops::Range<usize>)> =

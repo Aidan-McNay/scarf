@@ -28,7 +28,9 @@ fn get_nettype<'s>(
     define_span: Span<'s>,
 ) -> Result<DefaultNettype, PreprocessorError<'s>> {
     let Some(spanned_token) = preprocess_single(src, state, cache)? else {
-        return Err(PreprocessorError::IncompleteDirective(define_span));
+        return Err(PreprocessorError::IncompleteDirective {
+            directive_span: define_span,
+        });
     };
     match spanned_token.0 {
         Token::Wire => Ok(DefaultNettype::Wire),
@@ -42,23 +44,25 @@ fn get_nettype<'s>(
         Token::Trireg => Ok(DefaultNettype::Trireg),
         Token::Uwire => Ok(DefaultNettype::Uwire),
         Token::SimpleIdentifier("none") => Ok(DefaultNettype::None),
-        _ => Err(PreprocessorError::VerboseError(VerboseError {
-            span: spanned_token.1,
-            found: Some(spanned_token.0),
-            expected: vec![
-                Expectation::Token(Token::Wire),
-                Expectation::Token(Token::Tri),
-                Expectation::Token(Token::Tri0),
-                Expectation::Token(Token::Tri1),
-                Expectation::Token(Token::Wand),
-                Expectation::Token(Token::Triand),
-                Expectation::Token(Token::Wor),
-                Expectation::Token(Token::Trior),
-                Expectation::Token(Token::Trireg),
-                Expectation::Token(Token::Uwire),
-                Expectation::Label("'none'"),
-            ],
-        })),
+        _ => Err(PreprocessorError::VerboseError {
+            err: VerboseError {
+                span: spanned_token.1,
+                found: Some(spanned_token.0),
+                expected: vec![
+                    Expectation::Token(Token::Wire),
+                    Expectation::Token(Token::Tri),
+                    Expectation::Token(Token::Tri0),
+                    Expectation::Token(Token::Tri1),
+                    Expectation::Token(Token::Wand),
+                    Expectation::Token(Token::Triand),
+                    Expectation::Token(Token::Wor),
+                    Expectation::Token(Token::Trior),
+                    Expectation::Token(Token::Trireg),
+                    Expectation::Token(Token::Uwire),
+                    Expectation::Label("'none'"),
+                ],
+            },
+        }),
     }
 }
 

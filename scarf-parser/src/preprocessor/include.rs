@@ -20,7 +20,9 @@ fn get_include_path<'s>(
     define_span: Span<'s>,
 ) -> Result<(IncludePath<'s>, Span<'s>), PreprocessorError<'s>> {
     let Some(spanned_token) = preprocess_single(src, state, cache)? else {
-        return Err(PreprocessorError::IncompleteDirective(define_span));
+        return Err(PreprocessorError::IncompleteDirective {
+            directive_span: define_span,
+        });
     };
     match spanned_token.0 {
         Token::StringLiteral(id_str) => {
@@ -28,19 +30,25 @@ fn get_include_path<'s>(
         }
         Token::Lt => loop {
             let Some(next_token) = preprocess_single(src, state, cache)? else {
-                break Err(PreprocessorError::VerboseError(VerboseError {
-                    span: spanned_token.1,
-                    found: Some(spanned_token.0),
-                    expected: vec![Expectation::Label("an include path")],
-                }));
-            };
-            match next_token.0 {
-                Token::Newline => {
-                    break Err(PreprocessorError::VerboseError(VerboseError {
+                break Err(PreprocessorError::VerboseError {
+                    err: VerboseError {
                         span: spanned_token.1,
                         found: Some(spanned_token.0),
                         expected: vec![Expectation::Label("an include path")],
-                    }));
+                    },
+                });
+            };
+            match next_token.0 {
+                Token::Newline => {
+                    break Err(PreprocessorError::VerboseError {
+                        err: VerboseError {
+                            span: spanned_token.1,
+                            found: Some(spanned_token.0),
+                            expected: vec![Expectation::Label(
+                                "an include path",
+                            )],
+                        },
+                    });
                 }
                 Token::Gt => {
                     let mut path_span = spanned_token.1.clone();
@@ -54,11 +62,13 @@ fn get_include_path<'s>(
                 _ => (),
             }
         },
-        _ => Err(PreprocessorError::VerboseError(VerboseError {
-            span: spanned_token.1,
-            found: Some(spanned_token.0),
-            expected: vec![Expectation::Label("an include path")],
-        })),
+        _ => Err(PreprocessorError::VerboseError {
+            err: VerboseError {
+                span: spanned_token.1,
+                found: Some(spanned_token.0),
+                expected: vec![Expectation::Label("an include path")],
+            },
+        }),
     }
 }
 
@@ -69,11 +79,10 @@ pub fn preprocess_include<'s>(
     cache: &'s PreprocessorCache<'s>,
     include_span: &'s Span<'s>,
 ) -> Result<(), PreprocessorError<'s>> {
-    if state.include_history.len() >= MAX_INCLUDE_DEPTH {
-        return Err(PreprocessorError::IncludeDepth(
-            include_span.clone(),
-            state.include_history.clone(),
-        ));
+    if state.include_depth >= MAX_INCLUDE_DEPTH {
+        return Err(PreprocessorError::IncludeDepth {
+            include_span: include_span.clone(),
+        });
     }
     let (include_path_text, file_span) =
         get_include_path(src, state, cache, include_span.clone())?;
@@ -89,14 +98,14 @@ pub fn preprocess_include<'s>(
     if let Some(size_hint) = included_file_contents.size_hint().1 {
         dest.reserve(size_hint);
     }
-    state.include_history.push(include_span.clone());
+    state.include_depth += 1;
     let result = preprocess_helper(
         &mut TokenIterator::new(included_file_contents),
         dest,
         state,
         cache,
     );
-    state.include_history.pop();
+    state.include_depth -= 1;
     result
 }
 

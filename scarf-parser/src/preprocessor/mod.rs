@@ -144,9 +144,10 @@ pub(crate) fn preprocess_helper<'s>(
                         }
                         _ => {
                             return Err(
-                                PreprocessorError::IncompleteMacroWithToken(
-                                    spanned_token,
-                                ),
+                                PreprocessorError::IncompleteMacroWithToken {
+                                    error_token: spanned_token.0,
+                                    error_span: spanned_token.1,
+                                },
                             );
                         }
                     }
@@ -156,9 +157,10 @@ pub(crate) fn preprocess_helper<'s>(
                         Some(Token::Bracket) => dest.push(spanned_token),
                         _ => {
                             return Err(
-                                PreprocessorError::IncompleteMacroWithToken(
-                                    spanned_token,
-                                ),
+                                PreprocessorError::IncompleteMacroWithToken {
+                                    error_token: spanned_token.0,
+                                    error_span: spanned_token.1,
+                                },
                             );
                         }
                     }
@@ -168,9 +170,10 @@ pub(crate) fn preprocess_helper<'s>(
                         Some(Token::Brace) => dest.push(spanned_token),
                         _ => {
                             return Err(
-                                PreprocessorError::IncompleteMacroWithToken(
-                                    spanned_token,
-                                ),
+                                PreprocessorError::IncompleteMacroWithToken {
+                                    error_token: spanned_token.0,
+                                    error_span: spanned_token.1,
+                                },
                             );
                         }
                     }
@@ -223,18 +226,24 @@ pub(crate) fn preprocess_helper<'s>(
                     preprocess_define(src, state, cache, spanned_token.1)?;
                 }
                 Token::DirElse => {
-                    return Err(PreprocessorError::Else(spanned_token.1));
+                    return Err(PreprocessorError::Else {
+                        else_span: spanned_token.1,
+                    });
                 }
                 Token::DirElsif => {
-                    return Err(PreprocessorError::Elsif(spanned_token.1));
+                    return Err(PreprocessorError::Elsif {
+                        elsif_span: spanned_token.1,
+                    });
                 }
                 Token::DirEndKeywords => {
-                    return Err(PreprocessorError::EndKeywords(
-                        spanned_token.1,
-                    ));
+                    return Err(PreprocessorError::EndKeywords {
+                        end_keywords_span: spanned_token.1,
+                    });
                 }
                 Token::DirEndif => {
-                    return Err(PreprocessorError::Endif(spanned_token.1));
+                    return Err(PreprocessorError::Endif {
+                        endif_span: spanned_token.1,
+                    });
                 }
                 Token::DirIfdef => {
                     preprocess_ifdef(
