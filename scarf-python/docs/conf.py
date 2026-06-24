@@ -69,13 +69,5 @@ html_static_path = ["_static"]
 # Check that the build directory is as intended
 
 
-def check_build_dir(app):
-    if Path(app.outdir).name != "_build":
-        raise ValueError(
-            "Output directory must be named _build for "
-            "stubs to be generated properly"
-        )
-
-
 def setup(app):
-    app.connect("builder-inited", check_build_dir)
+    pass
