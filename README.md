@@ -25,7 +25,7 @@ A complete preprocessor and parser for SystemVerilog source text, forming an CST
 
 [![Crates.io Version](https://img.shields.io/crates/v/scarf-python)](https://crates.io/crates/scarf-python)
 [![PyPI Version](https://img.shields.io/pypi/v/scarf_python)](https://pypi.org/project/scarf_python)
-[![docs.rs](https://img.shields.io/docsrs/scarf-python)](https://docs.rs/crate/scarf-python/latest)
+[![ReadTheDocs](https://img.shields.io/readthedocs/scarf-python)](https://scarf-python.readthedocs.io/en/latest/?badge=latest)
 [![Crates.io License](https://img.shields.io/crates/l/scarf-python)](https://crates.io/crates/scarf-python)
 
 Python bindings for the `scarf` SystemVerilog tools
