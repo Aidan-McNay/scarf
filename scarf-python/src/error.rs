@@ -15,9 +15,9 @@ use pyo3::prelude::*;
 #[derive(Clone, PartialEq, Eq)]
 pub enum Expectation {
     /// A specific token
-    Token(Token),
+    Token { token: Token },
     /// A verbose human-readable label
-    Label(String),
+    Label { label: String },
     /// The end of a file
     EOI(),
 }
@@ -26,11 +26,13 @@ impl<'a> From<scarf_parser::Expectation<'a>> for Expectation {
     fn from(value: scarf_parser::Expectation<'a>) -> Self {
         match value {
             scarf_parser::Expectation::Token(rust_token) => {
-                Expectation::Token(rust_token.into())
+                Expectation::Token {
+                    token: rust_token.into(),
+                }
             }
-            scarf_parser::Expectation::Label(rust_str) => {
-                Expectation::Label(rust_str.to_string())
-            }
+            scarf_parser::Expectation::Label(rust_str) => Expectation::Label {
+                label: rust_str.to_string(),
+            },
             scarf_parser::Expectation::EOI => Expectation::EOI(),
         }
     }
@@ -72,6 +74,9 @@ impl<'a> From<scarf_parser::VerboseError<'a>> for VerboseError {
 // Preprocessor
 // -----------------------------------------------------------------------
 
+/// A wrapper around [`scarf_parser::PreprocessorError`]
+///
+/// See its documentation for details on each variant
 #[pyclass(eq, from_py_object, module = "scarf_python")]
 #[derive(Clone, PartialEq, Eq)]
 pub enum PreprocessorError {
@@ -215,7 +220,7 @@ pub enum PreprocessorError {
         include_path: String,
         /// The [`Span`] of the include path
         include_path_span: Span,
-        /// The [`io::Error`] raised when attempting to read the file
+        /// The [`std::io::Error`] raised when attempting to read the file
         read_err: String,
     },
     IncludeDepth {

@@ -7,6 +7,7 @@ use crate::{SpannedToken, lex};
 use pyo3::prelude::*;
 use scarf_parser::PreprocessorCache;
 
+/// Python utilities relating to preprocessor definitions
 #[pymodule]
 pub mod define {
     use super::*;

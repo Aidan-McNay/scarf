@@ -1,17 +1,14 @@
 // =======================================================================
 // lib.rs
 // =======================================================================
-//! Python bindings for the Scarf SystemVerilog tools
-//!
-//! Currently, only read-only access is provided; a Rust AST cannot be
-//! constructed from Python. Instead, a source file can be processed in
-//! Rust and then exposed in Python for examination. Many data structures
-//! are simplified when exposed to Python.
+//! Python bindings for the `scarf` SystemVerilog tools
 //!
 //! When crossing the FFI boundary, Rust's borrow checker can no longer
 //! provide lifetime guarantees; as such, many data structures must be
-//! cloned. If optimal runtime/space usage becomes a concern, native Rust
-//! applications should be considered instead.
+//! cloned, and have associated [`From`]/[`Into`] implementations for
+//! their reference-based Rust counterparts. This quickly becomes the
+//! dominant factor in runtime; if speed/space usage becomes a concern,
+//! native Rust applications should be considered instead.
 
 mod define;
 mod error;
@@ -26,6 +23,7 @@ use pyo3::prelude::*;
 use scarf_parser::{LexedSource, PreprocessorCache};
 pub use token::*;
 
+/// The top-level Python module
 #[pymodule]
 pub mod scarf_python {
     #[pymodule_export]
@@ -33,7 +31,10 @@ pub mod scarf_python {
     #[pymodule_export]
     pub use super::lex;
     #[pymodule_export]
-    pub use super::{Bytes, Node, NodeIterator, Span, SpannedToken, Token};
+    pub use super::{
+        Bytes, Expectation, Node, NodeIterator, Span, SpannedToken, Token,
+        VerboseError,
+    };
     #[pymodule_export]
     pub use super::{ParserResult, parse, parse_from_preprocess};
     #[pymodule_export]
@@ -46,6 +47,7 @@ pub mod scarf_python {
 // Lexing
 // -----------------------------------------------------------------------
 
+/// Separate a source file into syntactic tokens
 #[pyfunction]
 pub fn lex(src: String, file_name: String) -> Vec<SpannedToken> {
     scarf_parser::lex(&src, &file_name)
@@ -58,6 +60,7 @@ pub fn lex(src: String, file_name: String) -> Vec<SpannedToken> {
 // Preprocessing
 // -----------------------------------------------------------------------
 
+/// The result of preprocessing a SystemVerilog source
 #[pyclass(eq, from_py_object, module = "scarf_python")]
 #[derive(Clone, PartialEq, Eq)]
 pub enum PreprocessorResult {
@@ -65,6 +68,11 @@ pub enum PreprocessorResult {
     Err { error: PreprocessorError },
 }
 
+/// Same as [`preprocess`], but operates on the output of [`lex`]
+///
+/// Comparitively, this incurs overhead from copying data between
+/// Rust and Python's ownership models. Only use if you need to
+/// modify the output of [`lex`] before preprocessing
 #[pyfunction]
 pub fn preprocess_from_lex(
     tokens: Vec<SpannedToken>,
@@ -96,6 +104,7 @@ pub fn preprocess_from_lex(
     }
 }
 
+/// Preprocess a token stream, elaborating compiler directives
 #[pyfunction]
 pub fn preprocess(
     src: String,
@@ -130,6 +139,7 @@ pub fn preprocess(
 // Parsing
 // -----------------------------------------------------------------------
 
+/// The result of parsing a SystemVerilog source
 #[pyclass(eq, from_py_object, module = "scarf_python")]
 #[derive(Clone, PartialEq, Eq)]
 pub enum ParserResult {
@@ -144,6 +154,11 @@ pub enum ParserResult {
     },
 }
 
+/// Same as [`parse`], but operates on the output of [`preprocess`]
+///
+/// Comparitively, this incurs overhead from copying data between
+/// Rust and Python's ownership models. Only use if you need to
+/// modify the output of [`preprocess`] before parsing
 #[pyfunction]
 pub fn parse_from_preprocess(tokens: Vec<SpannedToken>) -> ParserResult {
     let cache = PreprocessorCache::new();
@@ -160,6 +175,7 @@ pub fn parse_from_preprocess(tokens: Vec<SpannedToken>) -> ParserResult {
     }
 }
 
+/// Parse the token stream into a concrete syntax tree
 #[pyfunction]
 pub fn parse(
     src: String,

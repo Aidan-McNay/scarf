@@ -1363,9 +1363,9 @@ impl<'a> From<&'a Token> for scarf_parser::Token<'a> {
 #[derive(Clone, PartialEq, Eq)]
 pub struct SpannedToken {
     #[pyo3(get, set)]
-    token: Token,
+    pub token: Token,
     #[pyo3(get, set)]
-    span: Span,
+    pub span: Span,
 }
 
 impl<'a> From<scarf_parser::SpannedToken<'a>> for SpannedToken {
