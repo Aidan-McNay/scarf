@@ -39,7 +39,7 @@ use unconnected::*;
 /// stack of tokens at the front, allowing users to peek the next
 /// token, as well as push tokens to be iterated on next (such as
 /// when expanding a preprocessor definition)
-pub struct TokenIterator<'s, T: Iterator<Item = SpannedToken<'s>>> {
+pub(crate) struct TokenIterator<'s, T: Iterator<Item = SpannedToken<'s>>> {
     iter: T,
     extras: VecDeque<SpannedToken<'s>>,
 }

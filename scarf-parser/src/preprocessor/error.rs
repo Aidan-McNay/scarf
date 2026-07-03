@@ -29,7 +29,7 @@ pub enum PreprocessorError<'a> {
     /// ";
     /// let input = lex(source, "test.v").tokens();
     /// let preprocess_result = preprocess(
-    ///     &mut TokenIterator::new(input.into_iter()),
+    ///     input,
     ///     &mut state,
     ///     &cache,
     /// );
@@ -51,7 +51,7 @@ pub enum PreprocessorError<'a> {
     /// ";
     /// let input = lex(source, "test.v").tokens();
     /// let preprocess_result = preprocess(
-    ///     &mut TokenIterator::new(input.into_iter()),
+    ///     input,
     ///     &mut state,
     ///     &cache,
     /// );
@@ -79,7 +79,7 @@ pub enum PreprocessorError<'a> {
     /// ";
     /// let input = lex(source, "test.v").tokens();
     /// let preprocess_result = preprocess(
-    ///     &mut TokenIterator::new(input.into_iter()),
+    ///     input,
     ///     &mut state,
     ///     &cache,
     /// );
@@ -101,7 +101,7 @@ pub enum PreprocessorError<'a> {
     /// ";
     /// let input = lex(source, "test.v").tokens();
     /// let preprocess_result = preprocess(
-    ///     &mut TokenIterator::new(input.into_iter()),
+    ///     input,
     ///     &mut state,
     ///     &cache,
     /// );
@@ -123,7 +123,7 @@ pub enum PreprocessorError<'a> {
     /// ";
     /// let input = lex(source, "test.v").tokens();
     /// let preprocess_result = preprocess(
-    ///     &mut TokenIterator::new(input.into_iter()),
+    ///     input,
     ///     &mut state,
     ///     &cache,
     /// );
@@ -145,7 +145,7 @@ pub enum PreprocessorError<'a> {
     /// ";
     /// let input = lex(source, "test.v").tokens();
     /// let preprocess_result = preprocess(
-    ///     &mut TokenIterator::new(input.into_iter()),
+    ///     input,
     ///     &mut state,
     ///     &cache,
     /// );
@@ -167,7 +167,7 @@ pub enum PreprocessorError<'a> {
     /// ";
     /// let input = lex(source, "test.v").tokens();
     /// let preprocess_result = preprocess(
-    ///     &mut TokenIterator::new(input.into_iter()),
+    ///     input,
     ///     &mut state,
     ///     &cache,
     /// );
@@ -194,7 +194,7 @@ pub enum PreprocessorError<'a> {
     /// ";
     /// let input = lex(source, "test.v").tokens();
     /// let preprocess_result = preprocess(
-    ///     &mut TokenIterator::new(input.into_iter()),
+    ///     input,
     ///     &mut state,
     ///     &cache,
     /// );
@@ -221,7 +221,7 @@ pub enum PreprocessorError<'a> {
     /// ";
     /// let input = lex(source, "test.v").tokens();
     /// let preprocess_result = preprocess(
-    ///     &mut TokenIterator::new(input.into_iter()),
+    ///     input,
     ///     &mut state,
     ///     &cache,
     /// );
@@ -252,7 +252,7 @@ pub enum PreprocessorError<'a> {
     /// let source = "`line";
     /// let input = lex(source, "test.v").tokens();
     /// let preprocess_result = preprocess(
-    ///     &mut TokenIterator::new(input.into_iter()),
+    ///     input,
     ///     &mut state,
     ///     &cache,
     /// );
@@ -277,7 +277,7 @@ pub enum PreprocessorError<'a> {
     /// ";
     /// let input = lex(source, "test.v").tokens();
     /// let preprocess_result = preprocess(
-    ///     &mut TokenIterator::new(input.into_iter()),
+    ///     input,
     ///     &mut state,
     ///     &cache,
     /// );
@@ -307,7 +307,7 @@ pub enum PreprocessorError<'a> {
     /// ";
     /// let input = lex(source, "test.v").tokens();
     /// let preprocess_result = preprocess(
-    ///     &mut TokenIterator::new(input.into_iter()),
+    ///     input,
     ///     &mut state,
     ///     &cache,
     /// );
@@ -334,7 +334,7 @@ pub enum PreprocessorError<'a> {
     /// ";
     /// let input = lex(source, "test.v").tokens();
     /// let preprocess_result = preprocess(
-    ///     &mut TokenIterator::new(input.into_iter()),
+    ///     input,
     ///     &mut state,
     ///     &cache,
     /// );
@@ -366,7 +366,7 @@ pub enum PreprocessorError<'a> {
     /// ";
     /// let input = lex(source, "test.v").tokens();
     /// let preprocess_result = preprocess(
-    ///     &mut TokenIterator::new(input.into_iter()),
+    ///     input,
     ///     &mut state,
     ///     &cache,
     /// );
@@ -399,7 +399,7 @@ pub enum PreprocessorError<'a> {
     /// ";
     /// let input = lex(source, "test.v").tokens();
     /// let preprocess_result = preprocess(
-    ///     &mut TokenIterator::new(input.into_iter()),
+    ///     input,
     ///     &mut state,
     ///     &cache,
     /// );
@@ -429,7 +429,7 @@ pub enum PreprocessorError<'a> {
     /// ";
     /// let input = lex(source, "test.v").tokens();
     /// let preprocess_result = preprocess(
-    ///     &mut TokenIterator::new(input.into_iter()),
+    ///     input,
     ///     &mut state,
     ///     &cache,
     /// );
@@ -465,7 +465,7 @@ pub enum PreprocessorError<'a> {
     /// ";
     /// let input = lex(source, "test.v").tokens();
     /// let preprocess_result = preprocess(
-    ///     &mut TokenIterator::new(input.into_iter()),
+    ///     input,
     ///     &mut state,
     ///     &cache,
     /// );
@@ -495,7 +495,7 @@ pub enum PreprocessorError<'a> {
     /// ";
     /// let input = lex(source, "test.v").tokens();
     /// let preprocess_result = preprocess(
-    ///     &mut TokenIterator::new(input.into_iter()),
+    ///     input,
     ///     &mut state,
     ///     &cache,
     /// );
@@ -522,7 +522,7 @@ pub enum PreprocessorError<'a> {
     /// ";
     /// let input = lex(source, "test.v").tokens();
     /// let preprocess_result = preprocess(
-    ///     &mut TokenIterator::new(input.into_iter()),
+    ///     input,
     ///     &mut state,
     ///     &cache,
     /// );
@@ -545,7 +545,7 @@ pub enum PreprocessorError<'a> {
     /// ";
     /// let input = lex(source, "test.v").tokens();
     /// let preprocess_result = preprocess(
-    ///     &mut TokenIterator::new(input.into_iter()),
+    ///     input,
     ///     &mut state,
     ///     &cache,
     /// );
@@ -573,7 +573,7 @@ pub enum PreprocessorError<'a> {
     /// ";
     /// let input = lex(source, "test.v").tokens();
     /// let preprocess_result = preprocess(
-    ///     &mut TokenIterator::new(input.into_iter()),
+    ///     input,
     ///     &mut state,
     ///     &cache,
     /// );
@@ -609,7 +609,7 @@ pub enum PreprocessorError<'a> {
     /// );
     /// let input = lex(source, "test.v").tokens();
     /// let preprocess_result = preprocess(
-    ///     &mut TokenIterator::new(input.into_iter()),
+    ///     input,
     ///     &mut state,
     ///     &cache,
     /// );
@@ -633,7 +633,7 @@ pub enum PreprocessorError<'a> {
     /// ";
     /// let input = lex(source, "test.v").tokens();
     /// let preprocess_result = preprocess(
-    ///     &mut TokenIterator::new(input.into_iter()),
+    ///     input,
     ///     &mut state,
     ///     &cache,
     /// );
@@ -661,7 +661,7 @@ pub enum PreprocessorError<'a> {
     /// ";
     /// let input = lex(source, "test.v").tokens();
     /// let preprocess_result = preprocess(
-    ///     &mut TokenIterator::new(input.into_iter()),
+    ///     input,
     ///     &mut state,
     ///     &cache,
     /// );
@@ -689,7 +689,7 @@ pub enum PreprocessorError<'a> {
     /// ";
     /// let input = lex(source, "test.v").tokens();
     /// let preprocess_result = preprocess(
-    ///     &mut TokenIterator::new(input.into_iter()),
+    ///     input,
     ///     &mut state,
     ///     &cache,
     /// );
