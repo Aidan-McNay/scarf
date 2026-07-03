@@ -231,6 +231,20 @@ pub enum PreprocessorError {
         /// The [`VerboseError`] for the preprocessor error
         err: VerboseError,
     },
+    NotPreviouslyDefinedMacro {
+        /// The name that wasn't previously defined
+        macro_name: String,
+        /// The [`Span`] where the not-previously-defined name was specified
+        macro_span: Span,
+    },
+    RedefinedMacro {
+        /// The name of the macro being redefined
+        macro_name: String,
+        /// The [`Span`] of the redefinition
+        redef_span: Span,
+        /// The [`Span`] where the macro was previously defined
+        prev_def_span: Span,
+    },
 }
 
 impl<'a> From<scarf_parser::PreprocessorError<'a>> for PreprocessorError {
@@ -397,6 +411,22 @@ impl<'a> From<scarf_parser::PreprocessorError<'a>> for PreprocessorError {
             scarf_parser::PreprocessorError::VerboseError { err } => {
                 PreprocessorError::VerboseError { err: err.into() }
             }
+            scarf_parser::PreprocessorError::RedefinedMacro {
+                macro_name,
+                redef_span,
+                prev_def_span,
+            } => PreprocessorError::RedefinedMacro {
+                macro_name: macro_name.to_string(),
+                redef_span: redef_span.into(),
+                prev_def_span: prev_def_span.into(),
+            },
+            scarf_parser::PreprocessorError::NotPreviouslyDefinedMacro {
+                macro_name,
+                macro_span,
+            } => PreprocessorError::NotPreviouslyDefinedMacro {
+                macro_name: macro_name.to_string(),
+                macro_span: macro_span.into(),
+            },
             scarf_parser::PreprocessorError::EndOfFunctionArgument(_)
             | scarf_parser::PreprocessorError::NewlineInDefine(_) => panic!(
                 "Unexpected internal error encountered during preprocessing"

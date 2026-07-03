@@ -53,16 +53,13 @@ fn main() {
     let token_stream = lexed_src.tokens();
     let preprocess_result = preprocess(token_stream, &mut state, &string_cache);
     let mut error_sources = sources(state.included_files());
-    for warning in &state.warnings {
+    for err in state.errors {
         let report: Report<'_, (String, std::ops::Range<usize>)> =
-            warning.into();
+            (&err).into();
         report.print(&mut error_sources).unwrap();
     }
     let preprocessed_stream = match preprocess_result {
-        Err(err) => {
-            let report: Report<'_, (String, std::ops::Range<usize>)> =
-                (&err).into();
-            report.print(&mut error_sources).unwrap();
+        Err(_) => {
             return;
         }
         Ok(preprocessed_stream) => preprocessed_stream,

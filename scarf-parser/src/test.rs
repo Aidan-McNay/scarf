@@ -29,9 +29,11 @@ macro_rules! check_preprocessor {
         match preprocess_result {
             Ok(result) => {
                 assert_eq!(result, $expected);
-                assert_eq!(state.warnings.first(), None);
+                if let Some(err) = state.errors.first() {
+                    panic!("{:?}", err)
+                }
             }
-            Err(err) => panic!("{:?}", err),
+            Err(()) => panic!("{:?}", state.errors.first()),
         }
     }};
 }

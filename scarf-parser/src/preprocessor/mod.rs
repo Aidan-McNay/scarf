@@ -87,6 +87,80 @@ impl<'s, T: Iterator<Item = SpannedToken<'s>>> TokenIterator<'s, T> {
     }
 }
 
+/// Attempt to recover from a preprocessor error by going to the next
+/// non-escaped newline, returning whether one was encountered
+pub(crate) fn recover_newline<'s>(
+    src: &mut TokenIterator<'s, impl Iterator<Item = SpannedToken<'s>>>,
+) -> bool {
+    loop {
+        let Some(SpannedToken(curr_token, _)) = src.next() else {
+            return false;
+        };
+        let next_token = src.peek();
+        match (curr_token, next_token) {
+            (Token::Bslash, Some(SpannedToken(Token::Newline, _))) => {
+                let _newline_token = src.next();
+                ()
+            }
+            (Token::Newline, _) => {
+                return true;
+            }
+            _ => (),
+        }
+    }
+}
+
+/// Attempt to recover from a preprocessor error, returning whether it
+/// was successful
+///
+/// Many of these are trivial, as they are removed from the token stream
+/// already
+pub(crate) fn recover<'s>(
+    src: &mut TokenIterator<'s, impl Iterator<Item = SpannedToken<'s>>>,
+    state: &mut PreprocessorState<'s>,
+    err: PreprocessorError<'s>,
+) -> bool {
+    let recovered = match err {
+        PreprocessorError::Endif { .. } => true,
+        PreprocessorError::NoEndif { .. } => false, // EOF
+        PreprocessorError::Elsif { .. } => true,
+        PreprocessorError::Else { .. } => true,
+        PreprocessorError::EndKeywords { .. } => true,
+        PreprocessorError::NoEndKeywords { .. } => false, // EOF
+        PreprocessorError::InvalidDefineParameter { .. } => {
+            recover_newline(src)
+        }
+        PreprocessorError::InvalidDefineArgument { .. } => recover_newline(src),
+        PreprocessorError::InvalidVersionSpecifier { .. } => true,
+        PreprocessorError::IncompleteDirective { .. } => recover_newline(src),
+        PreprocessorError::IncompleteDefine { .. } => recover_newline(src),
+        PreprocessorError::UndefinedMacro { .. } => true, // Don't worry about functions here
+        PreprocessorError::DuplicateMacroParameter { .. } => {
+            recover_newline(src)
+        }
+        PreprocessorError::NoDefaultAfterDefault { .. } => recover_newline(src),
+        PreprocessorError::NoMacroArguments { .. } => true,
+        PreprocessorError::TooManyMacroArguments { .. } => true,
+        PreprocessorError::MissingMacroArgument { .. } => true,
+        PreprocessorError::InvalidIdentifierFormation { .. } => true,
+        PreprocessorError::InvalidRelativeTimescales { .. } => true,
+        PreprocessorError::IncompleteMacroWithToken { .. } => true,
+        PreprocessorError::Include { .. } => true,
+        PreprocessorError::IncludeDepth { .. } => true,
+        PreprocessorError::VerboseError { .. } => recover_newline(src),
+        PreprocessorError::NotPreviouslyDefinedMacro { .. }
+        | PreprocessorError::RedefinedMacro { .. } => {
+            panic!("Shouldn't need to recover from warnings")
+        }
+        PreprocessorError::NewlineInDefine(_)
+        | PreprocessorError::EndOfFunctionArgument(_) => {
+            panic!("Tried to recover from an internal error")
+        }
+    };
+    state.err(err);
+    recovered
+}
+
 pub(crate) fn preprocess_helper<'s>(
     src: &mut TokenIterator<'s, impl Iterator<Item = SpannedToken<'s>>>,
     dest: &mut Vec<SpannedToken<'s>>,
@@ -355,13 +429,36 @@ pub(crate) fn preprocess_single<'s>(
     }
 }
 
+/// Preprocess the given token stream, elaborating any compiler directives
+///
+/// `state` is augmented during preprocessing (and can be examined afterwards,
+/// likely to inspect any errors found), and `cache` is used to retain any new
+/// files/spans found during preprocessing
+///
+/// [`preprocess`] returns the elaborated stream, as well as whether the
+/// initial stream was consumed completely (`false` if an irrecoverable
+/// error was encountered)
 pub fn preprocess<'s>(
     src: impl Iterator<Item = SpannedToken<'s>>,
     state: &mut PreprocessorState<'s>,
     cache: &'s PreprocessorCache<'s>,
-) -> Result<Vec<SpannedToken<'s>>, PreprocessorError<'s>> {
+) -> Result<Vec<SpannedToken<'s>>, ()> {
     let mut token_iter = TokenIterator::new(src);
     let mut dest = Vec::new();
-    preprocess_helper(&mut token_iter, &mut dest, state, cache)?;
-    Ok(dest)
+    loop {
+        match preprocess_helper(&mut token_iter, &mut dest, state, cache) {
+            Ok(()) => {
+                if state.errors.iter().all(|err| err.is_warning()) {
+                    return Ok(dest);
+                } else {
+                    return Err(());
+                }
+            }
+            Err(err) => {
+                if !recover(&mut token_iter, state, err) {
+                    return Err(());
+                }
+            }
+        }
+    }
 }

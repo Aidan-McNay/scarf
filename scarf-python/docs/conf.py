@@ -38,15 +38,43 @@ author = (
 )
 copyright = f"{date.today().year}, {author}"
 
+# -----------------------------------------------------------------------
+# Generate Python Stub Files
+# -----------------------------------------------------------------------
+
+
+def gen_stubs():
+    source_dir = Path(__file__).parent.parent
+    stubs_dir = source_dir / "_stubs"
+    stubs_dir.mkdir(parents=True, exist_ok=True)
+    global STUBS_DIR
+    STUBS_DIR = stubs_dir
+
+    file_dir = Path(__file__)
+    run_dir = file_dir.parent.parent
+
+    # Generate the stubs
+    subprocess.run(
+        ["maturin", "generate-stubs", "-o", str(stubs_dir)],
+        cwd=run_dir,
+        check=True,
+    )
+
+
+# gen_stubs()
 
 # -----------------------------------------------------------------------
 # General Configuration
 # -----------------------------------------------------------------------
 
-extensions = ["sphinx_rtd_theme"]
+extensions = ["sphinx_rtd_theme", "autodoc2"]
 
 templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
+
+autodoc2_packages = [
+    "../_stubs/scarf_python.pyi",
+]
 
 # -----------------------------------------------------------------------
 # HTML Output
@@ -66,7 +94,7 @@ html_static_path = ["_static"]
 # -----------------------------------------------------------------------
 # Setup Hooks
 # -----------------------------------------------------------------------
-# Check that the build directory is as intended
+# Used to generate stubs
 
 
 def setup(app):

@@ -16,7 +16,7 @@ mod node;
 mod token;
 use std::path::PathBuf;
 
-pub use define::define as definitions;
+pub use define::*;
 pub use error::*;
 pub use node::*;
 use pyo3::prelude::*;
@@ -27,14 +27,14 @@ pub use token::*;
 #[pymodule]
 pub mod scarf_python {
     #[pymodule_export]
-    pub use super::definitions;
-    #[pymodule_export]
     pub use super::lex;
     #[pymodule_export]
     pub use super::{
         Bytes, Expectation, Node, NodeIterator, Span, SpannedToken, Token,
         VerboseError,
     };
+    #[pymodule_export]
+    pub use super::{Define, define_empty, define_text};
     #[pymodule_export]
     pub use super::{ParserResult, parse, parse_from_preprocess};
     #[pymodule_export]
@@ -65,7 +65,7 @@ pub fn lex(src: String, file_name: String) -> Vec<SpannedToken> {
 #[derive(Clone, PartialEq, Eq)]
 pub enum PreprocessorResult {
     Ok { tokens: Vec<SpannedToken> },
-    Err { error: PreprocessorError },
+    Err { errors: Vec<PreprocessorError> },
 }
 
 /// Same as [`preprocess`], but operates on the output of [`lex`]
@@ -77,7 +77,7 @@ pub enum PreprocessorResult {
 pub fn preprocess_from_lex(
     tokens: Vec<SpannedToken>,
     include_paths: Vec<PathBuf>,
-    defines: Vec<crate::definitions::Define>,
+    defines: Vec<crate::Define>,
 ) -> PreprocessorResult {
     let cache = PreprocessorCache::new();
     let rust_tokens = tokens
@@ -100,7 +100,9 @@ pub fn preprocess_from_lex(
                 .map(|rust_token| rust_token.into())
                 .collect(),
         },
-        Err(err) => PreprocessorResult::Err { error: err.into() },
+        Err(()) => PreprocessorResult::Err {
+            errors: state.errors.into_iter().map(|err| err.into()).collect(),
+        },
     }
 }
 
@@ -110,7 +112,7 @@ pub fn preprocess(
     src: String,
     file_name: String,
     include_paths: Vec<PathBuf>,
-    defines: Vec<crate::definitions::Define>,
+    defines: Vec<crate::Define>,
 ) -> PreprocessorResult {
     let cache = PreprocessorCache::new();
     let tokens = scarf_parser::lex(&src, &file_name).tokens();
@@ -131,7 +133,9 @@ pub fn preprocess(
                 .map(|rust_token| rust_token.into())
                 .collect(),
         },
-        Err(err) => PreprocessorResult::Err { error: err.into() },
+        Err(()) => PreprocessorResult::Err {
+            errors: state.errors.into_iter().map(|err| err.into()).collect(),
+        },
     }
 }
 
@@ -150,7 +154,7 @@ pub enum ParserResult {
         error: VerboseError,
     },
     PreprocessorErr {
-        preprocessor_error: PreprocessorError,
+        preprocessor_errors: Vec<PreprocessorError>,
     },
 }
 
@@ -181,7 +185,7 @@ pub fn parse(
     src: String,
     file_name: String,
     include_paths: Vec<PathBuf>,
-    defines: Vec<crate::definitions::Define>,
+    defines: Vec<crate::Define>,
 ) -> ParserResult {
     let cache = PreprocessorCache::new();
     let tokens = scarf_parser::lex(&src, &file_name).tokens();
@@ -197,9 +201,13 @@ pub fn parse(
     );
     let tokens = match scarf_parser::preprocess(tokens, &mut state, &cache) {
         Ok(tokens) => tokens,
-        Err(err) => {
+        Err(()) => {
             return ParserResult::PreprocessorErr {
-                preprocessor_error: err.into(),
+                preprocessor_errors: state
+                    .errors
+                    .into_iter()
+                    .map(|err| err.into())
+                    .collect(),
             };
         }
     };

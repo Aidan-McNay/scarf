@@ -139,8 +139,8 @@ pub struct PreprocessorState<'a> {
     pub included_files: HashMap<&'a str, &'a str>,
     /// The current standard for reserved keywords
     pub curr_standard: StandardVersion,
-    /// Any warnings encountered so far
-    pub warnings: Vec<PreprocessorWarning<'a>>,
+    /// Any errors encountered so far
+    pub errors: Vec<PreprocessorError<'a>>,
     pub(crate) in_define: bool,
     pub(crate) in_define_arg: bool,
     pub(crate) include_depth: usize,
@@ -159,7 +159,7 @@ impl<'a> PreprocessorState<'a> {
             line_directives: vec![],
             included_files: HashMap::new(),
             curr_standard: StandardVersion::default(),
-            warnings: vec![],
+            errors: vec![],
             in_define: false,
             in_define_arg: false,
             include_depth: 0,
@@ -176,7 +176,7 @@ impl<'a> PreprocessorState<'a> {
         self.cell_defines = vec![];
         self.line_directives = vec![];
         self.curr_standard = StandardVersion::default();
-        self.warnings = vec![];
+        self.errors = vec![];
         self.in_define = false;
         self.in_define_arg = false;
         self.include_depth = 0;
@@ -407,10 +407,7 @@ impl<'a> PreprocessorState<'a> {
                 PreprocessorError::Include {
                     include_path,
                     include_path_span: include_path_span.clone(),
-                    read_err: io::Error::new(
-                        io::ErrorKind::NotFound,
-                        "File not found",
-                    ),
+                    read_err: io::ErrorKind::NotFound,
                 }
             })?;
         match self
@@ -426,7 +423,7 @@ impl<'a> PreprocessorState<'a> {
                     .map_err(|err| PreprocessorError::Include {
                         include_path,
                         include_path_span,
-                        read_err: err,
+                        read_err: err.kind(),
                     })?;
                 let cached_contents = cache.retain_string(file_contents);
                 self.included_files.insert(cached_path, cached_contents);
@@ -588,8 +585,8 @@ impl<'a> PreprocessorState<'a> {
         cache.retain_string(string)
     }
 
-    /// Add a warning encountered during preprocessing
-    pub fn warn(&mut self, warning: PreprocessorWarning<'a>) {
-        self.warnings.push(warning);
+    /// Add a error encountered during preprocessing
+    pub fn err(&mut self, warning: PreprocessorError<'a>) {
+        self.errors.push(warning);
     }
 }

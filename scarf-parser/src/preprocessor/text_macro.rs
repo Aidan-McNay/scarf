@@ -402,20 +402,23 @@ impl<'a> SpanReplacer<'a> {
 
     fn update_span(&self, mut token: SpannedToken<'a>) -> SpannedToken<'a> {
         let original_span = std::mem::take(&mut token.1);
-        // Nested macros
-        let original_span_ref = match self.text_macro_span.expanded_from {
-            Some(prev_expansion) => insert_base_expansion(
-                self.cache,
-                prev_expansion,
-                self.cache.retain_span(original_span),
-            ),
-            None => self.cache.retain_span(original_span),
+        token.1 = if original_span.file == "" {
+            self.text_macro_span.clone()
+        } else {
+            // Check for nested macros
+            let original_span_ref = match self.text_macro_span.expanded_from {
+                Some(prev_expansion) => insert_base_expansion(
+                    self.cache,
+                    prev_expansion,
+                    self.cache.retain_span(original_span),
+                ),
+                None => self.cache.retain_span(original_span),
+            };
+            Span {
+                expanded_from: Some(original_span_ref),
+                ..self.text_macro_span.clone()
+            }
         };
-        let new_span = Span {
-            expanded_from: Some(original_span_ref),
-            ..self.text_macro_span.clone()
-        };
-        token.1 = new_span;
         token
     }
 }
