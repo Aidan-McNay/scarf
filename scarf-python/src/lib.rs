@@ -147,15 +147,9 @@ pub fn preprocess(
 #[pyclass(eq, from_py_object, module = "scarf_python")]
 #[derive(Clone, PartialEq, Eq)]
 pub enum ParserResult {
-    Ok {
-        root: Node,
-    },
-    ParserErr {
-        error: VerboseError,
-    },
-    PreprocessorErr {
-        preprocessor_errors: Vec<PreprocessorError>,
-    },
+    Ok { root: Node },
+    ParserErr { error: VerboseError },
+    PreprocessorErr { errors: Vec<PreprocessorError> },
 }
 
 /// Same as [`parse`], but operates on the output of [`preprocess`]
@@ -203,7 +197,7 @@ pub fn parse(
         Ok(tokens) => tokens,
         Err(()) => {
             return ParserResult::PreprocessorErr {
-                preprocessor_errors: state
+                errors: state
                     .errors
                     .into_iter()
                     .map(|err| err.into())

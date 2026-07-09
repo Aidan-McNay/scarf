@@ -12,7 +12,7 @@ use winnow::stream::{Stateful, TokenSlice};
 use winnow::token::literal;
 
 // Keep track of the largest error we've seen in repeat/opt branches
-pub type Tokens<'s> =
+pub(crate) type Tokens<'s> =
     Stateful<TokenSlice<'s, SpannedToken<'s>>, Option<VerboseError<'s>>>;
 impl<'s> Parser<Tokens<'s>, &'s SpannedToken<'s>, ErrMode<VerboseError<'s>>>
     for Token<'s>

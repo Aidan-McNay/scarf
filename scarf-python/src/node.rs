@@ -137,17 +137,17 @@ impl<'a> Span {
     }
 }
 
-/// A wrapper around [`scarf_syntax::Node`], providing a single AST node
+/// A wrapper around [`scarf_syntax::Node`], providing a single CST node
 #[pyclass(eq, from_py_object, module = "scarf_python")]
 #[derive(Clone, PartialEq, Eq)]
 pub struct Node {
-    /// The name of the node (see [`scarf_syntax::Node::name`])
+    /// The name of the [`Node`] (see [`scarf_syntax::Node::name`])
     #[pyo3(get, set)]
     pub name: String,
-    /// The span of the node (see [`scarf_syntax::Node::span`])
+    /// The span of the [`Node`] (see [`scarf_syntax::Node::span`])
     #[pyo3(get, set)]
     pub span: Span,
-    /// All children of the [`Node`] in the AST (see [`scarf_syntax::Node::children`])
+    /// All direct children of the [`Node`] in the CST (see [`scarf_syntax::Node::children`])
     #[pyo3(get, set)]
     pub children: Vec<Node>,
 }

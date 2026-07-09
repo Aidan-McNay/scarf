@@ -26,5 +26,15 @@ native Rust applications should be considered instead.
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: Overview
+   :hidden:
+
+   parsing.rst
+
+.. toctree::
+   :maxdepth: 2
+   :caption: API Reference
+
+   api/functions.rst
+   api/classes.rst
 

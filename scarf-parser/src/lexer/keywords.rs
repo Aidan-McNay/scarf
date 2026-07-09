@@ -5,6 +5,7 @@
 
 use crate::*;
 
+/// A specific SystemVerilog standard to operate under
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Debug)]
 pub enum StandardVersion {
     IEEE1364_1995,
@@ -27,7 +28,7 @@ impl Default for StandardVersion {
 impl<'a> Token<'a> {
     /// Whether the token is a keyword that needs to be replaced, based on
     /// the current standard
-    pub(crate) fn keyword_replace(&self, standard: &StandardVersion) -> bool {
+    pub fn keyword_replace(&self, standard: &StandardVersion) -> bool {
         let valid_in_standard = match self {
             Token::Automatic
             | Token::Endgenerate

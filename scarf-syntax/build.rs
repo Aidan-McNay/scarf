@@ -107,7 +107,7 @@ fn gen_node_def(node_names: &Vec<syn::Ident>) -> TokenStream {
           pub fn iter(&self) -> NodeIter<'a, 'b> {
               self.clone().into()
           }
-          /// The child nodes of a given [`Node`]
+          /// The direct child nodes of a given [`Node`]
           pub fn children(&self) -> Vec<Node<'a, 'b>> {
               match self {
                   #( Node::#node_names(inner_ref) => { inner_ref.children() } )*

@@ -20,8 +20,14 @@ pub fn data_declaration_parser<'s>(
         list_of_variable_decl_assignments_parser,
         token(Token::SColon),
     )
-        .map(|(a, b, c, d, e, f)| {
-            DataDeclaration::Variable(Box::new((a, b, c, d, e, f)))
+        .verify_map(|(a, b, c, d, e, f)| {
+            if matches!(d, DataTypeOrImplicit::ImplicitDataType(_))
+                & b.is_none()
+            {
+                None // BNF clarification 14
+            } else {
+                Some(DataDeclaration::Variable(Box::new((a, b, c, d, e, f))))
+            }
         });
     alt((
         _variable_data_declaration_parser,

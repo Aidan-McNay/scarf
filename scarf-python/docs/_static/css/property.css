@@ -1,0 +1,11 @@
+/*
+ * Fix the gap after Python properties
+ */
+
+.py.property {
+  margin-bottom: 0px !important;
+  padding-bottom: 0px !important;
+}
+.py.property + .docutils.container {
+  margin-top: 0px !important;
+}

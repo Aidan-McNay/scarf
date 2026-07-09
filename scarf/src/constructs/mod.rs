@@ -3,6 +3,7 @@
 // =======================================================================
 /// Checking which constructs are used in a source file
 use clap::Args;
+use scarf_parser::report::Sources;
 use scarf_parser::*;
 use scarf_syntax::{Node, NodeID, Nodes};
 use std::{
@@ -178,19 +179,21 @@ pub fn constructs(args: &ConstructsArgs) {
         }
         let lex_errors = lexed_src.report_errors().collect::<Vec<_>>();
         if !lex_errors.is_empty() {
+            let mut sources = state.included_files().sources();
             for report in lex_errors {
-                report.print((path, Source::from(src))).unwrap()
+                report.print(&mut sources).unwrap();
             }
             return;
         }
         let token_stream = lexed_src.tokens();
         let preprocess_result =
             preprocess(token_stream, &mut state, &string_cache);
-        let mut error_sources = sources(state.included_files());
-        for err in &state.errors {
-            let report: Report<'_, (String, std::ops::Range<usize>)> =
-                err.into();
-            report.print(&mut error_sources).unwrap();
+        let mut sources = state.included_files().sources();
+        if !state.errors.is_empty() {
+            for err in &state.errors {
+                let report: report::Report<'_> = err.into();
+                report.print(&mut sources).unwrap();
+            }
         }
         let preprocessed_stream = match preprocess_result {
             Err(_) => {
@@ -201,11 +204,9 @@ pub fn constructs(args: &ConstructsArgs) {
         let parsed_src = parse(&preprocessed_stream);
         let source_text = match parsed_src {
             Err(err) => {
-                println!("{:?}", err);
-                let report: Report<'_, (String, std::ops::Range<usize>)> =
-                    err.report("P1");
-                report.print(&mut error_sources).unwrap();
-                continue;
+                let report: report::Report<'_> = err.report("P1");
+                report.print(&mut sources).unwrap();
+                return;
             }
             Ok(source_text) => source_text,
         };

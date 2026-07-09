@@ -1,8 +1,7 @@
 // =======================================================================
 // mod.rs
 // =======================================================================
-// The top-level interface for the parser
-
+//! Parsing a token stream into a SystemVerilog CST
 pub(crate) mod behavioral_statements;
 pub(crate) mod combinators;
 pub(crate) mod declarations;
@@ -27,12 +26,25 @@ pub(crate) use pratt::*;
 pub(crate) use primitive_instances::*;
 use scarf_syntax::*;
 pub(crate) use source_text::*;
-pub use spanned_token::*;
+pub(crate) use spanned_token::*;
 pub(crate) use specify_section::*;
 pub(crate) use udp_declaration_and_instantiation::*;
 pub(crate) use utils::*;
 use winnow::error::{ErrMode, ParserError};
 
+/// Parse the token stream into a SystemVerilog CST as defined in [`scarf_syntax`]
+///
+/// ```rust
+/// # use scarf_parser::*;
+/// # let mut state = PreprocessorState::new(vec![], vec![]);
+/// # let cache = PreprocessorCache::new();
+/// let file_contents = "module test_module; endmodule";
+/// let tokens = lex(file_contents, "test_file.v").tokens();
+/// let pp_tokens = preprocess(tokens, &mut state, &cache).unwrap();
+/// let ast: scarf_syntax::SourceText<'_> = parse(&pp_tokens).unwrap();
+/// let descriptions = &ast.2;
+/// assert!(matches!(descriptions.first(), Some(scarf_syntax::Description::ModuleDeclaration(_))))
+/// ```
 pub fn parse<'s>(
     input: &'s [SpannedToken<'s>],
 ) -> Result<SourceText<'s>, VerboseError<'s>> {

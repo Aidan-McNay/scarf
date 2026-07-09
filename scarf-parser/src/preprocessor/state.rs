@@ -51,7 +51,8 @@ pub enum DefineBody<'a> {
 /// A preprocessor text macro function
 #[derive(Clone, Debug)]
 pub struct DefineFunction<'a> {
-    /// A list of arguments (possibly with defaults)
+    /// A list of arguments (possibly with defaults), with the
+    /// [`Span`] being that of the `=`
     pub args: Vec<(
         SpannedString<'a>,
         Option<(

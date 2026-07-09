@@ -1,0 +1,6 @@
+/* 
+ * Change the link colors for inline code
+ */
+
+ .rst-content a code { color: rebeccapurple !important; }
+ .py .reference.internal { color: rebeccapurple !important; }

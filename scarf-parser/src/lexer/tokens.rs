@@ -8,6 +8,11 @@ use logos::Logos;
 use std::fmt;
 
 /// A single syntactic token for a SystemVerilog source file
+///
+/// Most variants don't carry data, and represent a specific
+/// keyword, directive, or other literal token of the language.
+/// Those that can vary in content (such as identifiers, strings,
+/// etc.) contain a reference to that content in the source file.
 #[derive(Logos, Debug, Clone, PartialEq, Eq, Copy)]
 #[logos(skip r"[ \t\f]+")]
 #[logos(error = String)]

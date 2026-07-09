@@ -4,6 +4,7 @@
 // The top-level code for scarf
 
 use clap::{Args, Parser, Subcommand};
+use scarf_parser::report::Sources;
 use scarf_parser::*;
 use std::path::PathBuf;
 mod cli;
@@ -55,19 +56,21 @@ fn format(args: &FormatArgs) {
         }
         let lex_errors = lexed_src.report_errors().collect::<Vec<_>>();
         if !lex_errors.is_empty() {
+            let mut sources = state.included_files().sources();
             for report in lex_errors {
-                report.print((path.as_str(), Source::from(src))).unwrap()
+                report.print(&mut sources).unwrap();
             }
             return;
         }
         let token_stream = lexed_src.tokens();
         let preprocess_result =
             preprocess(token_stream, &mut state, &string_cache);
-        let mut error_sources = sources(state.included_files());
-        for err in state.errors {
-            let report: Report<'_, (String, std::ops::Range<usize>)> =
-                (&err).into();
-            report.print(&mut error_sources).unwrap();
+        let mut sources = state.included_files().sources();
+        if !state.errors.is_empty() {
+            for err in state.errors {
+                let report: report::Report<'_> = (&err).into();
+                report.print(&mut sources).unwrap();
+            }
         }
         let preprocessed_stream = match preprocess_result {
             Err(_) => {
@@ -75,13 +78,11 @@ fn format(args: &FormatArgs) {
             }
             Ok(preprocessed_stream) => preprocessed_stream,
         };
-        println!("{:?}", preprocessed_stream);
         let parsed_src = parse(&preprocessed_stream);
         if let Err(err) = parsed_src {
-            println!("{:?}", err);
-            let report: Report<'_, (String, std::ops::Range<usize>)> =
-                err.report("P1");
-            report.print(&mut error_sources).unwrap()
+            let report: report::Report<'_> = err.report("P1");
+            report.print(&mut sources).unwrap();
+            return;
         }
         // println!("{:#?}", parsed_src);
     }

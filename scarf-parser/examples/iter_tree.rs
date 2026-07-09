@@ -4,6 +4,7 @@
 // Iterate across the AST of SystemVerilog source code
 
 use clap::Parser;
+use scarf_parser::report::Sources;
 use scarf_parser::*;
 use std::path::PathBuf;
 
@@ -27,8 +28,8 @@ fn main() {
     let args = Cli::parse();
     let path = args.path;
     let src = std::fs::read_to_string(&path).unwrap();
-    let string_cache = PreprocessorCache::new();
-    let mut state = PreprocessorState::new(vec![], vec![]);
+    let string_cache = preprocessor::PreprocessorCache::new();
+    let mut state = preprocessor::PreprocessorState::new(vec![], vec![]);
     let (_, src) = state.retain_file(
         path.clone().into_os_string().into_string().unwrap(),
         src,
@@ -43,20 +44,20 @@ fn main() {
     }
     let lex_errors = lexed_src.report_errors().collect::<Vec<_>>();
     if !lex_errors.is_empty() {
+        let mut sources = state.included_files().sources();
         for report in lex_errors {
-            report
-                .print((path.to_str().unwrap(), Source::from(src)))
-                .unwrap()
+            report.print(&mut sources).unwrap();
         }
         return;
     }
     let token_stream = lexed_src.tokens();
     let preprocess_result = preprocess(token_stream, &mut state, &string_cache);
-    let mut error_sources = sources(state.included_files());
-    for err in state.errors {
-        let report: Report<'_, (String, std::ops::Range<usize>)> =
-            (&err).into();
-        report.print(&mut error_sources).unwrap();
+    let mut sources = state.included_files().sources();
+    if !state.errors.is_empty() {
+        for err in state.errors {
+            let report: report::Report<'_> = (&err).into();
+            report.print(&mut sources).unwrap();
+        }
     }
     let preprocessed_stream = match preprocess_result {
         Err(_) => {
@@ -66,9 +67,8 @@ fn main() {
     };
     let parsed_src = parse(&preprocessed_stream);
     if let Err(err) = parsed_src {
-        let report: Report<'_, (String, std::ops::Range<usize>)> =
-            err.report("P1");
-        report.print(&mut error_sources).unwrap();
+        let report: report::Report<'_> = err.report("P1");
+        report.print(&mut sources).unwrap();
         return;
     }
     let source_text = parsed_src.unwrap();

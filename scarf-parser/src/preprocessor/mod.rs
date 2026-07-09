@@ -438,6 +438,22 @@ pub(crate) fn preprocess_single<'s>(
 /// [`preprocess`] returns the elaborated stream, as well as whether the
 /// initial stream was consumed completely (`false` if an irrecoverable
 /// error was encountered)
+///
+/// ```rust
+/// # use scarf_parser::*;
+/// # let mut state = PreprocessorState::new(vec![], vec![]);
+/// # let cache = PreprocessorCache::new();
+/// let file_contents = "
+/// `define TEST(a, b) a + b
+/// `TEST(1, 2)
+/// ";
+/// let tokens = lex(file_contents, "test_file.v").tokens();
+/// let mut pp_tokens = preprocess(tokens, &mut state, &cache).unwrap().into_iter();
+/// assert_eq!(pp_tokens.next().unwrap().0, Token::UnsignedNumber("1"));
+/// assert_eq!(pp_tokens.next().unwrap().0, Token::Plus);
+/// assert_eq!(pp_tokens.next().unwrap().0, Token::UnsignedNumber("2"));
+/// assert_eq!(pp_tokens.next(), None)
+/// ```
 pub fn preprocess<'s>(
     src: impl Iterator<Item = SpannedToken<'s>>,
     state: &mut PreprocessorState<'s>,

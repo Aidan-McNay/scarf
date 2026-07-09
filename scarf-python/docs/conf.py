@@ -67,14 +67,10 @@ def gen_stubs():
 # General Configuration
 # -----------------------------------------------------------------------
 
-extensions = ["sphinx_rtd_theme", "autodoc2"]
+extensions = ["sphinx_rtd_theme", "sphinx_design"]
 
 templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
-
-autodoc2_packages = [
-    "../_stubs/scarf_python.pyi",
-]
 
 # -----------------------------------------------------------------------
 # HTML Output
@@ -90,6 +86,8 @@ html_context = {
 
 html_theme = "sphinx_rtd_theme"
 html_static_path = ["_static"]
+
+html_css_files = ["css/property.css", "css/link.css"]
 
 # -----------------------------------------------------------------------
 # Setup Hooks

@@ -7,8 +7,8 @@ pub(crate) mod callbacks;
 pub(crate) mod keywords;
 pub(crate) mod tokens;
 use crate::SpannedToken;
-use ariadne::Report;
-use ariadne::{Color, Label, ReportKind};
+use crate::report::Report;
+pub use ariadne::ReportKind;
 pub use keywords::StandardVersion;
 use logos::Logos;
 use logos::Span as ByteSpan;
@@ -18,49 +18,47 @@ use std::io::{self, BufWriter, Write};
 use std::path::Path;
 pub use tokens::Token;
 
-fn report_lex_result<'a>(
-    lex_result: (Result<Token<'a>, String>, Span<'a>),
-) -> Option<Report<'a, (&'a str, ByteSpan)>> {
-    let (result, span) = lex_result;
-    if let Err(ref text) = result {
-        let report = if text.len() == 0 {
-            Report::build(ReportKind::Error, (span.file, span.bytes.clone()))
-                .with_code("L1")
-                .with_config(
-                    ariadne::Config::new()
-                        .with_index_type(ariadne::IndexType::Byte),
-                )
-                .with_message("Unrecognized token")
-                .with_label(
-                    Label::new((span.file, span.bytes.clone()))
-                        .with_message("Unrecognized token")
-                        .with_color(Color::Red),
-                )
-                .finish()
-        } else {
-            Report::build(ReportKind::Error, (span.file, span.bytes.clone()))
-                .with_code("L2")
-                .with_config(
-                    ariadne::Config::new()
-                        .with_index_type(ariadne::IndexType::Byte),
-                )
-                .with_message(text.clone())
-                .with_label(
-                    Label::new((span.file, span.bytes.clone()))
-                        .with_message(text)
-                        .with_color(Color::Red),
-                )
-                .finish()
+/// A single result from the lexer
+///
+/// This is either a valid token, or a (possible) explanation
+/// of what went wrong, if identifiable, along with the associated
+/// [`Span`]
+pub type LexerResult<'a> = (Result<Token<'a>, String>, Span<'a>);
+
+impl<'a> TryFrom<&LexerResult<'a>> for Report<'a> {
+    type Error = ();
+    fn try_from(
+        value: &(Result<Token<'a>, String>, Span<'a>),
+    ) -> Result<Self, Self::Error> {
+        let (result, span) = value;
+        let Err(text) = result else {
+            return Err(());
         };
-        Some(report)
-    } else {
-        None
+        if text.len() == 0 {
+            Ok(
+                Report::new(
+                    ReportKind::Error,
+                    span,
+                    "L1",
+                    "Unrecognized token",
+                )
+                .with_label(
+                    &span,
+                    ReportKind::Error,
+                    "Unrecognized token",
+                ),
+            )
+        } else {
+            Ok(Report::new(ReportKind::Error, span, "L2", text).with_label(
+                &span,
+                ReportKind::Error,
+                text,
+            ))
+        }
     }
 }
 
-fn map_lex_result<'a>(
-    lex_result: (Result<Token<'a>, String>, Span<'a>),
-) -> SpannedToken<'a> {
+fn map_lex_result<'a>(lex_result: LexerResult<'a>) -> SpannedToken<'a> {
     match lex_result.0 {
         Ok(tok) => SpannedToken(tok, lex_result.1),
         Err(_) => SpannedToken(Token::Error, lex_result.1),
@@ -68,14 +66,14 @@ fn map_lex_result<'a>(
 }
 
 /// An iterator over syntactical tokens for a SystemVerilog source
-pub trait LexedSource<'a>:
-    Iterator<Item = (Result<Token<'a>, String>, Span<'a>)> + Clone
-{
+pub trait LexedSource<'a>: Iterator<Item = LexerResult<'a>> + Clone {
     /// Generate error reports for any errors encountered in lexing
-    fn report_errors(
-        &self,
-    ) -> impl Iterator<Item = Report<'a, (&'a str, ByteSpan)>> {
-        self.clone().filter_map(report_lex_result)
+    fn report_errors(&self) -> impl Iterator<Item = Report<'a>> {
+        self.clone().into_iter().filter_map(|result| {
+            let report_result: Result<Report<'a>, ()> =
+                Report::try_from(&result);
+            report_result.ok()
+        })
     }
 
     /// Dump a representation of the lexed source to a file, for debugging
@@ -105,9 +103,7 @@ pub trait LexedSource<'a>:
     ///
     /// While this does incur memory overhead, it avoid processing
     /// the source multiple times if cloned.
-    fn process(
-        self,
-    ) -> std::vec::IntoIter<(Result<Token<'a>, String>, Span<'a>)> {
+    fn process(self) -> std::vec::IntoIter<LexerResult<'a>> {
         self.collect::<Vec<_>>().into_iter()
     }
 
@@ -117,17 +113,14 @@ pub trait LexedSource<'a>:
     }
 }
 impl<'a, T> LexedSource<'a> for T where
-    T: Iterator<Item = (Result<Token<'a>, String>, Span<'a>)> + Clone
+    T: Iterator<Item = LexerResult<'a>> + Clone
 {
 }
 
 fn token_span_mapper<'a>(
     file_name: &'a str,
     included_from: Option<&'a Span<'a>>,
-) -> impl Fn(
-    (Result<Token<'a>, String>, ByteSpan),
-) -> (Result<Token<'a>, String>, Span<'a>)
-+ Clone {
+) -> impl Fn((Result<Token<'a>, String>, ByteSpan)) -> LexerResult<'a> + Clone {
     move |(token_result, byte_span)| {
         (
             token_result,

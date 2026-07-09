@@ -3,11 +3,12 @@
 // =======================================================================
 //! Warnings/errors that are thrown by the preprocessor
 
-use crate::{include::MAX_INCLUDE_DEPTH, *};
-use ariadne::ReportBuilder;
+use crate::{preprocessor::include::MAX_INCLUDE_DEPTH, report::Report, *};
 use std::io;
 
 const NOTE_COLOR: Color = Color::Fixed(81);
+const NOTE_KIND: ariadne::ReportKind<'static> =
+    ariadne::ReportKind::Custom("note", NOTE_COLOR);
 
 /// An error encountered during preprocessing
 ///
@@ -729,264 +730,418 @@ impl<'a> PreprocessorError<'a> {
     }
 }
 
-fn make_report<'s>(
-    span: &Span<'s>,
-    code: &str,
-    reason: String,
-    code_label: String,
-    kind: ariadne::ReportKind<'s>,
-) -> ReportBuilder<'s, (String, std::ops::Range<usize>)> {
-    let report =
-        Report::build(kind, (span.file.to_string(), span.bytes.clone()))
-            .with_code(code)
-            .with_config(
-                ariadne::Config::new()
-                    .with_index_type(ariadne::IndexType::Byte),
-            )
-            .with_message(reason);
-    attach_span_label(span, kind_color(&kind), code_label, report)
-}
-
-impl<'s> From<&PreprocessorError<'s>>
-    for Report<'s, (String, std::ops::Range<usize>)>
-{
+impl<'s> From<&PreprocessorError<'s>> for Report<'s> {
     fn from(s: &PreprocessorError<'s>) -> Self {
         match s {
-            PreprocessorError::Endif{endif_span} => make_report(
-                endif_span,
-                "PP1",
-                "Unexpected `endif".to_string(),
-                "Unexpected `endif".to_string(),
+            PreprocessorError::Endif { endif_span } => Report::new(
                 ReportKind::Error,
-            ).finish(),
-            PreprocessorError::NoEndif{cond_token, cond_token_span} => make_report(
+                &endif_span,
+                "PP1",
+                "Unexpected `endif",
+            )
+            .with_label(&endif_span, ReportKind::Error, "Unexpected `endif"),
+            PreprocessorError::NoEndif {
+                cond_token,
                 cond_token_span,
+            } => Report::new(
+                ReportKind::Error,
+                &cond_token_span,
                 "PP2",
                 format!("No matching `endif for {cond_token}"),
-                "No matching `endif".to_owned(),
+            )
+            .with_label(
+                &cond_token_span,
                 ReportKind::Error,
-            ).finish(),
-            PreprocessorError::Elsif{elsif_span} => make_report(
-                elsif_span,
+                "No matching `endif",
+            ),
+            PreprocessorError::Elsif { elsif_span } => Report::new(
+                ReportKind::Error,
+                &elsif_span,
                 "PP3",
-                "Unexpected `elsif".to_string(),
-                "Unexpected `elsif".to_string(),
+                "Unexpected `elsif",
+            )
+            .with_label(&elsif_span, ReportKind::Error, "Unexpected `elsif"),
+            PreprocessorError::Else { else_span } => Report::new(
                 ReportKind::Error,
-            ).finish(),
-            PreprocessorError::Else{else_span} => make_report(
-                else_span,
+                &else_span,
                 "PP4",
-                "Unexpected `else".to_string(),
-                "Unexpected `else".to_string(),
+                "Unexpected `else",
+            )
+            .with_label(
+                &else_span,
                 ReportKind::Error,
-            ).finish(),
-            PreprocessorError::EndKeywords{end_keywords_span} => make_report(
-                end_keywords_span,
-                "PP5",
-                "`end_keywords with no previous `begin_keywords".to_string(),
-                "No matching `begin_keywords".to_string(),
-                ReportKind::Error,
-            ).finish(),
-            PreprocessorError::NoEndKeywords{begin_keywords_span} => make_report(
+                "Unexpected `else",
+            ),
+            PreprocessorError::EndKeywords { end_keywords_span } => {
+                Report::new(
+                    ReportKind::Error,
+                    &end_keywords_span,
+                    "PP5",
+                    "`end_keywords with no previous `begin_keywords",
+                )
+                .with_label(
+                    &end_keywords_span,
+                    ReportKind::Error,
+                    "No matching `begin_keywords",
+                )
+            }
+            PreprocessorError::NoEndKeywords {
                 begin_keywords_span,
-                "PP6",
-                "`begin_keywords with no matching `end_keywords".to_string(),
-                "No matching `end_keywords".to_string(),
+            } => Report::new(
                 ReportKind::Error,
-            ).finish(),
-            PreprocessorError::InvalidDefineParameter{other_token, other_span} => {
-                make_report(
-                    other_span,
-                    "PP7",
-                    format!(
-                        "Found {}, expected a preprocessor macro parameter/identifier",
-                        other_token
+                &begin_keywords_span,
+                "PP6",
+                "`begin_keywords with no matching `end_keywords",
+            )
+            .with_label(
+                &begin_keywords_span,
+                ReportKind::Error,
+                "No matching `end_keywords",
+            ),
+            PreprocessorError::InvalidDefineParameter {
+                other_token,
+                other_span,
+            } => Report::new(
+                ReportKind::Error,
+                &other_span,
+                "PP7",
+                format!(
+                    concat!(
+                        "Found {}, expected a preprocessor ",
+                        "macro parameter/identifier"
                     ),
-                    format!("Unexpected {}", other_token),
-                    ReportKind::Error,
-                ).finish()
-            }
-            PreprocessorError::InvalidDefineArgument{other_token, other_span} => {
-                make_report(
-                    other_span,
-                    "PP7",
-                    format!(
-                        "Found {}, expected a comma, ), or a preprocessor macro argument",
-                        other_token
+                    other_token
+                ),
+            )
+            .with_label(
+                &other_span,
+                ReportKind::Error,
+                format!("Unexpected {}", other_token),
+            ),
+            PreprocessorError::InvalidDefineArgument {
+                other_token,
+                other_span,
+            } => Report::new(
+                ReportKind::Error,
+                &other_span,
+                "PP7",
+                format!(
+                    concat!(
+                        "Found {}, expected a comma, ), ",
+                        "or a preprocessor macro argument"
                     ),
-                    format!("Unexpected {}", other_token),
-                    ReportKind::Error,
-                ).finish()
-            }
-            PreprocessorError::InvalidVersionSpecifier{
-                    invalid_version,
-                    invalid_version_span,
-            } => make_report(
+                    other_token
+                ),
+            )
+            .with_label(
+                &other_span,
+                ReportKind::Error,
+                format!("Unexpected {}", other_token),
+            ),
+            PreprocessorError::InvalidVersionSpecifier {
+                invalid_version,
                 invalid_version_span,
+            } => Report::new(
+                ReportKind::Error,
+                &invalid_version_span,
                 "PP8",
                 match invalid_version {
-                    Token::StringLiteral(invalid_version_str) => format!("{invalid_version_str} is not a valid version specifier"),
-                    _ => format!("A {} isn't a version specifier", invalid_version)
+                    Token::StringLiteral(invalid_version_str) => format!(
+                        "{} is not a valid version specifier",
+                        invalid_version_str
+                    ),
+                    _ => {
+                        format!("{} isn't a version specifier", invalid_version)
+                    }
                 },
-                "Invalid version specifier".to_string(),
+            )
+            .with_label(
+                &invalid_version_span,
                 ReportKind::Error,
-            ).finish(),
-            PreprocessorError::IncompleteDirective{directive_span} => make_report(
-                directive_span,
-                "PP9",
-                "Incomplete directive".to_string(),
-                "Expected a complete directive".to_string(),
-                ReportKind::Error,
-            ).finish(),
-            PreprocessorError::IncompleteDefine{
-                other_token, other_span
-            } => make_report(
+                "Invalid version specifier",
+            ),
+            PreprocessorError::IncompleteDirective { directive_span } => {
+                Report::new(
+                    ReportKind::Error,
+                    &directive_span,
+                    "PP9",
+                    "Incomplete directive",
+                )
+                .with_label(
+                    &directive_span,
+                    ReportKind::Error,
+                    "Expected a complete directive",
+                )
+            }
+            PreprocessorError::IncompleteDefine {
+                other_token,
                 other_span,
+            } => Report::new(
+                ReportKind::Error,
+                &other_span,
                 "PP10",
                 format!(
                     "Found {}, expected more in the preprocessor definition",
                     other_token
                 ),
-                "Expected more after".to_string(),
+            )
+            .with_label(
+                &other_span,
                 ReportKind::Error,
-            ).finish(),
-            PreprocessorError::UndefinedMacro{undefined_name, undefined_span} => {
-                make_report(
-                    undefined_span,
-                    "PP11",
-                    format!("{undefined_name} has not been previously defined"),
-                    "Not previously defined".to_string(),
-                    ReportKind::Error,
-                ).finish()
-            },
-            PreprocessorError::RedefinedMacro{macro_name, redef_span, prev_def_span} => {
-                attach_span_label(prev_def_span, NOTE_COLOR, "Previously defined here", make_report(
-                    redef_span,
-                    "PP12",
-                    format!("Redefining {macro_name}"),
-                    "Redefined here".to_string(),
-                    ReportKind::Warning,
-                )).finish()
-            }
-            PreprocessorError::NotPreviouslyDefinedMacro{
+                "Expected more after",
+            ),
+            PreprocessorError::UndefinedMacro {
+                undefined_name,
+                undefined_span,
+            } => Report::new(
+                ReportKind::Error,
+                &undefined_span,
+                "PP11",
+                format!("{undefined_name} has not been previously defined"),
+            )
+            .with_label(
+                &undefined_span,
+                ReportKind::Error,
+                "Not previously defined",
+            ),
+            PreprocessorError::RedefinedMacro {
+                macro_name,
+                redef_span,
+                prev_def_span,
+            } => Report::new(
+                ReportKind::Warning,
+                &redef_span,
+                "PP12",
+                format!("Redefining {macro_name}"),
+            )
+            .with_label(&prev_def_span, NOTE_KIND, "Previously defined here")
+            .with_label(
+                &redef_span,
+                ReportKind::Warning,
+                "Redefined here",
+            ),
+            PreprocessorError::NotPreviouslyDefinedMacro {
                 macro_name,
                 macro_span,
-             } => make_report(
-                macro_span,
-                "PP13",
-                format!("Undefining {macro_name}, which has not been previously defined"),
-                "Not previously defined".to_string(),
+            } => Report::new(
                 ReportKind::Warning,
-            ).finish(),
-            PreprocessorError::DuplicateMacroParameter{define_name, param_name, dup_span, prev_span} => {
-                attach_span_label(prev_span, NOTE_COLOR, "Previously declared here", make_report(
-                    dup_span,
-                    "PP14",
-                    format!("'{param_name}' was already declared as a macro parameter for {define_name}"),
-                    "Duplicate parameter declaration".to_string(),
-                    ReportKind::Error,
-                )).finish()
-            }
-            PreprocessorError::NoDefaultAfterDefault{default_param, default_param_span, non_default_param, non_default_param_span} => {
-                attach_span_label(default_param_span, NOTE_COLOR, format!("{} had a default specified", default_param), make_report(
-                    non_default_param_span,
-                    "PP15",
-                    format!("No default specified for argument after one with a default"),
-                    format!("No default specified for {}", non_default_param),
-                    ReportKind::Error,
-                )).finish()
-            }
-            PreprocessorError::NoMacroArguments{macro_name, define_span, use_span} => {
-                attach_span_label(define_span, NOTE_COLOR, "Macro defined here", make_report(
-                    use_span,
-                    "PP16",
-                    format!("Expected arguments when using {macro_name}"),
-                    "Expected arguments not present".to_string(),
-                    ReportKind::Error,
-                )).finish()
-            }
-            PreprocessorError::TooManyMacroArguments{macro_name, define_span, use_span, expected, found} => {
-                attach_span_label(define_span, NOTE_COLOR, format!("Macro definition expects {expected} arguments"), make_report(
-                    use_span,
-                    "PP17",
-                    format!("{} expected {} arguments, but {} were provided", macro_name, expected, found),
-                    format!("{found} arguments provided"),
-                    ReportKind::Error,
-                )).finish()
-            }
-            PreprocessorError::MissingMacroArgument{define_span, use_span, param_name} => {
-                attach_span_label(define_span, NOTE_COLOR, "Macro defined here", make_report(
-                    use_span,
-                    "PP18",
-                    format!("'{param_name}' wasn't specified and has no default"),
-                    "Missing argument".to_string(),
-                    ReportKind::Error,
-                )).finish()
-            }
-            PreprocessorError::InvalidIdentifierFormation{param_name, arg_span} => {
-                make_report(
-                    arg_span,
-                    "PP19",
-                    format!("The argument for '{param_name}' cannot be concatenated into an identifier"),
-                    "No valid conversion to identifier".to_string(),
-                    ReportKind::Error,
-                ).finish()
-            }
-            PreprocessorError::InvalidRelativeTimescales{timescale_span} => {
-                make_report(
-                    timescale_span,
-                    "PP20",
-                    "Time precision is larger than the time unit".to_string(),
-                    "Cannot have delay unit be smaller than precision".to_string(),
-                    ReportKind::Error,
-                ).finish()
-            }
-            PreprocessorError::IncompleteMacroWithToken{error_token, error_span} => {
-                make_report(
-                    error_span,
-                  "PP21",
-                  format!("Usage of {} resulted in an incomplete macro", error_token),
-                  "Expected a complete macro argument or escaped newline after".to_string(),
-                  ReportKind::Error,
-              ).finish()
-            }
-            PreprocessorError::Include{include_path, include_path_span, read_err} => {
-                make_report(
-                    include_path_span,
-                    "PP22",
-                    format!("Error when reading {}", include_path),
-                    read_err.to_string(),
-                    ReportKind::Error,
-                ).finish()
-            }
-            PreprocessorError::IncludeDepth{include_span} => {
-                make_report(
-                    include_span,
-                    "PP23",
-                    format!("Include depth of {} reached", MAX_INCLUDE_DEPTH),
-                    "Check for an `include loop".to_string(),
-                    ReportKind::Error,
-                ).finish()
-            }
-            PreprocessorError::VerboseError{err} => {
-              err.report("PP24")
-            },
-            PreprocessorError::NewlineInDefine(newline_span) => make_report(
-              newline_span,
-              "PPX",
-              "(Internal Error) Newline in define not handled correctly".to_string(),
-              "(Internal Error) Newline in define not handled correctly".to_string(),
-              ReportKind::Error,
-          ).finish(),
-            PreprocessorError::EndOfFunctionArgument(err_spanned_token) => {
-              make_report(
-                &err_spanned_token.1,
-                "PPX",
-                "(Internal Error) End of function argument not handled correctly".to_string(),
-                "(Internal Error) End of function argument not handled correctly".to_string(),
+                &macro_span,
+                "PP13",
+                format!(
+                    "Undefining {}, which has not been previously defined",
+                    macro_name
+                ),
+            )
+            .with_label(
+                &macro_span,
+                ReportKind::Warning,
+                "Not previously defined",
+            ),
+            PreprocessorError::DuplicateMacroParameter {
+                define_name,
+                param_name,
+                dup_span,
+                prev_span,
+            } => Report::new(
                 ReportKind::Error,
-            ).finish()
-            },
+                &dup_span,
+                "PP14",
+                format!(
+                    "'{}' was already declared as a macro parameter for {}",
+                    param_name, define_name
+                ),
+            )
+            .with_label(&prev_span, NOTE_KIND, "Previously declared here")
+            .with_label(
+                &dup_span,
+                ReportKind::Error,
+                "Duplicate parameter declaration",
+            ),
+            PreprocessorError::NoDefaultAfterDefault {
+                default_param,
+                default_param_span,
+                non_default_param,
+                non_default_param_span,
+            } => Report::new(
+                ReportKind::Error,
+                &non_default_param_span,
+                "PP15",
+                "No default specified for argument after one with a default",
+            )
+            .with_label(
+                &default_param_span,
+                NOTE_KIND,
+                format!("{} had a default specified", default_param),
+            )
+            .with_label(
+                &non_default_param_span,
+                ReportKind::Error,
+                format!("No default specified for {}", non_default_param),
+            ),
+            PreprocessorError::NoMacroArguments {
+                macro_name,
+                define_span,
+                use_span,
+            } => Report::new(
+                ReportKind::Error,
+                &use_span,
+                "PP16",
+                format!("Expected arguments when using {macro_name}"),
+            )
+            .with_label(&define_span, NOTE_KIND, "Macro defined here")
+            .with_label(
+                &use_span,
+                ReportKind::Error,
+                "Expected arguments not present",
+            ),
+            PreprocessorError::TooManyMacroArguments {
+                macro_name,
+                define_span,
+                use_span,
+                expected,
+                found,
+            } => Report::new(
+                ReportKind::Error,
+                &use_span,
+                "PP17",
+                format!(
+                    "{} expected {} arguments, but {} were provided",
+                    macro_name, expected, found
+                ),
+            )
+            .with_label(
+                &define_span,
+                NOTE_KIND,
+                format!("Macro definition expects {expected} arguments"),
+            )
+            .with_label(
+                &use_span,
+                ReportKind::Error,
+                format!("{found} arguments provided"),
+            ),
+            PreprocessorError::MissingMacroArgument {
+                define_span,
+                use_span,
+                param_name,
+            } => Report::new(
+                ReportKind::Error,
+                &use_span,
+                "PP18",
+                format!("'{param_name}' wasn't specified and has no default"),
+            )
+            .with_label(&define_span, NOTE_KIND, "Macro defined here")
+            .with_label(
+                &use_span,
+                ReportKind::Error,
+                "Missing argument",
+            ),
+            PreprocessorError::InvalidIdentifierFormation {
+                param_name,
+                arg_span,
+            } => Report::new(
+                ReportKind::Error,
+                &arg_span,
+                "PP19",
+                format!(
+                    concat!(
+                        "The argument for '{}' cannot be ",
+                        "concatenated into an identifier"
+                    ),
+                    param_name
+                ),
+            )
+            .with_label(
+                &arg_span,
+                ReportKind::Error,
+                "No valid conversion to identifier",
+            ),
+            PreprocessorError::InvalidRelativeTimescales { timescale_span } => {
+                Report::new(
+                    ReportKind::Error,
+                    &timescale_span,
+                    "PP20",
+                    "Time precision is larger than the time unit",
+                )
+                .with_label(
+                    &timescale_span,
+                    ReportKind::Error,
+                    "Cannot have delay unit be smaller than precision",
+                )
+            }
+            PreprocessorError::IncompleteMacroWithToken {
+                error_token,
+                error_span,
+            } => Report::new(
+                ReportKind::Error,
+                &error_span,
+                "PP21",
+                format!(
+                    "Usage of {} resulted in an incomplete macro",
+                    error_token
+                ),
+            )
+            .with_label(
+                &error_span,
+                ReportKind::Error,
+                "Expected a complete macro argument or escaped newline after",
+            ),
+            PreprocessorError::Include {
+                include_path,
+                include_path_span,
+                read_err,
+            } => Report::new(
+                ReportKind::Error,
+                &include_path_span,
+                "PP22",
+                format!("Error when reading {}", include_path),
+            )
+            .with_label(
+                &include_path_span,
+                ReportKind::Error,
+                read_err.to_string(),
+            ),
+            PreprocessorError::IncludeDepth { include_span } => Report::new(
+                ReportKind::Error,
+                &include_span,
+                "PP23",
+                format!("Max include depth of {} reached", MAX_INCLUDE_DEPTH),
+            )
+            .with_label(
+                &include_span,
+                ReportKind::Error,
+                "Check for an `include loop",
+            ),
+            PreprocessorError::VerboseError { err } => err.report("PP24"),
+            PreprocessorError::NewlineInDefine(newline_span) => Report::new(
+                ReportKind::Error,
+                &newline_span,
+                "PPX",
+                "(Internal Error) Newline in define not handled correctly",
+            )
+            .with_label(
+                &newline_span,
+                ReportKind::Error,
+                "(Internal Error) Newline in define not handled correctly",
+            ),
+            PreprocessorError::EndOfFunctionArgument(err_spanned_token) => {
+                Report::new(
+                    ReportKind::Error,
+                    &err_spanned_token.1,
+                    "PPX",
+                    concat!(
+                        "(Internal Error) End of function argument ",
+                        "not handled correctly"
+                    ),
+                )
+                .with_label(
+                    &err_spanned_token.1,
+                    ReportKind::Error,
+                    concat!(
+                        "(Internal Error) End of function argument ",
+                        "not handled correctly"
+                    ),
+                )
+            }
         }
     }
 }

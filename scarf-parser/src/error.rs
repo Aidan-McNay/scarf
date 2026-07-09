@@ -3,6 +3,7 @@
 // =======================================================================
 //! Errors used in parsing
 
+use crate::report::Report;
 use crate::*;
 use core::ops::Range;
 use lexer::Token;
@@ -217,10 +218,7 @@ impl<'a> DisplayShort for VerboseError<'a> {
 
 impl<'s> VerboseError<'s> {
     /// Generate an error report for the [`VerboseError`]
-    pub fn report<C>(
-        &self,
-        code: C,
-    ) -> Report<'s, (String, std::ops::Range<usize>)>
+    pub fn report<C>(&self, code: C) -> Report<'s>
     where
         C: fmt::Display,
     {
@@ -241,21 +239,7 @@ impl<'s> VerboseError<'s> {
         } else {
             self.span.clone()
         };
-        let mut report = Report::build(
-            ReportKind::Error,
-            (error_span.file.to_string(), error_span.bytes.clone()),
-        )
-        .with_code(code)
-        .with_config(
-            ariadne::Config::new().with_index_type(ariadne::IndexType::Byte),
-        )
-        .with_message(self.to_string());
-        report = attach_span_label(
-            &error_span,
-            Color::Red,
-            self.to_short_string(),
-            report,
-        );
-        report.finish()
+        Report::new(ReportKind::Error, &error_span, code, self.to_string())
+            .with_label(&error_span, ReportKind::Error, self.to_short_string())
     }
 }
