@@ -134,8 +134,12 @@ pub fn module_ansi_header_parser<'s>(
         opt_note(list_of_port_declarations_parser),
         token(Token::SColon),
     )
-        .map(|(a, b, c, d, e, f, g, h)| {
-            ModuleAnsiHeader(a, b, c, d, e, f, g, h)
+        .verify_map(|(a, b, c, d, e, f, g, h)| {
+            if (e.len() > 0) & f.is_none() & g.is_none() {
+                None // BNF clarification 1
+            } else {
+                Some(ModuleAnsiHeader(a, b, c, d, e, f, g, h))
+            }
         })
         .parse_next(input)
 }
@@ -307,8 +311,12 @@ pub fn interface_ansi_header_parser<'s>(
         opt_note(list_of_port_declarations_parser),
         token(Token::SColon),
     )
-        .map(|(a, b, c, d, e, f, g, h)| {
-            InterfaceAnsiHeader(a, b, c, d, e, f, g, h)
+        .verify_map(|(a, b, c, d, e, f, g, h)| {
+            if (e.len() > 0) & f.is_none() & g.is_none() {
+                None // BNF clarification 1
+            } else {
+                Some(InterfaceAnsiHeader(a, b, c, d, e, f, g, h))
+            }
         })
         .parse_next(input)
 }
@@ -430,8 +438,12 @@ pub fn program_ansi_header_parser<'s>(
         opt_note(list_of_port_declarations_parser),
         token(Token::SColon),
     )
-        .map(|(a, b, c, d, e, f, g, h)| {
-            ProgramAnsiHeader(a, b, c, d, e, f, g, h)
+        .verify_map(|(a, b, c, d, e, f, g, h)| {
+            if (e.len() > 0) & f.is_none() & g.is_none() {
+                None // BNF clarification 1
+            } else {
+                Some(ProgramAnsiHeader(a, b, c, d, e, f, g, h))
+            }
         })
         .parse_next(input)
 }

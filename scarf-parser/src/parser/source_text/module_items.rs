@@ -303,7 +303,23 @@ pub fn bind_directive_parser<'s>(
         bind_instantiation_parser,
         token(Token::SColon),
     )
-        .map(|(a, b, c, d, e)| BindDirective::Scope(Box::new((a, b, c, d, e))));
+        .verify_map(|(a, b, c, d, e)| {
+            let scope_is_instance = match b {
+                BindTargetScope::Interface(_) => true,
+                BindTargetScope::Module(_) => false,
+            };
+            let instantiation_is_checker_or_interface = match d {
+                BindInstantiation::Checker(_)
+                | BindInstantiation::Interface(_) => true,
+                BindInstantiation::Module(_)
+                | BindInstantiation::Program(_) => false,
+            };
+            if scope_is_instance & !instantiation_is_checker_or_interface {
+                None // BNF clarification 4
+            } else {
+                Some(BindDirective::Scope(Box::new((a, b, c, d, e))))
+            }
+        });
     alt((_instance_parser, _scope_parser)).parse_next(input)
 }
 
