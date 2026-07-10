@@ -191,7 +191,7 @@ pub fn constructs(args: &ConstructsArgs) {
         let mut sources = state.included_files().sources();
         if !state.errors.is_empty() {
             for err in &state.errors {
-                let report: report::Report<'_> = err.into();
+                let report: report::Report = err.into();
                 report.print(&mut sources).unwrap();
             }
         }
@@ -204,7 +204,7 @@ pub fn constructs(args: &ConstructsArgs) {
         let parsed_src = parse(&preprocessed_stream);
         let source_text = match parsed_src {
             Err(err) => {
-                let report: report::Report<'_> = err.report("P1");
+                let report: report::Report = err.report("P1");
                 report.print(&mut sources).unwrap();
                 return;
             }

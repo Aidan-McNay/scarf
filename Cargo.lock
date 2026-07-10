@@ -396,6 +396,7 @@ dependencies = [
  "pyo3",
  "scarf-parser",
  "scarf-syntax",
+ "yansi",
 ]
 
 [[package]]

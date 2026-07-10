@@ -1440,3 +1440,44 @@ Parsing
 
       .. py:property:: error
          :type: VerboseError
+
+Reporting
+--------------------------------------------------------------------------
+
+.. py:class:: Report(kind: ReportKind, span: Span, code: String, msg: String)
+
+   A report detailing an error when consuming a source file, including
+   a location in that file.
+
+   This does not label/print the location; to do so, use :py:meth:`Report.label`
+
+   .. py:method:: eprint()
+
+      Print the :py:class:`Report` to ``stdout``
+
+   .. py:method:: include(file_name: str, file_content: str)
+
+      Include additional files to use when printing.
+
+      Use this when the :py:attr:`Span.file` used in a :py:class:`Report`
+      does not correspond to an actual file on the file system
+   
+   .. py:method:: label(span: Span, kind: ReportKind, msg: str)
+
+      Include a labeled section of source code in the :py:class:`Report`
+
+   .. py:method:: print()
+
+      Print the :py:class:`Report` to ``stdout``
+
+.. py:class:: ReportKind
+
+   The type of report being generated, used for coloring output
+
+   .. py:class:: ReportKind.Advice(ReportKind)
+
+   .. py:class:: ReportKind.Error(ReportKind)
+
+   .. py:class:: ReportKind.Note(ReportKind)
+
+   .. py:class:: ReportKind.Warning(ReportKind)

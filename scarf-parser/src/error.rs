@@ -210,7 +210,7 @@ impl<'a> fmt::Display for VerboseError<'a> {
 impl<'a> DisplayShort for VerboseError<'a> {
     fn to_short_string(&self) -> String {
         match self.found {
-            Some(tok) => format!("Didn't expect {}", tok.to_string()),
+            Some(tok) => format!("Didn't expect {}", tok),
             None => "Didn't expect end of input".to_owned(),
         }
     }
@@ -218,7 +218,7 @@ impl<'a> DisplayShort for VerboseError<'a> {
 
 impl<'s> VerboseError<'s> {
     /// Generate an error report for the [`VerboseError`]
-    pub fn report<C>(&self, code: C) -> Report<'s>
+    pub fn report<C>(&self, code: C) -> Report
     where
         C: fmt::Display,
     {
@@ -239,7 +239,16 @@ impl<'s> VerboseError<'s> {
         } else {
             self.span.clone()
         };
-        Report::new(ReportKind::Error, &error_span, code, self.to_string())
-            .with_label(&error_span, ReportKind::Error, self.to_short_string())
+        Report::new(
+            report::ReportKind::Error,
+            &error_span,
+            code,
+            self.to_string(),
+        )
+        .with_label(
+            &error_span,
+            report::ReportKind::Error,
+            self.to_short_string(),
+        )
     }
 }

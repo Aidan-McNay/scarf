@@ -23,7 +23,7 @@ pub mod lexer;
 pub mod parser;
 pub mod preprocessor;
 pub mod report;
-use ariadne::{Color, Label, ReportKind};
+use ariadne::{Color, Label};
 pub use error::*;
 use lexer::*;
 pub use lexer::{LexedSource, Token, lex};

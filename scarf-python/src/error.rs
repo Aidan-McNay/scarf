@@ -38,6 +38,19 @@ impl<'a> From<scarf_parser::Expectation<'a>> for Expectation {
     }
 }
 
+impl<'a> std::fmt::Display for Expectation {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Expectation::Token { token } => {
+                let rust_token: scarf_parser::Token = token.into();
+                rust_token.fmt(f)
+            }
+            Expectation::Label { label } => write!(f, "{}", label),
+            Expectation::EOI() => write!(f, "end of input"),
+        }
+    }
+}
+
 /// A wrapper around [`scarf_parser::VerboseError`]
 #[pyclass(eq, from_py_object, module = "scarf_python")]
 #[derive(Clone, PartialEq, Eq)]
@@ -66,6 +79,35 @@ impl<'a> From<scarf_parser::VerboseError<'a>> for VerboseError {
                 .into_iter()
                 .map(|rust_expectation| rust_expectation.into())
                 .collect(),
+        }
+    }
+}
+
+impl<'a> std::fmt::Display for VerboseError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "found ")?;
+        match &self.found {
+            Some(tok) => tok.fmt(f)?,
+            None => write!(f, "end of input")?,
+        };
+        write!(f, ", expected ")?;
+        let mut dedup_expected: Vec<Expectation> = vec![];
+        for expected in self.expected.iter() {
+            if !dedup_expected.contains(expected) {
+                dedup_expected.push(expected.clone());
+            }
+        }
+        match &dedup_expected[..] {
+            [] => write!(f, "something else"),
+            [expected] => expected.fmt(f),
+            _ => {
+                for expected in &dedup_expected[..dedup_expected.len() - 1] {
+                    expected.fmt(f)?;
+                    write!(f, ", ")?;
+                }
+                write!(f, "or ")?;
+                dedup_expected.last().unwrap().fmt(f)
+            }
         }
     }
 }

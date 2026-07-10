@@ -4,6 +4,7 @@
 //! Reporting errors from parsing
 
 use crate::*;
+pub use ariadne::{Cache, ReportKind};
 
 /// A cache of sources that can be used for printing reports
 ///
@@ -28,8 +29,8 @@ where
 ///
 /// These include detailed information about the location of the error,
 /// and are printed with file snippets to assist the user
-pub struct Report<'a> {
-    builder: ariadne::ReportBuilder<'a, (String, std::ops::Range<usize>)>,
+pub struct Report {
+    builder: ariadne::ReportBuilder<'static, (String, std::ops::Range<usize>)>,
 }
 
 fn get_expansion_string(expansion_depth: usize, is_first: bool) -> String {
@@ -48,12 +49,12 @@ fn get_expansion_string(expansion_depth: usize, is_first: bool) -> String {
     }
 }
 
-impl<'a> Report<'a> {
+impl<'a> Report {
     /// Create a new [`Report`] indicating a particular location with a message
     ///
     /// This does not label/print the location; to do so, use [`Report::with_label`]
     pub fn new<C, M>(
-        kind: ariadne::ReportKind<'a>,
+        kind: ariadne::ReportKind<'static>,
         span: &Span<'a>,
         code: C,
         msg: M,
@@ -83,7 +84,7 @@ impl<'a> Report<'a> {
     pub fn with_label<M>(
         mut self,
         span: &Span<'a>,
-        kind: ariadne::ReportKind<'a>,
+        kind: ariadne::ReportKind<'static>,
         msg: M,
     ) -> Self
     where

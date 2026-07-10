@@ -7,8 +7,7 @@ pub(crate) mod callbacks;
 pub(crate) mod keywords;
 pub(crate) mod tokens;
 use crate::SpannedToken;
-use crate::report::Report;
-pub use ariadne::ReportKind;
+use crate::report::{Report, ReportKind};
 pub use keywords::StandardVersion;
 use logos::Logos;
 use logos::Span as ByteSpan;
@@ -25,7 +24,7 @@ pub use tokens::Token;
 /// [`Span`]
 pub type LexerResult<'a> = (Result<Token<'a>, String>, Span<'a>);
 
-impl<'a> TryFrom<&LexerResult<'a>> for Report<'a> {
+impl<'a> TryFrom<&LexerResult<'a>> for Report {
     type Error = ();
     fn try_from(
         value: &(Result<Token<'a>, String>, Span<'a>),
@@ -68,10 +67,9 @@ fn map_lex_result<'a>(lex_result: LexerResult<'a>) -> SpannedToken<'a> {
 /// An iterator over syntactical tokens for a SystemVerilog source
 pub trait LexedSource<'a>: Iterator<Item = LexerResult<'a>> + Clone {
     /// Generate error reports for any errors encountered in lexing
-    fn report_errors(&self) -> impl Iterator<Item = Report<'a>> {
+    fn report_errors(&self) -> impl Iterator<Item = Report> {
         self.clone().into_iter().filter_map(|result| {
-            let report_result: Result<Report<'a>, ()> =
-                Report::try_from(&result);
+            let report_result: Result<Report, ()> = Report::try_from(&result);
             report_result.ok()
         })
     }

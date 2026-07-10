@@ -13,6 +13,7 @@
 mod define;
 mod error;
 mod node;
+mod report;
 mod token;
 use std::path::PathBuf;
 
@@ -20,6 +21,7 @@ pub use define::*;
 pub use error::*;
 pub use node::*;
 use pyo3::prelude::*;
+pub use report::*;
 use scarf_parser::{LexedSource, PreprocessorCache};
 pub use token::*;
 
@@ -30,8 +32,8 @@ pub mod scarf_python {
     pub use super::lex;
     #[pymodule_export]
     pub use super::{
-        Bytes, Expectation, Node, NodeIterator, Span, SpannedToken, Token,
-        VerboseError,
+        Bytes, Expectation, Node, NodeIterator, Report, ReportKind, Span,
+        SpannedToken, Token, VerboseError,
     };
     #[pymodule_export]
     pub use super::{Define, define_empty, define_text};
