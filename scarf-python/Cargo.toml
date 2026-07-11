@@ -1,7 +1,7 @@
 [package]
 name = "scarf-python"
 description = "Python bindings for the Scarf SystemVerilog tools"
-version = "0.2.2"
+version = "0.2.3"
 authors = ["Aidan McNay <aidanmcnay@gmail.com>"]
 edition = "2024"
 license = "Apache-2.0"

@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "scarf_python"
-version = "0.2.2"
+version = "0.2.3"
 authors = [
   { name="Aidan McNay", email="aidanmcnay@gmail.com" },
 ]

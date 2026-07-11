@@ -1,7 +1,7 @@
 [package]
 name = "scarf"
 description = "A suite of tools for interacting with (System)Verilog hardware designs"
-version = "0.2.2"
+version = "0.2.3"
 authors = ["Aidan McNay <aidanmcnay@gmail.com>"]
 edition = "2024"
 license = "Apache-2.0"
