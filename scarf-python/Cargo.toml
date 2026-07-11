@@ -1,7 +1,7 @@
 [package]
 name = "scarf-python"
 description = "Python bindings for the Scarf SystemVerilog tools"
-version = "0.2.0"
+version = "0.2.2"
 authors = ["Aidan McNay <aidanmcnay@gmail.com>"]
 edition = "2024"
 license = "Apache-2.0"
@@ -15,7 +15,7 @@ name = "scarf_python"
 crate-type = ["cdylib"]
 
 [dependencies]
-scarf-parser = { version = "0.1", path = "../scarf-parser" }
+scarf-parser = { version = "0.2.2", path = "../scarf-parser" }
 scarf-syntax = { version = "0.2", path = "../scarf-syntax" }
 yansi = "1.0.1"
 

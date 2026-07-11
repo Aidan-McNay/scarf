@@ -1,7 +1,7 @@
 [package]
 name = "scarf"
 description = "A suite of tools for interacting with (System)Verilog hardware designs"
-version = "0.1.1"
+version = "0.2.2"
 authors = ["Aidan McNay <aidanmcnay@gmail.com>"]
 edition = "2024"
 license = "Apache-2.0"
@@ -11,6 +11,6 @@ keywords = ["systemverilog"]
 categories = ["command-line-utilities", "development-tools"]
 
 [dependencies]
-scarf-parser = { version = "0.1", path = "../scarf-parser" }
+scarf-parser = { version = "0.2.2", path = "../scarf-parser" }
 scarf-syntax = { version = "0.2", path = "../scarf-syntax" }
 clap = { version = "4.5.39", features = ["derive"] }
