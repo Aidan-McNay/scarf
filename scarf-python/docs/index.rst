@@ -21,7 +21,7 @@ native Rust applications should be considered instead.
 
 .. warning::
     ``scarf_python`` is currently considered unstable. Expect API breaks
-    between minor versions and during development.
+    between minor versions.
 
 
 .. toctree::

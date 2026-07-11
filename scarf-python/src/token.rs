@@ -1359,7 +1359,7 @@ impl<'a> From<&'a Token> for scarf_parser::Token<'a> {
 }
 
 /// A source file [`Token`] with an associated [`Span`]
-#[pyclass(eq, from_py_object, module = "scarf_python")]
+#[pyclass(eq, from_py_object, module = "scarf_python", str)]
 #[derive(Clone, PartialEq, Eq)]
 pub struct SpannedToken {
     #[pyo3(get, set)]
@@ -1374,6 +1374,12 @@ impl<'a> From<scarf_parser::SpannedToken<'a>> for SpannedToken {
             token: value.0.into(),
             span: value.1.into(),
         }
+    }
+}
+
+impl std::fmt::Display for SpannedToken {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.token.fmt(f)
     }
 }
 
