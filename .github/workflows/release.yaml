@@ -1,0 +1,65 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*' # Triggers the workflow on any push matching v1.0.0, v0.1.1-alpha, etc.
+
+permissions:
+  contents: write # Crucial permission for uploading artifacts to a GitHub Release
+
+jobs:
+  build-release:
+    name: Build and Release Binaries
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            artifact_name: my-app-linux-amd64
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            artifact_name: my-app-macos-intel
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            artifact_name: my-app-macos-arm64
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            artifact_name: my-app-windows-amd64.exe
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust Toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          target: ${{ matrix.target }}
+
+      - name: Build Release Binary
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Package Binary (Linux/macOS)
+        if: matrix.os != 'windows-latest'
+        run: |
+          cd target/${{ matrix.target }}/release
+          tar -czf ../../../${{ matrix.artifact_name }}.tar.gz my-app
+          cd ../../..
+
+      - name: Package Binary (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          powershell Compress-Archive -Path target/${{ matrix.target }}/release/my-app.exe -DestinationPath ${{ matrix.artifact_name }}.zip
+
+      - name: Upload Binaries to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            my-app-linux-amd64.tar.gz
+            my-app-macos-intel.tar.gz
+            my-app-macos-arm64.tar.gz
+            my-app-windows-amd64.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

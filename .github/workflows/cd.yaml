@@ -7,9 +7,12 @@ name: Publish (PyPI)
 
 on:
   workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   linux:
