@@ -3,10 +3,10 @@ name: Release
 on:
   push:
     tags:
-      - 'v*' # Triggers the workflow on any push matching v1.0.0, v0.1.1-alpha, etc.
+      - 'v*'
 
 permissions:
-  contents: write # Crucial permission for uploading artifacts to a GitHub Release
+  contents: write
 
 jobs:
   build-release:
