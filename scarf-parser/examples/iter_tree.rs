@@ -11,68 +11,71 @@ use std::path::PathBuf;
 #[derive(Parser)]
 #[command(version, author, about, long_about = None)]
 struct Cli {
-    #[arg(short, long)]
+    /// Directory to search for include paths
+    #[arg(short = 'I', long, value_name = "DIR_PATH")]
     include: Vec<PathBuf>,
 
+    /// Sets a preprocessor define
+    #[arg(short = 'D', long, value_name = "NAME[=VALUE]")]
+    define: Vec<String>,
+
+    /// Whether to print the nodes
     #[arg(short, long)]
-    defines: Vec<String>,
+    print: bool,
 
-    /// A directory to dump debug output to
-    #[arg(long)]
-    debug: Option<PathBuf>,
-
-    path: PathBuf,
+    paths: Vec<PathBuf>,
 }
 
 fn main() {
     let args = Cli::parse();
-    let path = args.path;
-    let src = std::fs::read_to_string(&path).unwrap();
     let string_cache = preprocessor::PreprocessorCache::new();
-    let mut state = preprocessor::PreprocessorState::new(vec![], vec![]);
-    let (_, src) = state.retain_file(
-        path.clone().into_os_string().into_string().unwrap(),
-        src,
-        &string_cache,
-    );
-    let lexed_src = lex(src, path.to_str().unwrap()).process();
-    if let Some(debug_path) = args.debug {
-        match lexed_src.dump(&debug_path) {
-            Ok(_) => (),
-            Err(err) => println!("{}", err),
-        }
-    }
-    let lex_errors = lexed_src.report_errors().collect::<Vec<_>>();
-    if !lex_errors.is_empty() {
+    let includes = args
+        .include
+        .iter()
+        .map(|pathbuf| pathbuf.as_path())
+        .collect::<Vec<_>>();
+    let defines = args
+        .define
+        .iter()
+        .map(|def| <std::string::String as AsRef<str>>::as_ref(def).into())
+        .collect::<Vec<_>>();
+    let mut state = preprocessor::PreprocessorState::new(includes, vec![]);
+    for path in &args.paths {
+        let src = std::fs::read_to_string(&path).unwrap();
+        state.make_fresh(defines.clone());
+        let (_, src) = state.retain_file(
+            path.clone().into_os_string().into_string().unwrap(),
+            src,
+            &string_cache,
+        );
+        let lexed_src = lex(src, path.to_str().unwrap());
+        let token_stream = lexed_src.tokens();
+        let preprocess_result =
+            preprocess(token_stream, &mut state, &string_cache);
         let mut sources = state.included_files().sources();
-        for report in lex_errors {
-            report.print(&mut sources).unwrap();
+        if !state.errors.is_empty() {
+            for err in &state.errors {
+                let report: report::Report = err.into();
+                report.print(&mut sources).unwrap();
+            }
         }
-        return;
-    }
-    let token_stream = lexed_src.tokens();
-    let preprocess_result = preprocess(token_stream, &mut state, &string_cache);
-    let mut sources = state.included_files().sources();
-    if !state.errors.is_empty() {
-        for err in state.errors {
-            let report: report::Report = (&err).into();
+        let preprocessed_stream = match preprocess_result {
+            Err(_) => {
+                return;
+            }
+            Ok(preprocessed_stream) => preprocessed_stream,
+        };
+        let parsed_src = parse(&preprocessed_stream);
+        if let Err(err) = parsed_src {
+            let report: report::Report = err.report("P1");
             report.print(&mut sources).unwrap();
-        }
-    }
-    let preprocessed_stream = match preprocess_result {
-        Err(_) => {
             return;
         }
-        Ok(preprocessed_stream) => preprocessed_stream,
-    };
-    let parsed_src = parse(&preprocessed_stream);
-    if let Err(err) = parsed_src {
-        let report: report::Report = err.report("P1");
-        report.print(&mut sources).unwrap();
-        return;
-    }
-    let source_text = parsed_src.unwrap();
-    for node in source_text.iter() {
-        println!("{}", node.name());
+        let source_text = parsed_src.unwrap();
+        if args.print {
+            for node in source_text.iter() {
+                println!("{}", node.name());
+            }
+        }
     }
 }

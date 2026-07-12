@@ -35,6 +35,18 @@ impl<'a> Define<'a> {
     }
 }
 
+impl<'a> From<&'a str> for Define<'a> {
+    fn from(value: &'a str) -> Self {
+        let mut components = value.splitn(2, "=");
+        let name = SpannedString(components.next().unwrap(), Span::default());
+        let body = match components.next() {
+            Some(text) => DefineBody::Text(lex(text, "").tokens().collect()),
+            None => DefineBody::Empty,
+        };
+        Self { name, body }
+    }
+}
+
 /// The body of a preprocessor definition
 ///
 /// Defines can either be
