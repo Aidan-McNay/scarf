@@ -7,6 +7,7 @@ use clap::Parser;
 use scarf_parser::report::Sources;
 use scarf_parser::*;
 use std::path::PathBuf;
+use std::process::ExitCode;
 
 #[derive(Parser)]
 #[command(version, author, about, long_about = None)]
@@ -26,7 +27,7 @@ struct Cli {
     paths: Vec<PathBuf>,
 }
 
-fn main() {
+fn main() -> ExitCode {
     let args = Cli::parse();
     let string_cache = preprocessor::PreprocessorCache::new();
     let includes = args
@@ -61,7 +62,7 @@ fn main() {
         }
         let preprocessed_stream = match preprocess_result {
             Err(_) => {
-                return;
+                return ExitCode::FAILURE;
             }
             Ok(preprocessed_stream) => preprocessed_stream,
         };
@@ -69,7 +70,7 @@ fn main() {
         if let Err(err) = parsed_src {
             let report: report::Report = err.report("P1");
             report.print(&mut sources).unwrap();
-            return;
+            return ExitCode::FAILURE;
         }
         let source_text = parsed_src.unwrap();
         if args.print {
@@ -78,4 +79,5 @@ fn main() {
             }
         }
     }
+    ExitCode::SUCCESS
 }
