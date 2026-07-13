@@ -33,9 +33,9 @@ fn get_text_macro_args<'s>(
     let end_span =
         loop {
             let mut new_arg: Vec<SpannedToken<'s>> = vec![];
-            let prev_in_define_arg = state.enter_define_arg();
+            let prev_in_text_macro_arg = state.enter_text_macro_arg();
             let result = preprocess_helper(src, &mut new_arg, state, cache);
-            state.exit_define_arg(prev_in_define_arg);
+            state.exit_text_macro_arg(prev_in_text_macro_arg);
             match result {
                 Ok(()) => {
                     return Err(PreprocessorError::IncompleteDirective {

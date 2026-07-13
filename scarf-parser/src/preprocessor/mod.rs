@@ -168,7 +168,7 @@ pub(crate) fn preprocess_helper<'s>(
     cache: &'s PreprocessorCache<'s>,
 ) -> Result<(), PreprocessorError<'s>> {
     let mut enclosures: Vec<Token<'s>> = vec![];
-    if state.in_define() || state.in_define_arg() {
+    if state.in_define() || state.in_define_arg() || state.in_text_macro_arg() {
         while let Some(mut spanned_token) = src.next() {
             match spanned_token.0 {
                 Token::Bslash => loop {
@@ -189,24 +189,32 @@ pub(crate) fn preprocess_helper<'s>(
                     };
                     break;
                 },
-                Token::Newline => {
+                Token::Newline if !state.in_text_macro_arg() => {
                     return Err(PreprocessorError::NewlineInDefine(
                         spanned_token.1,
                     ));
                 }
-                Token::Paren if state.in_define_arg() => {
+                Token::Paren
+                    if state.in_define_arg() || state.in_text_macro_arg() =>
+                {
                     enclosures.push(Token::Paren);
                     dest.push(spanned_token);
                 }
-                Token::Bracket if state.in_define_arg() => {
+                Token::Bracket
+                    if state.in_define_arg() || state.in_text_macro_arg() =>
+                {
                     enclosures.push(Token::Bracket);
                     dest.push(spanned_token);
                 }
-                Token::Brace if state.in_define_arg() => {
+                Token::Brace
+                    if state.in_define_arg() || state.in_text_macro_arg() =>
+                {
                     enclosures.push(Token::Brace);
                     dest.push(spanned_token);
                 }
-                Token::EParen if state.in_define_arg() => {
+                Token::EParen
+                    if state.in_define_arg() || state.in_text_macro_arg() =>
+                {
                     match enclosures.pop() {
                         Some(Token::Paren) => dest.push(spanned_token),
                         None => {
@@ -226,7 +234,9 @@ pub(crate) fn preprocess_helper<'s>(
                         }
                     }
                 }
-                Token::EBracket if state.in_define_arg() => {
+                Token::EBracket
+                    if state.in_define_arg() || state.in_text_macro_arg() =>
+                {
                     match enclosures.pop() {
                         Some(Token::Bracket) => dest.push(spanned_token),
                         _ => {
@@ -239,7 +249,9 @@ pub(crate) fn preprocess_helper<'s>(
                         }
                     }
                 }
-                Token::EBrace if state.in_define_arg() => {
+                Token::EBrace
+                    if state.in_define_arg() || state.in_text_macro_arg() =>
+                {
                     match enclosures.pop() {
                         Some(Token::Brace) => dest.push(spanned_token),
                         _ => {
@@ -252,7 +264,9 @@ pub(crate) fn preprocess_helper<'s>(
                         }
                     }
                 }
-                Token::Comma if state.in_define_arg() => {
+                Token::Comma
+                    if state.in_define_arg() || state.in_text_macro_arg() =>
+                {
                     if enclosures.is_empty() {
                         return Err(PreprocessorError::EndOfFunctionArgument(
                             spanned_token,
@@ -262,7 +276,9 @@ pub(crate) fn preprocess_helper<'s>(
                     }
                 }
                 Token::BlockComment(_) | Token::OnelineComment(_) => (),
-                Token::TextMacro(macro_name) if state.in_define_arg() => {
+                Token::TextMacro(macro_name)
+                    if state.in_define_arg() || state.in_text_macro_arg() =>
+                {
                     preprocess_macro(
                         src,
                         state,

@@ -156,6 +156,7 @@ pub struct PreprocessorState<'a> {
     pub errors: Vec<PreprocessorError<'a>>,
     pub(crate) in_define: bool,
     pub(crate) in_define_arg: bool,
+    pub(crate) in_text_macro_arg: bool,
     pub(crate) include_depth: usize,
 }
 
@@ -175,6 +176,7 @@ impl<'a> PreprocessorState<'a> {
             errors: vec![],
             in_define: false,
             in_define_arg: false,
+            in_text_macro_arg: false,
             include_depth: 0,
         }
     }
@@ -277,6 +279,32 @@ impl<'a> PreprocessorState<'a> {
     #[inline]
     pub fn in_define_arg(&self) -> bool {
         self.in_define_arg
+    }
+
+    /// Called when starting to preprocess a text macro argument
+    ///
+    /// Each call to [`PreprocessorState::enter_text_macro_arg`] should be
+    /// paired with a later call to [`PreprocessorState::exit_text_macro_arg`]
+    #[inline]
+    pub(crate) fn enter_text_macro_arg(&mut self) -> bool {
+        let prev_in_text_macro_arg = self.in_text_macro_arg;
+        self.in_text_macro_arg = true;
+        prev_in_text_macro_arg
+    }
+
+    /// Called when stopping preprocessing of a text macro argument
+    ///
+    /// Each call to [`PreprocessorState::enter_text_macro_arg`] should be
+    /// paired with a later call to [`PreprocessorState::exit_text_macro_arg`]
+    #[inline]
+    pub(crate) fn exit_text_macro_arg(&mut self, prev_in_text_macro_arg: bool) {
+        self.in_text_macro_arg = prev_in_text_macro_arg;
+    }
+
+    /// Whether we're currently preprocessing a text macro argument
+    #[inline]
+    pub fn in_text_macro_arg(&self) -> bool {
+        self.in_text_macro_arg
     }
 
     /// Remove a given macro, evaluating to whether a macro was removed
