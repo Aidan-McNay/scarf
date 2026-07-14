@@ -169,17 +169,15 @@ pub(crate) fn preprocess_helper<'s>(
 ) -> Result<(), PreprocessorError<'s>> {
     let mut enclosures: Vec<Token<'s>> = vec![];
     if state.in_define() || state.in_define_arg() || state.in_text_macro_arg() {
-        while let Some(mut spanned_token) = src.next() {
+        while let Some(spanned_token) = src.next() {
             match spanned_token.0 {
-                Token::Bslash => loop {
+                Token::Bslash if !state.in_text_macro_arg() => {
                     match src.next() {
                         None => dest.push(spanned_token),
                         Some(next_token) => match next_token.0 {
                             Token::Newline => (),
                             Token::Bslash => {
                                 dest.push(spanned_token);
-                                spanned_token = next_token;
-                                continue;
                             }
                             _ => {
                                 dest.push(spanned_token);
@@ -187,8 +185,7 @@ pub(crate) fn preprocess_helper<'s>(
                             }
                         },
                     };
-                    break;
-                },
+                }
                 Token::Newline if !state.in_text_macro_arg() => {
                     return Err(PreprocessorError::NewlineInDefine(
                         spanned_token.1,
@@ -275,7 +272,16 @@ pub(crate) fn preprocess_helper<'s>(
                         dest.push(spanned_token)
                     }
                 }
-                Token::BlockComment(_) | Token::OnelineComment(_) => (),
+                Token::BlockComment(_) => (),
+                Token::OnelineComment(comment_text) => {
+                    if comment_text.ends_with('\\') & !state.in_text_macro_arg()
+                    {
+                        // Counts as escaping a newline
+                        //
+                        // Can safely consume and disregard next token (the newline)
+                        let _ = src.next();
+                    };
+                }
                 Token::TextMacro(macro_name)
                     if state.in_define_arg() || state.in_text_macro_arg() =>
                 {

@@ -62,6 +62,7 @@ fn get_define_name<'s>(
 fn get_define_function_args<'s>(
     src: &mut TokenIterator<'s, impl Iterator<Item = SpannedToken<'s>>>,
     define_name: &'s str,
+    define_name_span: &Span<'s>,
     state: &mut PreprocessorState<'s>,
     cache: &'s PreprocessorCache<'s>,
 ) -> Result<
@@ -82,6 +83,10 @@ fn get_define_function_args<'s>(
     };
     match spanned_token.0 {
         Token::Paren => {
+            if spanned_token.1.bytes.start != define_name_span.bytes.end {
+                // Space in between indicates define body
+                return Ok(None);
+            }
             let paren_span = src.next().unwrap().1;
             let mut started_defaults = None;
             let mut function_args: Vec<(
@@ -277,8 +282,13 @@ pub fn preprocess_define<'s>(
         });
         state.undefine(define_name.0);
     }
-    let function_args =
-        get_define_function_args(src, define_name.0, state, cache)?;
+    let function_args = get_define_function_args(
+        src,
+        define_name.0,
+        &define_name.1,
+        state,
+        cache,
+    )?;
     let define_text = get_define_body(src, state, cache)?;
     let (define_body, define_span) = match function_args {
         Some((end_span, arg_vec)) => {
