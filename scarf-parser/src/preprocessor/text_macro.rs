@@ -153,65 +153,23 @@ fn get_identifier_substitute<'a>(
 }
 
 fn get_string_substitute<'a>(
-    id_name: &'a str,
+    _id_name: &'a str,
     replacement_tokens: &Vec<SpannedToken<'a>>,
     str_to_append: &mut String,
+    state: &PreprocessorState<'a>,
 ) -> Result<(), PreprocessorError<'a>> {
-    let replacement_tokens_len = replacement_tokens.len();
-    if replacement_tokens_len > 1 {
-        // Only currently support a max of one token
-        let err_span = replacement_tokens.first().unwrap().1.clone();
-        return Err(PreprocessorError::InvalidIdentifierFormation {
-            param_name: id_name,
-            arg_span: err_span,
-        });
-    } else if replacement_tokens_len == 1 {
-        let replacement_token = replacement_tokens.first().unwrap().clone();
-        match replacement_token.0 {
-            Token::UnsignedNumber(text)
-            | Token::FixedPointNumber(text)
-            | Token::BinaryNumber(text)
-            | Token::OctalNumber(text)
-            | Token::DecimalNumber(text)
-            | Token::HexNumber(text)
-            | Token::ScientificNumber(text)
-            | Token::UnbasedUnsizedLiteral(text)
-            | Token::SystemTfIdentifier(text)
-            | Token::SimpleIdentifier(text)
-            | Token::EscapedIdentifier(text) => {
-                *str_to_append += text;
-                Ok(())
-            }
-            Token::StringLiteral(text) => {
-                *str_to_append += "\"";
-                *str_to_append += text;
-                *str_to_append += "\"";
-                Ok(())
-            }
-            Token::TripleQuoteStringLiteral(text) => {
-                *str_to_append += "\"\"\"";
-                *str_to_append += text;
-                *str_to_append += "\"\"\"";
-                Ok(())
-            }
-            Token::OnelineComment(_)
-            | Token::BlockComment(_)
-            | Token::PreprocessorIdentifier(_)
-            | Token::TextMacro(_)
-            | Token::Newline => {
-                return Err(PreprocessorError::InvalidIdentifierFormation {
-                    param_name: id_name,
-                    arg_span: replacement_token.1,
-                });
-            }
-            other => {
-                *str_to_append += other.as_str();
-                Ok(())
-            }
-        }
-    } else {
-        Ok(())
+    if !replacement_tokens.is_empty() {
+        let start_span = &replacement_tokens.first().unwrap().1;
+        let end_span = &replacement_tokens.last().unwrap().1;
+        // Guaranteed to be the same file, otherwise they'd split a preprocessor definition
+        let slice = &state
+            .included_files
+            .get(start_span.file)
+            .expect("Internal Error: File not parsed yet")
+            [start_span.bytes.start..end_span.bytes.end];
+        *str_to_append += slice;
     }
+    Ok(())
 }
 
 fn get_replacement_string<'a>(
@@ -231,6 +189,7 @@ fn get_replacement_string<'a>(
                         define.name.0,
                         tokens,
                         &mut token_str,
+                        state,
                     )?;
                     token_str
                 }
@@ -250,6 +209,7 @@ fn get_replacement_string<'a>(
                 argument,
                 &arguments.get(argument).unwrap().1,
                 &mut replacement_string,
+                state,
             )?;
             initial_string =
                 initial_string.replace(argument, replacement_string.as_str())
