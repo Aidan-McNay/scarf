@@ -260,6 +260,29 @@ fn replace_macro_tokens<'a>(
                     span,
                 ));
             }
+            SpannedToken(Token::ConcatenatedTextMacro(id), span) => {
+                let components = id.split("``");
+                let mut resulting_identifier = "".to_string();
+                for component in components.into_iter() {
+                    match arguments.get(component) {
+                        Some((_, replacement_tokens)) => {
+                            resulting_identifier += get_identifier_substitute(
+                                component,
+                                replacement_tokens,
+                            )?;
+                        }
+                        None => {
+                            resulting_identifier += component;
+                        }
+                    }
+                }
+                result_vec.push(SpannedToken(
+                    Token::TextMacro(
+                        state.retain_string(resulting_identifier, cache),
+                    ),
+                    span,
+                ));
+            }
             SpannedToken(Token::PreprocessorStringLiteral(id), span) => {
                 result_vec.push(SpannedToken(
                     Token::StringLiteral(state.retain_string(

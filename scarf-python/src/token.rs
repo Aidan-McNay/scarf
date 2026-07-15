@@ -416,6 +416,7 @@ pub enum Token {
     EscapedIdentifier { text: String },
     PreprocessorIdentifier { text: String },
     TextMacro { text: String },
+    ConcatenatedTextMacro { text: String },
     StringLiteral { text: String },
     PreprocessorStringLiteral { text: String },
     TripleQuoteStringLiteral { text: String },
@@ -883,6 +884,11 @@ impl<'a> From<scarf_parser::Token<'a>> for Token {
             scarf_parser::Token::TextMacro(str) => Token::TextMacro {
                 text: str.to_string(),
             },
+            scarf_parser::Token::ConcatenatedTextMacro(str) => {
+                Token::ConcatenatedTextMacro {
+                    text: str.to_string(),
+                }
+            }
             scarf_parser::Token::StringLiteral(str) => Token::StringLiteral {
                 text: str.to_string(),
             },
@@ -1341,6 +1347,9 @@ impl<'a> From<&'a Token> for scarf_parser::Token<'a> {
                 scarf_parser::Token::PreprocessorIdentifier(&text)
             }
             Token::TextMacro { text } => scarf_parser::Token::TextMacro(&text),
+            Token::ConcatenatedTextMacro { text } => {
+                scarf_parser::Token::ConcatenatedTextMacro(&text)
+            }
             Token::StringLiteral { text } => {
                 scarf_parser::Token::StringLiteral(&text)
             }

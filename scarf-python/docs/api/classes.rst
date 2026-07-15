@@ -916,6 +916,13 @@ General
 
             The text referenced by the token
 
+      .. py:class:: Token.ConcatenatedTextMacro(Token)
+
+         .. py:property:: text
+            :type: str
+
+            The text referenced by the token
+
       .. py:class:: Token.This(Token)
 
       .. py:class:: Token.Throughout(Token)
