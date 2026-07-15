@@ -77,7 +77,7 @@ pub fn blocking_assignment_parser<'s>(
     )
         .map(|(a, b, c)| BlockingAssignment::Dynamic(Box::new((a, b, c))));
     let _class_parser = (
-        _implicit_class_handle_or_class_scope_or_package_scope_parser,
+        opt_note(_implicit_class_handle_or_class_scope_or_package_scope_parser),
         hierarchical_variable_identifier_parser,
         select_parser,
         token(Token::Eq),

@@ -58,7 +58,7 @@ pub enum BlockingAssignment<'a> {
     ),
     Class(
         Box<(
-            ImplicitClassHandleOrClassScopeOrPackageScope<'a>,
+            Option<ImplicitClassHandleOrClassScopeOrPackageScope<'a>>,
             HierarchicalVariableIdentifier<'a>,
             Select<'a>,
             Metadata<'a>, // =
