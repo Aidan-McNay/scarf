@@ -7,7 +7,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::alt;
+use winnow::combinator::{alt, peek, terminated};
 
 pub fn concatenation_parser<'s>(
     input: &mut Tokens<'s>,
@@ -93,7 +93,7 @@ pub fn streaming_concatenation_parser<'s>(
     (
         token(Token::Brace),
         stream_operator_parser,
-        opt_note(slice_size_parser),
+        opt_note(terminated(slice_size_parser, peek(token(Token::Brace)))),
         stream_concatenation_parser,
         token(Token::EBrace),
     )
