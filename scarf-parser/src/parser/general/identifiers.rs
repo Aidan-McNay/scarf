@@ -792,17 +792,8 @@ pub fn ps_identifier_parser<'s>(
 pub fn ps_or_hierarchical_array_identifier_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<PsOrHierarchicalArrayIdentifier<'s>, VerboseError<'s>> {
-    let _scope_parser = alt((
-        (implicit_class_handle_parser, token(Token::Period)).map(|(a, b)| {
-            PsOrHierarchicalArrayIdentifierScope::ImplicitClassHandle(a, b)
-        }),
-        class_scope_parser
-            .map(|a| PsOrHierarchicalArrayIdentifierScope::ClassScope(a)),
-        package_scope_parser
-            .map(|a| PsOrHierarchicalArrayIdentifierScope::PackageScope(a)),
-    ));
     (
-        opt_note(_scope_parser),
+        opt_note(implicit_class_handle_or_class_scope_or_package_scope_parser),
         hierarchical_array_identifier_parser,
     )
         .map(|(a, b)| PsOrHierarchicalArrayIdentifier(a, b))
@@ -812,51 +803,75 @@ pub fn ps_or_hierarchical_array_identifier_parser<'s>(
 pub fn ps_or_hierarchical_net_identifier_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<PsOrHierarchicalNetIdentifier<'s>, VerboseError<'s>> {
-    alt((
-        hierarchical_net_identifier_parser
-            .map(|a| PsOrHierarchicalNetIdentifier::Hierarchical(a)),
-        (opt_note(package_scope_parser), net_identifier_parser)
-            .map(|(a, b)| PsOrHierarchicalNetIdentifier::PackageScope(a, b)),
-    ))
-    .parse_next(input)
+    let opt_scope = opt_note(package_scope_parser).parse_next(input)?;
+    match opt_scope {
+        None => hierarchical_net_identifier_parser
+            .map(|a| PsOrHierarchicalNetIdentifier::Hierarchical(a))
+            .parse_next(input),
+        Some(scope) => {
+            let identifier = net_identifier_parser.parse_next(input)?;
+            Ok(PsOrHierarchicalNetIdentifier::PackageScope(
+                Some(scope),
+                identifier,
+            ))
+        }
+    }
 }
 
 pub fn ps_or_hierarchical_property_identifier_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<PsOrHierarchicalPropertyIdentifier<'s>, VerboseError<'s>> {
-    alt((
-        hierarchical_property_identifier_parser
-            .map(|a| PsOrHierarchicalPropertyIdentifier::Hierarchical(a)),
-        (opt_note(package_scope_parser), property_identifier_parser).map(
-            |(a, b)| PsOrHierarchicalPropertyIdentifier::PackageScope(a, b),
-        ),
-    ))
-    .parse_next(input)
+    let opt_scope = opt_note(package_scope_parser).parse_next(input)?;
+    match opt_scope {
+        None => hierarchical_property_identifier_parser
+            .map(|a| PsOrHierarchicalPropertyIdentifier::Hierarchical(a))
+            .parse_next(input),
+        Some(scope) => {
+            let identifier = property_identifier_parser.parse_next(input)?;
+            Ok(PsOrHierarchicalPropertyIdentifier::PackageScope(
+                Some(scope),
+                identifier,
+            ))
+        }
+    }
 }
 
 pub fn ps_or_hierarchical_sequence_identifier_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<PsOrHierarchicalSequenceIdentifier<'s>, VerboseError<'s>> {
-    alt((
-        hierarchical_sequence_identifier_parser
-            .map(|a| PsOrHierarchicalSequenceIdentifier::Hierarchical(a)),
-        (opt_note(package_scope_parser), sequence_identifier_parser).map(
-            |(a, b)| PsOrHierarchicalSequenceIdentifier::PackageScope(a, b),
-        ),
-    ))
-    .parse_next(input)
+    let opt_scope = opt_note(package_scope_parser).parse_next(input)?;
+    match opt_scope {
+        None => hierarchical_sequence_identifier_parser
+            .map(|a| PsOrHierarchicalSequenceIdentifier::Hierarchical(a))
+            .parse_next(input),
+        Some(scope) => {
+            let identifier = sequence_identifier_parser.parse_next(input)?;
+            Ok(PsOrHierarchicalSequenceIdentifier::PackageScope(
+                Some(scope),
+                identifier,
+            ))
+        }
+    }
 }
 
 pub fn ps_or_hierarchical_tf_identifier_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<PsOrHierarchicalTfIdentifier<'s>, VerboseError<'s>> {
-    alt((
-        hierarchical_tf_identifier_parser
-            .map(|a| PsOrHierarchicalTfIdentifier::Hierarchical(a)),
-        (opt_note(package_scope_parser), tf_identifier_parser)
-            .map(|(a, b)| PsOrHierarchicalTfIdentifier::PackageScope(a, b)),
-    ))
-    .parse_next(input)
+    let opt_scope =
+        opt_note(implicit_class_handle_or_class_scope_or_package_scope_parser)
+            .parse_next(input)?;
+    match opt_scope {
+        None => hierarchical_tf_identifier_parser
+            .map(|a| PsOrHierarchicalTfIdentifier::Hierarchical(a))
+            .parse_next(input),
+        Some(scope) => {
+            let identifier = tf_identifier_parser.parse_next(input)?;
+            Ok(PsOrHierarchicalTfIdentifier::Scoped(
+                Some(scope),
+                identifier,
+            ))
+        }
+    }
 }
 
 pub fn package_or_class_scope_parser<'s>(

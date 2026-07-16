@@ -207,15 +207,8 @@ pub struct PsCheckerIdentifier<'a>(
 pub struct PsIdentifier<'a>(pub Option<PackageScope<'a>>, pub Identifier<'a>);
 
 #[derive(Clone, Debug, PartialEq)]
-pub enum PsOrHierarchicalArrayIdentifierScope<'a> {
-    ImplicitClassHandle(ImplicitClassHandle<'a>, Metadata<'a>),
-    ClassScope(ClassScope<'a>),
-    PackageScope(PackageScope<'a>),
-}
-
-#[derive(Clone, Debug, PartialEq)]
 pub struct PsOrHierarchicalArrayIdentifier<'a>(
-    pub Option<PsOrHierarchicalArrayIdentifierScope<'a>>,
+    pub Option<ImplicitClassHandleOrClassScopeOrPackageScope<'a>>,
     pub HierarchicalArrayIdentifier<'a>,
 );
 
@@ -239,7 +232,10 @@ pub enum PsOrHierarchicalSequenceIdentifier<'a> {
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum PsOrHierarchicalTfIdentifier<'a> {
-    PackageScope(Option<PackageScope<'a>>, TfIdentifier<'a>),
+    Scoped(
+        Option<ImplicitClassHandleOrClassScopeOrPackageScope<'a>>,
+        TfIdentifier<'a>,
+    ),
     Hierarchical(HierarchicalTfIdentifier<'a>),
 }
 

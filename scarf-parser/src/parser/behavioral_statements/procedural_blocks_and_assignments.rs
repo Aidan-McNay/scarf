@@ -45,10 +45,13 @@ pub fn final_construct_parser<'s>(
         .parse_next(input)
 }
 
-pub fn blocking_assignment_parser<'s>(
+pub fn implicit_class_handle_or_class_scope_or_package_scope_parser<'s>(
     input: &mut Tokens<'s>,
-) -> ModalResult<BlockingAssignment<'s>, VerboseError<'s>> {
-    let _implicit_class_handle_or_class_scope_or_package_scope_parser = alt((
+) -> ModalResult<
+    ImplicitClassHandleOrClassScopeOrPackageScope<'s>,
+    VerboseError<'s>,
+> {
+    alt((
         (implicit_class_handle_parser, token(Token::Period)).map(|(a, b)| {
             ImplicitClassHandleOrClassScopeOrPackageScope::ImplicitClassHandle(
                 Box::new((a, b)),
@@ -60,7 +63,13 @@ pub fn blocking_assignment_parser<'s>(
         package_scope_parser.map(|a| {
             ImplicitClassHandleOrClassScopeOrPackageScope::Package(Box::new(a))
         }),
-    ));
+    ))
+    .parse_next(input)
+}
+
+pub fn blocking_assignment_parser<'s>(
+    input: &mut Tokens<'s>,
+) -> ModalResult<BlockingAssignment<'s>, VerboseError<'s>> {
     let _variable_parser = (
         variable_lvalue_parser,
         token(Token::Eq),
@@ -77,7 +86,7 @@ pub fn blocking_assignment_parser<'s>(
     )
         .map(|(a, b, c)| BlockingAssignment::Dynamic(Box::new((a, b, c))));
     let _class_parser = (
-        opt_note(_implicit_class_handle_or_class_scope_or_package_scope_parser),
+        opt_note(implicit_class_handle_or_class_scope_or_package_scope_parser),
         hierarchical_variable_identifier_parser,
         select_parser,
         token(Token::Eq),
