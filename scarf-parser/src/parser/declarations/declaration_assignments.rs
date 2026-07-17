@@ -167,13 +167,15 @@ pub fn variable_decl_assignment_parser<'s>(
         });
     let _class_variable_parser = (
         class_variable_identifier_parser,
-        opt_note((token(Token::Eq), class_new_parser)),
+        ((token(Token::Eq), class_new_parser)), // Optional, but gets picked up by variable parser
     )
-        .map(|(a, b)| VariableDeclAssignment::ClassVariable(Box::new((a, b))));
+        .map(|(a, b)| {
+            VariableDeclAssignment::ClassVariable(Box::new((a, Some(b))))
+        });
     alt((
-        _variable_parser,
         _dynamic_variable_parser,
         _class_variable_parser,
+        _variable_parser,
     ))
     .parse_next(input)
 }
