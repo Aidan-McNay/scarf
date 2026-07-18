@@ -101,7 +101,7 @@ pub fn nonrange_variable_lvalue_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<NonrangeVariableLvalue<'s>, VerboseError<'s>> {
     (
-        implicit_class_handle_or_package_scope_parser,
+        opt_note(implicit_class_handle_or_package_scope_parser),
         hierarchical_variable_identifier_parser,
         nonrange_select_parser,
     )

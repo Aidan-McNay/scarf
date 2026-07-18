@@ -100,9 +100,9 @@ pub fn blocking_assignment_parser<'s>(
     let _inc_or_dec_parser = inc_or_dec_expression_parser
         .map(|a| BlockingAssignment::IncOrDec(Box::new(a)));
     alt((
-        _variable_parser,
         _dynamic_parser,
         _class_parser,
+        _variable_parser,
         _operator_parser,
         _inc_or_dec_parser,
     ))

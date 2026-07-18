@@ -68,7 +68,7 @@ pub struct AssignmentVariableLvalue<'a>(
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct NonrangeVariableLvalue<'a>(
-    pub ImplicitClassHandleOrPackageScope<'a>,
+    pub Option<ImplicitClassHandleOrPackageScope<'a>>,
     pub HierarchicalVariableIdentifier<'a>,
     pub NonrangeSelect<'a>,
 );
