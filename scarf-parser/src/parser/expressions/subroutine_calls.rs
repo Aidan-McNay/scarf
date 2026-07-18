@@ -160,7 +160,7 @@ pub fn method_call_body_parser<'s>(
         .map(|(a, b, c)| MethodCallBody::Custom(Box::new((a, b, c))));
     let _build_in_parser = built_in_method_call_parser
         .map(|a| MethodCallBody::BuiltIn(Box::new(a)));
-    alt((_custom_parser, _build_in_parser)).parse_next(input)
+    alt((_build_in_parser, _custom_parser)).parse_next(input)
 }
 
 pub fn built_in_method_call_parser<'s>(

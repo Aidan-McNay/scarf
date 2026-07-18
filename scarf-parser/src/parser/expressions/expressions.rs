@@ -9,7 +9,7 @@ use crate::*;
 use scarf_syntax::*;
 use winnow::ModalResult;
 use winnow::Parser;
-use winnow::combinator::alt;
+use winnow::combinator::{alt, not, peek, terminated};
 
 pub fn inc_or_dec_expression_parser<'s>(
     input: &mut Tokens<'s>,
@@ -202,8 +202,9 @@ pub fn constant_param_expression_parser<'s>(
 pub fn param_expression_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<ParamExpression<'s>, VerboseError<'s>> {
-    let _mintypmax_parser = mintypmax_expression_parser
-        .map(|a| ParamExpression::Mintypmax(Box::new(a)));
+    let _mintypmax_parser =
+        terminated(mintypmax_expression_parser, peek(not(token(Token::Pound))))
+            .map(|a| ParamExpression::Mintypmax(Box::new(a)));
     let _data_parser =
         data_type_parser.map(|a| ParamExpression::Data(Box::new(a)));
     let _dollar_parser =
@@ -341,8 +342,16 @@ pub(crate) fn gen_pattern_parser<'s>(
 fn basic_expression_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<Expression<'s>, VerboseError<'s>> {
-    let _primary_parser =
-        primary_parser.map(|a| Expression::Primary(Box::new(a)));
+    let _primary_parser = terminated(
+        primary_parser,
+        peek(alt((
+            token(Token::Comma),
+            token(Token::Paren),
+            token(Token::EParen),
+            token(Token::SColon),
+        ))),
+    )
+    .map(|a| Expression::Primary(Box::new(a)));
     let _unary_parser = (
         unary_operator_parser,
         attribute_instance_vec_parser,
@@ -359,12 +368,15 @@ fn basic_expression_parser<'s>(
         .map(|(a, b, c)| Expression::OperatorAssignment(Box::new((a, b, c))));
     let _tagged_union_expression_parser = tagged_union_expression_parser
         .map(|a| Expression::TaggedUnionExpression(Box::new(a)));
+    let _catchall_primary_parser =
+        primary_parser.map(|a| Expression::Primary(Box::new(a)));
     alt((
         _primary_parser,
         _unary_parser,
         _inc_or_dec_expression_parser,
         _operator_assignment_parser,
         _tagged_union_expression_parser,
+        _catchall_primary_parser,
     ))
     .parse_next(input)
 }
