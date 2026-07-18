@@ -76,11 +76,24 @@ pub fn event_control_parser<'s>(
 pub fn clocking_event_parser<'s>(
     input: &mut Tokens<'s>,
 ) -> ModalResult<ClockingEvent<'s>, VerboseError<'s>> {
-    let _ps_parser = (token(Token::At), ps_identifier_parser)
-        .map(|(a, b)| ClockingEvent::Ps(Box::new((a, b))));
-    let _hierarchical_parser =
-        (token(Token::At), hierarchical_identifier_parser)
-            .map(|(a, b)| ClockingEvent::Hierarchical(Box::new((a, b))));
+    let _identifier_parser = |input: &mut Tokens<'s>| {
+        let at_sign = token(Token::At).parse_next(input)?;
+        let opt_scope = opt_note(package_scope_parser).parse_next(input)?;
+        match opt_scope {
+            None => {
+                let identifier =
+                    hierarchical_identifier_parser.parse_next(input)?;
+                Ok(ClockingEvent::Hierarchical(Box::new((at_sign, identifier))))
+            }
+            Some(scope) => {
+                let identifier = identifier_parser.parse_next(input)?;
+                Ok(ClockingEvent::Ps(Box::new((
+                    at_sign,
+                    PsIdentifier(Some(scope), identifier),
+                ))))
+            }
+        }
+    };
     let _expression_parser = (
         token(Token::At),
         token(Token::Paren),
@@ -88,8 +101,7 @@ pub fn clocking_event_parser<'s>(
         token(Token::EParen),
     )
         .map(|(a, b, c, d)| ClockingEvent::Expression(Box::new((a, b, c, d))));
-    alt((_ps_parser, _hierarchical_parser, _expression_parser))
-        .parse_next(input)
+    alt((_expression_parser, _identifier_parser)).parse_next(input)
 }
 
 fn basic_event_expression_parser<'s>(
